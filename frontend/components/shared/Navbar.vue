@@ -1,5 +1,5 @@
 <template>
-  <nav class="navbar navbar-expand-lg navbar-light fixed-top navbar-animated" :class="{ 'navbar-scrolled': isScrolled }">
+  <nav class="navbar navbar-expand-lg navbar-light fixed-top navbar-animated" :class="{ 'navbar-scrolled': isScrolled, 'navbar-hidden': isNavbarHidden }">
     <div class="container">
       <!-- Logo et nom de l'application -->
       <NuxtLink to="/" class="navbar-brand d-flex align-items-center navbar-brand-animated">
@@ -20,25 +20,25 @@
       <!-- Menu de navigation desktop -->
       <div class="collapse navbar-collapse d-none d-lg-block" id="navbarNav">
         <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-5 navbar-nav-animated">
-                      <li class="nav-item">
-              <button class="nav-link fw-500 border-0 bg-transparent" :class="{ 'active': $route.path === '/' && !isInFeaturesSection }" @click="scrollToTop">
-                Accueil
-              </button>
-            </li>
-                      <li class="nav-item">
-              <button class="nav-link fw-500 border-0 bg-transparent" :class="{ 'active': isInFeaturesSection }" @click="scrollToFeatures">
-                Fonctionnalités
-              </button>
-            </li>
-                      <li class="nav-item">
-              <button class="nav-link fw-500 border-0 bg-transparent" @click="scrollToPricing">
-                Tarifs
-              </button>
-            </li>
+                                <li class="nav-item">
+            <button class="nav-link fw-500 border-0 bg-transparent" :class="{ 'active': $route.path === '/' && !isInFeaturesSection && !isInPricingSection && !isInContactSection }" @click="scrollToTop">
+              Accueil
+            </button>
+          </li>
           <li class="nav-item">
-            <NuxtLink to="/" class="nav-link fw-500">
+            <button class="nav-link fw-500 border-0 bg-transparent" :class="{ 'active': isInFeaturesSection }" @click="scrollToFeatures">
+              Fonctionnalités
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link fw-500 border-0 bg-transparent" :class="{ 'active': isInPricingSection }" @click="scrollToPricing">
+              Tarifs
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link fw-500 border-0 bg-transparent" :class="{ 'active': isInContactSection }" @click="scrollToContact">
               Contact
-            </NuxtLink>
+            </button>
           </li>
         </ul>
 
@@ -74,7 +74,7 @@
     <div class="sidebar-content">
       <ul class="sidebar-nav">
         <li class="sidebar-nav-item">
-          <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ 'active': $route.path === '/' && !isInFeaturesSection }" @click="scrollToTopAndClose">
+          <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ 'active': $route.path === '/' && !isInFeaturesSection && !isInPricingSection && !isInContactSection }" @click="scrollToTopAndClose">
             <i class="bi bi-house me-3"></i>
             Accueil
           </button>
@@ -86,16 +86,16 @@
           </button>
         </li>
         <li class="sidebar-nav-item">
-          <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start" @click="scrollToPricingAndClose">
+          <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ 'active': isInPricingSection }" @click="scrollToPricingAndClose">
             <i class="bi bi-tag me-3"></i>
             Tarifs
           </button>
         </li>
         <li class="sidebar-nav-item">
-          <NuxtLink to="/" class="sidebar-nav-link" @click="closeSidebar">
+          <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ 'active': isInContactSection }" @click="scrollToContactAndClose">
             <i class="bi bi-envelope me-3"></i>
             Contact
-          </NuxtLink>
+          </button>
         </li>
       </ul>
       
@@ -111,6 +111,26 @@
       </div>
     </div>
   </div>
+
+  <!-- Barre de navigation mobile fixe en bas -->
+  <div class="mobile-bottom-nav d-lg-none" :class="{ 'bottom-nav-hidden': isSidebarOpen }">
+    <div class="bottom-nav-item" :class="{ 'active': $route.path === '/' && !isInFeaturesSection && !isInPricingSection && !isInContactSection }" @click="scrollToTop">
+      <i class="bi bi-house"></i>
+      <span>Accueil</span>
+    </div>
+    <div class="bottom-nav-item" :class="{ 'active': isInFeaturesSection }" @click="scrollToFeatures">
+      <i class="bi bi-gear"></i>
+      <span>Fonctionnalités</span>
+    </div>
+    <div class="bottom-nav-item" :class="{ 'active': isInPricingSection }" @click="scrollToPricing">
+      <i class="bi bi-tag"></i>
+      <span>Tarifs</span>
+    </div>
+    <div class="bottom-nav-item" :class="{ 'active': isInContactSection }" @click="scrollToContact">
+      <i class="bi bi-envelope"></i>
+      <span>Contact</span>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -119,9 +139,30 @@ import { ref, onMounted, onUnmounted } from 'vue'
 const isScrolled = ref(false)
 const isSidebarOpen = ref(false)
 const isInFeaturesSection = ref(false)
+const isInPricingSection = ref(false)
+const isInContactSection = ref(false)
+const isNavbarHidden = ref(false)
+const lastScrollY = ref(0)
 
 const handleScroll = () => {
-  isScrolled.value = window.scrollY > 80
+  const currentScrollY = window.scrollY
+  
+  // Masquer/afficher la navbar selon la direction du scroll (mobile seulement)
+  if (window.innerWidth <= 991) { // Mobile et tablette
+    if (currentScrollY > lastScrollY.value && currentScrollY > 100) {
+      // Scroll vers le bas - masquer la navbar
+      isNavbarHidden.value = true
+    } else if (currentScrollY < lastScrollY.value) {
+      // Scroll vers le haut - afficher la navbar
+      isNavbarHidden.value = false
+    }
+  } else {
+    // Sur desktop, toujours afficher la navbar
+    isNavbarHidden.value = false
+  }
+  
+  lastScrollY.value = currentScrollY
+  isScrolled.value = currentScrollY > 80
   
   // Détecter si on est dans la section fonctionnalités
   const featuresSection = document.getElementById('fonctionnalites')
@@ -131,6 +172,22 @@ const handleScroll = () => {
     
     // On est dans la section fonctionnalités si elle est visible à l'écran
     isInFeaturesSection.value = rect.top < windowHeight * 0.3 && rect.bottom > windowHeight * 0.3
+  }
+  
+  // Détecter si on est dans la section tarifs
+  const pricingSection = document.getElementById('tarifs')
+  if (pricingSection) {
+    const rect = pricingSection.getBoundingClientRect()
+    const windowHeight = window.innerHeight
+    isInPricingSection.value = rect.top < windowHeight * 0.3 && rect.bottom > windowHeight * 0.3
+  }
+  
+  // Détecter si on est dans la section contact
+  const contactSection = document.getElementById('contact')
+  if (contactSection) {
+    const rect = contactSection.getBoundingClientRect()
+    const windowHeight = window.innerHeight
+    isInContactSection.value = rect.top < windowHeight * 0.3 && rect.bottom > windowHeight * 0.3
   }
 }
 
@@ -201,6 +258,22 @@ const scrollToPricingAndClose = () => {
   closeSidebar()
 }
 
+// Fonction pour faire défiler vers le contact
+const scrollToContact = () => {
+  const contactSection = document.getElementById('contact')
+  if (contactSection) {
+    const navbarHeight = 80
+    const elementPosition = contactSection.offsetTop - navbarHeight - 50
+    window.scrollTo({ top: elementPosition, behavior: 'smooth' })
+  }
+}
+
+// Fonction pour faire défiler vers le contact et fermer la sidebar
+const scrollToContactAndClose = () => {
+  scrollToContact()
+  closeSidebar()
+}
+
 // Fonction pour faire défiler et fermer la sidebar
 const scrollToFeaturesAndClose = () => {
   scrollToFeatures()
@@ -209,10 +282,12 @@ const scrollToFeaturesAndClose = () => {
 
 onMounted(() => {
   window.addEventListener('scroll', handleScroll)
+  window.addEventListener('resize', handleScroll)
 })
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
+  window.removeEventListener('resize', handleScroll)
   document.body.style.overflow = ''
 })
 </script>
@@ -288,6 +363,11 @@ onUnmounted(() => {
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
   transform: translateY(-2px) scale(0.98);
   animation: slideDown 0.3s ease-out forwards;
+}
+
+.navbar-hidden {
+  transform: translateY(-100%) !important;
+  transition: transform 0.3s ease-in-out;
 }
 
 @keyframes slideDown {
@@ -755,5 +835,145 @@ onUnmounted(() => {
     width: 100%;
     right: -100%;
   }
+}
+
+/* Barre de navigation mobile fixe en bas */
+.mobile-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(180deg, rgba(26, 26, 26, 0.95) 0%, rgba(20, 20, 20, 0.98) 100%);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 8px 0 6px 0;
+  z-index: 1000;
+  box-shadow: 
+    0 -4px 20px rgba(0, 0, 0, 0.15),
+    0 -1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  min-width: 60px;
+  color: rgba(255, 255, 255, 0.6);
+  position: relative;
+  overflow: hidden;
+}
+
+.bottom-nav-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(0, 102, 204, 0.1) 0%, rgba(0, 123, 255, 0.05) 100%);
+  border-radius: 10px;
+  opacity: 0;
+  transition: all 0.4s ease;
+  transform: scale(0.8);
+}
+
+.bottom-nav-item i {
+  font-size: 1.1rem;
+  margin-bottom: 4px;
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative;
+  z-index: 2;
+}
+
+.bottom-nav-item span {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-align: center;
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative;
+  z-index: 2;
+  letter-spacing: 0.3px;
+}
+
+.bottom-nav-item.active {
+  color: white;
+  transform: translateY(-4px);
+}
+
+.bottom-nav-item.active::before {
+  opacity: 1;
+  transform: scale(1);
+  background: linear-gradient(135deg, var(--primary-blue) 0%, #0052a3 100%);
+}
+
+.bottom-nav-item.active i {
+  transform: scale(1.1);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.bottom-nav-item.active span {
+  transform: scale(1.05);
+  font-weight: 700;
+}
+
+.bottom-nav-item:hover:not(.active) {
+  color: rgba(255, 255, 255, 0.9);
+  transform: translateY(-2px);
+}
+
+.bottom-nav-item:hover:not(.active)::before {
+  opacity: 0.3;
+  transform: scale(1);
+}
+
+.bottom-nav-item:hover:not(.active) i {
+  transform: scale(1.05);
+}
+
+.bottom-nav-item:active {
+  transform: translateY(-1px);
+  transition: all 0.1s ease;
+}
+
+/* Animation d'entrée pour la barre */
+.mobile-bottom-nav {
+  animation: slideUpNav 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+@keyframes slideUpNav {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Animation pour les éléments */
+.bottom-nav-item {
+  animation: fadeInUp 0.8s ease-out forwards;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.bottom-nav-item:nth-child(1) { animation-delay: 0.1s; }
+.bottom-nav-item:nth-child(2) { animation-delay: 0.2s; }
+.bottom-nav-item:nth-child(3) { animation-delay: 0.3s; }
+.bottom-nav-item:nth-child(4) { animation-delay: 0.4s; }
+
+/* Masquer la barre de navigation du bas quand le menu mobile est ouvert */
+.bottom-nav-hidden {
+  transform: translateY(100%);
+  transition: transform 0.3s ease-in-out;
 }
 </style>

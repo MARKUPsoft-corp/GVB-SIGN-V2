@@ -4,16 +4,16 @@
       <div class="row g-4">
         <!-- Logo et description -->
         <div class="col-lg-4 col-md-6">
-          <div class="footer-brand mb-4">
-            <NuxtLink to="/" class="d-flex align-items-center text-decoration-none mb-3">
+          <div class="footer-brand mb-4 footer-brand-mobile">
+            <NuxtLink to="/" class="d-flex align-items-center text-decoration-none mb-3 footer-logo-link">
               <div class="logo-container me-3">
-                <i class="bi bi-shield-check text-primary fs-2"></i>
+                <i class="bi bi-qr-code text-primary fs-2"></i>
               </div>
               <span class="brand-text fw-bold text-light fs-4">GVB Sign</span>
             </NuxtLink>
             <p class="text-light-50 mb-4">
               La solution de signature électronique la plus sécurisée et innovante du marché. 
-              Simplifiez vos processus de signature avec notre technologie QR Code avancée.
+              Simplifiez vos processus de signature avec notre technologie QR Code avancée et authentification mobile.
             </p>
             <!-- Réseaux sociaux -->
             <div class="social-links d-flex gap-3">
@@ -33,94 +33,109 @@
           </div>
         </div>
 
-        <!-- Liens produit -->
-        <div class="col-lg-2 col-md-6 col-sm-6">
-          <h5 class="fw-bold mb-3 text-primary">Produit</h5>
-          <ul class="footer-links">
-            <li><NuxtLink to="/">Fonctionnalités</NuxtLink></li>
-            <li><NuxtLink to="/">Tarifs</NuxtLink></li>
-            <li><NuxtLink to="/">Sécurité</NuxtLink></li>
-            <li><NuxtLink to="/">Intégrations</NuxtLink></li>
-            <li><NuxtLink to="/">API</NuxtLink></li>
-          </ul>
-        </div>
-
-        <!-- Liens solutions -->
-        <div class="col-lg-2 col-md-6 col-sm-6">
-          <h5 class="fw-bold mb-3 text-primary">Solutions</h5>
-          <ul class="footer-links">
-            <li><NuxtLink to="/">Entreprises</NuxtLink></li>
-            <li><NuxtLink to="/">PME</NuxtLink></li>
-            <li><NuxtLink to="/">Freelances</NuxtLink></li>
-            <li><NuxtLink to="/">Juridique</NuxtLink></li>
-            <li><NuxtLink to="/">Ressources Humaines</NuxtLink></li>
-          </ul>
-        </div>
-
-        <!-- Liens support -->
-        <div class="col-lg-2 col-md-6 col-sm-6">
-          <h5 class="fw-bold mb-3 text-primary">Support</h5>
-          <ul class="footer-links">
-            <li><NuxtLink to="/">Centre d'aide</NuxtLink></li>
-            <li><NuxtLink to="/">Documentation</NuxtLink></li>
-            <li><NuxtLink to="/">Contact</NuxtLink></li>
-            <li><NuxtLink to="/">Statut des services</NuxtLink></li>
-            <li><NuxtLink to="/">Communauté</NuxtLink></li>
-          </ul>
-        </div>
-
-        <!-- Liens légaux -->
-        <div class="col-lg-2 col-md-6 col-sm-6">
-          <h5 class="fw-bold mb-3 text-primary">Légal</h5>
-          <ul class="footer-links">
-            <li><NuxtLink to="/">Confidentialité</NuxtLink></li>
-            <li><NuxtLink to="/">Conditions d'utilisation</NuxtLink></li>
-            <li><NuxtLink to="/">Cookies</NuxtLink></li>
-            <li><NuxtLink to="/">RGPD</NuxtLink></li>
-            <li><NuxtLink to="/">Conformité</NuxtLink></li>
-          </ul>
-        </div>
-      </div>
-
-      <!-- Newsletter -->
-      <div class="row mt-5 pt-4 border-top border-secondary">
-        <div class="col-lg-6">
-          <h5 class="fw-bold mb-3 text-primary">Restez informé</h5>
-          <p class="text-light-50 mb-3">
-            Recevez nos dernières actualités et mises à jour produit directement dans votre boîte mail.
-          </p>
-          <form class="newsletter-form d-flex gap-2" @submit.prevent="subscribeNewsletter">
-            <div class="flex-grow-1">
-              <input
-                type="email"
-                class="form-control form-control-lg"
-                placeholder="Votre adresse email"
-                v-model="email"
-                required
-              >
+        <!-- Menu et Tarification (Desktop) -->
+        <div class="col-lg-4 d-none d-lg-block">
+          <div class="row">
+            <!-- Menu -->
+            <div class="col-6">
+              <h5 class="fw-bold mb-3 text-primary footer-section-title">Menu</h5>
+              <ul class="footer-links">
+                <li><NuxtLink to="/">Accueil</NuxtLink></li>
+                <li><NuxtLink to="/">Fonctionnalités</NuxtLink></li>
+                <li><NuxtLink to="/">Tarifs</NuxtLink></li>
+                <li><NuxtLink to="/">Contact</NuxtLink></li>
+              </ul>
             </div>
-            <button type="submit" class="btn btn-primary btn-lg px-4" :disabled="isSubscribing">
-              <i class="bi bi-send" v-if="!isSubscribing"></i>
-              <div class="spinner-border spinner-border-sm" v-else></div>
-            </button>
-          </form>
+
+            <!-- Tarification -->
+            <div class="col-6">
+              <h5 class="fw-bold mb-3 text-primary footer-section-title">Tarification</h5>
+              <ul class="footer-links">
+                <li><NuxtLink to="/">Plan Free</NuxtLink></li>
+                <li><NuxtLink to="/">Plan Pro</NuxtLink></li>
+                <li><NuxtLink to="/">Plan Ultra</NuxtLink></li>
+                <li><NuxtLink to="/">Plan Custom</NuxtLink></li>
+              </ul>
+            </div>
+          </div>
         </div>
 
-        <!-- Contact info -->
-        <div class="col-lg-6">
-          <h5 class="fw-bold mb-3 text-primary">Contact</h5>
+        <!-- Contact (Desktop) -->
+        <div class="col-lg-4 d-none d-lg-block">
+          <h5 class="fw-bold mb-3 text-primary footer-section-title">Contact</h5>
           <div class="contact-info">
             <div class="contact-item d-flex align-items-center mb-2">
-              <i class="bi bi-geo-alt me-3 text-primary"></i>
-              <span class="text-light-50">123 Avenue de l'Innovation, 75001 Paris, France</span>
+              <div class="contact-icon-wrapper me-3">
+                <i class="bi bi-geo-alt text-primary"></i>
+              </div>
+              <span class="text-light-50">123 Boulevard de l'Indépendance, Douala, Cameroun</span>
             </div>
             <div class="contact-item d-flex align-items-center mb-2">
-              <i class="bi bi-telephone me-3 text-primary"></i>
-              <span class="text-light-50">+33 1 23 45 67 89</span>
+              <div class="contact-icon-wrapper me-3">
+                <i class="bi bi-telephone text-primary"></i>
+              </div>
+              <span class="text-light-50">+237 691 234 567</span>
             </div>
             <div class="contact-item d-flex align-items-center">
-              <i class="bi bi-envelope me-3 text-primary"></i>
-              <span class="text-light-50">contact@gvbsign.com</span>
+              <div class="contact-icon-wrapper me-3">
+                <i class="bi bi-envelope text-primary"></i>
+              </div>
+              <span class="text-light-50">contact@gvbsign.cm</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Layout Mobile -->
+        <div class="col-12 d-lg-none text-center">
+          <!-- Menu et Tarification en deux colonnes -->
+          <div class="row mb-4 justify-content-center">
+            <!-- Tarification (Gauche) -->
+            <div class="col-6 text-center">
+              <h5 class="fw-bold mb-3 text-primary footer-section-title">Tarification</h5>
+              <ul class="footer-links">
+                <li><NuxtLink to="/">Plan Free</NuxtLink></li>
+                <li><NuxtLink to="/">Plan Pro</NuxtLink></li>
+                <li><NuxtLink to="/">Plan Ultra</NuxtLink></li>
+                <li><NuxtLink to="/">Plan Custom</NuxtLink></li>
+              </ul>
+            </div>
+
+            <!-- Menu (Droite) -->
+            <div class="col-6 text-center">
+              <h5 class="fw-bold mb-3 text-primary footer-section-title">Menu</h5>
+              <ul class="footer-links">
+                <li><NuxtLink to="/">Accueil</NuxtLink></li>
+                <li><NuxtLink to="/">Fonctionnalités</NuxtLink></li>
+                <li><NuxtLink to="/">Tarifs</NuxtLink></li>
+                <li><NuxtLink to="/">Contact</NuxtLink></li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Contact en bas -->
+          <div class="row justify-content-center">
+            <div class="col-12 text-center">
+              <h5 class="fw-bold mb-3 text-primary footer-section-title">Contact</h5>
+              <div class="contact-info">
+                <div class="contact-item d-flex align-items-center justify-content-center mb-2">
+                  <div class="contact-icon-wrapper me-3">
+                    <i class="bi bi-geo-alt text-primary"></i>
+                  </div>
+                  <span class="text-light-50">123 Boulevard de l'Indépendance, Douala, Cameroun</span>
+                </div>
+                <div class="contact-item d-flex align-items-center justify-content-center mb-2">
+                  <div class="contact-icon-wrapper me-3">
+                    <i class="bi bi-telephone text-primary"></i>
+                  </div>
+                  <span class="text-light-50">+237 691 234 567</span>
+                </div>
+                <div class="contact-item d-flex align-items-center justify-content-center">
+                  <div class="contact-icon-wrapper me-3">
+                    <i class="bi bi-envelope text-primary"></i>
+                  </div>
+                  <span class="text-light-50">contact@gvbsign.cm</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -128,14 +143,9 @@
 
       <!-- Copyright -->
       <div class="row mt-4 pt-4 border-top border-secondary">
-        <div class="col-lg-6">
+        <div class="col-12 text-center">
           <p class="text-light-50 mb-0">
             &copy; {{ currentYear }} GVB Sign. Tous droits réservés.
-          </p>
-        </div>
-        <div class="col-lg-6 text-lg-end">
-          <p class="text-light-50 mb-0">
-            Fait avec <i class="bi bi-heart-fill text-danger"></i> en France
           </p>
         </div>
       </div>
@@ -144,25 +154,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-
-// Newsletter
-const email = ref('')
-const isSubscribing = ref(false)
-
-const subscribeNewsletter = async () => {
-  if (!email.value) return
-  
-  isSubscribing.value = true
-  
-  // Simulation d'un appel API
-  setTimeout(() => {
-    // Ici on ajouterait la logique d'inscription à la newsletter
-    console.log('Newsletter subscription:', email.value)
-    email.value = ''
-    isSubscribing.value = false
-  }, 1500)
-}
+import { computed } from 'vue'
 
 // Année courante
 const currentYear = computed(() => new Date().getFullYear())
@@ -194,6 +186,74 @@ const currentYear = computed(() => new Date().getFullYear())
 .brand-text {
   font-family: 'Inter', sans-serif;
   letter-spacing: -0.5px;
+}
+
+.footer-section-title {
+  position: relative;
+  padding-bottom: 8px;
+}
+
+.footer-section-title::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 40px;
+  height: 3px;
+  background: var(--primary-blue);
+  border-radius: 2px;
+}
+
+/* Centrage sur mobile */
+@media (max-width: 991px) {
+  .footer-brand-mobile {
+    text-align: center;
+  }
+  
+  .footer-brand-mobile .social-links {
+    justify-content: center;
+  }
+  
+  .footer-logo-link {
+    justify-content: center;
+  }
+  
+  .footer-section-title::after {
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}
+
+/* Suppression de l'arrière-plan du logo */
+.logo-container {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Styles pour les icônes de contact */
+.contact-icon-wrapper {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(0, 102, 204, 0.1) 0%, rgba(0, 123, 255, 0.05) 100%);
+  border: 2px solid rgba(0, 102, 204, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.contact-icon-wrapper:hover {
+  background: linear-gradient(135deg, rgba(0, 102, 204, 0.15) 0%, rgba(0, 123, 255, 0.1) 100%);
+  border-color: rgba(0, 102, 204, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 102, 204, 0.15);
+}
+
+.contact-icon-wrapper i {
+  font-size: 1.2rem;
+  color: var(--primary-blue);
 }
 
 .footer-links {

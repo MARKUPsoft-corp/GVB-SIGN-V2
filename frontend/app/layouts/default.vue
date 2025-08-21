@@ -172,6 +172,7 @@ html {
 @media (max-width: 768px) {
   .main-content {
     padding-top: 50px;
+    padding-bottom: 70px; /* Espace pour la barre de navigation mobile */
   }
   
   .section-padding {

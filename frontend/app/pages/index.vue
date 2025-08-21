@@ -6,16 +6,20 @@
     <!-- Features Section -->
     <HomepageFeaturesSection />
     
-    <!-- Pricing Section -->
-    <HomepagePricingSection />
-  </div>
-</template>
+          <!-- Pricing Section -->
+      <HomepagePricingSection />
+      
+      <!-- Contact Section -->
+      <HomepageContactSection />
+    </div>
+  </template>
 
 <script setup>
 // Import explicite des composants
 import HomepageHeroSection from '../../components/homepage/HeroSection.vue'
 import HomepageFeaturesSection from '../../components/homepage/FeaturesSection.vue'
 import HomepagePricingSection from '../../components/homepage/PricingSection.vue'
+import HomepageContactSection from '../../components/homepage/ContactSection.vue'
 
 // Meta tags pour la page d'accueil
 useHead({
