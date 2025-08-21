@@ -382,6 +382,12 @@ onUnmounted(() => {
     height: 45px;
     font-size: 1rem;
   }
+  
+  .scroll-down-container {
+    bottom: 1rem;
+    left: 2rem;
+    transform: none;
+  }
 }
 
 /* Bouton de défilement */

@@ -30,11 +30,11 @@
                 Fonctionnalités
               </button>
             </li>
-          <li class="nav-item">
-            <NuxtLink to="/" class="nav-link fw-500">
-              Tarifs
-            </NuxtLink>
-          </li>
+                      <li class="nav-item">
+              <button class="nav-link fw-500 border-0 bg-transparent" @click="scrollToPricing">
+                Tarifs
+              </button>
+            </li>
           <li class="nav-item">
             <NuxtLink to="/" class="nav-link fw-500">
               Contact
@@ -86,10 +86,10 @@
           </button>
         </li>
         <li class="sidebar-nav-item">
-          <NuxtLink to="/" class="sidebar-nav-link" @click="closeSidebar">
+          <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start" @click="scrollToPricingAndClose">
             <i class="bi bi-tag me-3"></i>
             Tarifs
-          </NuxtLink>
+          </button>
         </li>
         <li class="sidebar-nav-item">
           <NuxtLink to="/" class="sidebar-nav-link" @click="closeSidebar">
@@ -176,6 +176,28 @@ const scrollToTop = () => {
 // Fonction pour faire défiler vers le haut et fermer la sidebar
 const scrollToTopAndClose = () => {
   scrollToTop()
+  closeSidebar()
+}
+
+// Fonction pour faire défiler vers les tarifs
+const scrollToPricing = () => {
+  const pricingSection = document.getElementById('tarifs')
+  if (pricingSection) {
+    // Calculer la position exacte
+    const navbarHeight = 80
+    const elementPosition = pricingSection.offsetTop - navbarHeight - 50
+    
+    // Scroll vers la position calculée
+    window.scrollTo({
+      top: elementPosition,
+      behavior: 'smooth'
+    })
+  }
+}
+
+// Fonction pour faire défiler vers les tarifs et fermer la sidebar
+const scrollToPricingAndClose = () => {
+  scrollToPricing()
   closeSidebar()
 }
 
