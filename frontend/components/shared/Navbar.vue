@@ -48,7 +48,7 @@
             <i class="bi bi-box-arrow-in-right me-2"></i>
             Connexion
           </NuxtLink>
-          <NuxtLink to="/" class="btn btn-primary-custom btn-sm">
+          <NuxtLink to="/register" class="btn btn-primary-custom btn-sm">
             <i class="bi bi-person-plus me-2"></i>
             Inscription
           </NuxtLink>
@@ -104,7 +104,7 @@
           <i class="bi bi-box-arrow-in-right me-2"></i>
           Connexion
         </NuxtLink>
-        <NuxtLink to="/" class="btn btn-primary-custom w-100" @click="closeSidebar">
+        <NuxtLink to="/register" class="btn btn-primary-custom w-100" @click="closeSidebar">
           <i class="bi bi-person-plus me-2"></i>
           Inscription
         </NuxtLink>
@@ -126,9 +126,9 @@
       <i class="bi bi-tag"></i>
       <span>Tarifs</span>
     </div>
-    <div class="bottom-nav-item" :class="{ 'active': isInContactSection }" @click="scrollToContact">
-      <i class="bi bi-envelope"></i>
-      <span>Contact</span>
+    <div class="bottom-nav-item" @click="goToLogin">
+      <i class="bi bi-person"></i>
+      <span>Se connecter</span>
     </div>
   </div>
 </template>
@@ -272,6 +272,11 @@ const scrollToContact = () => {
 const scrollToContactAndClose = () => {
   scrollToContact()
   closeSidebar()
+}
+
+// Fonction pour aller à la page de connexion
+const goToLogin = () => {
+  window.location.href = '/login'
 }
 
 // Fonction pour faire défiler et fermer la sidebar
