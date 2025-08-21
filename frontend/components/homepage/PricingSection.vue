@@ -7,12 +7,36 @@
           <div class="pricing-header text-center mb-5">
             <h2 class="display-3 fw-bold mb-4 text-dark pricing-title">
               Des <span class="text-primary-blue">Tarifs</span> 
-              <span class="text-primary-blue">Adaptés</span> à vos Besoins
+              <span class="text-primary-blue"> Adaptés</span> à vos Besoins
             </h2>
             <p class="lead mb-0 text-dark pricing-subtitle">
               Choisissez le plan qui correspond parfaitement à votre activité. 
               Tous nos plans incluent la sécurité maximale et le support technique.
             </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Toggle Mensuel/Annuel -->
+      <div class="row mb-5">
+        <div class="col-12">
+          <div class="pricing-toggle-container text-center">
+            <div class="pricing-toggle">
+              <button 
+                class="toggle-btn" 
+                :class="{ 'active': billingPeriod === 'monthly' }"
+                @click="billingPeriod = 'monthly'"
+              >
+                Mensuel
+              </button>
+              <button 
+                class="toggle-btn" 
+                :class="{ 'active': billingPeriod === 'yearly' }"
+                @click="billingPeriod = 'yearly'"
+              >
+                Annuel <span class="save-badge">ÉCONOMISEZ 20%</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -25,7 +49,7 @@
             <div class="card border-0 shadow-sm pricing-card-inner">
               <div class="card-body p-4 text-center">
                 <div class="pricing-badge mb-3">
-                  <i class="bi bi-gift text-success fs-2"></i>
+                  <i class="bi bi-gift text-primary-blue fs-2"></i>
                 </div>
                 <h3 class="pricing-plan-name mb-2">Free</h3>
                 <div class="pricing-price mb-4">
@@ -35,25 +59,25 @@
                 </div>
                 <ul class="pricing-features list-unstyled mb-4">
                   <li class="pricing-feature mb-3">
-                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                    <i class="bi bi-check text-success me-2"></i>
                     10 signatures/mois
                   </li>
                   <li class="pricing-feature mb-3">
-                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                    <i class="bi bi-check text-success me-2"></i>
                     Stockage 1 GB
                   </li>
                   <li class="pricing-feature mb-3">
-                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                    <i class="bi bi-check text-success me-2"></i>
                     Support email
                   </li>
                   <li class="pricing-feature mb-3">
-                    <i class="bi bi-x-circle text-muted me-2"></i>
+                    <i class="bi bi-dash text-muted me-2"></i>
                     <span class="text-muted">Branding personnalisé</span>
                   </li>
                 </ul>
-                <button class="btn btn-outline-primary-custom w-100 pricing-btn">
-                  Commencer gratuitement
-                </button>
+                                 <button class="btn btn-free w-100 pricing-btn">
+                   Commencer gratuitement
+                 </button>
               </div>
             </div>
           </div>
@@ -63,18 +87,18 @@
         <div class="col-lg-3 col-md-6 mb-4">
           <div class="pricing-card">
             <div class="card border-0 shadow-sm pricing-card-inner pricing-popular">
-              <div class="popular-badge">
-                <span>Plus populaire</span>
-              </div>
               <div class="card-body p-4 text-center">
                 <div class="pricing-badge mb-3">
-                  <i class="bi bi-star-fill text-warning fs-2"></i>
+                  <i class="bi bi-briefcase text-primary-blue fs-2"></i>
                 </div>
                 <h3 class="pricing-plan-name mb-2">Pro</h3>
                 <div class="pricing-price mb-4">
-                  <span class="price-amount">15,000</span>
+                  <span class="price-amount">{{ billingPeriod === 'monthly' ? '15,000' : '12,000' }}</span>
                   <span class="price-currency">FCFA</span>
-                  <span class="price-period">/mois</span>
+                  <span class="price-period">/{{ billingPeriod === 'monthly' ? 'mois' : 'mois' }}</span>
+                  <div v-if="billingPeriod === 'yearly'" class="price-original">
+                    <span class="original-price">180,000 FCFA/an</span>
+                  </div>
                 </div>
                 <ul class="pricing-features list-unstyled mb-4">
                   <li class="pricing-feature mb-3">
@@ -108,13 +132,16 @@
             <div class="card border-0 shadow-sm pricing-card-inner">
               <div class="card-body p-4 text-center">
                 <div class="pricing-badge mb-3">
-                  <i class="bi bi-rocket-takeoff text-primary-blue fs-2"></i>
+                  <i class="bi bi-building text-primary-blue fs-2"></i>
                 </div>
                 <h3 class="pricing-plan-name mb-2">Ultra</h3>
                 <div class="pricing-price mb-4">
-                  <span class="price-amount">35,000</span>
+                  <span class="price-amount">{{ billingPeriod === 'monthly' ? '35,000' : '28,000' }}</span>
                   <span class="price-currency">FCFA</span>
-                  <span class="price-period">/mois</span>
+                  <span class="price-period">/{{ billingPeriod === 'monthly' ? 'mois' : 'mois' }}</span>
+                  <div v-if="billingPeriod === 'yearly'" class="price-original">
+                    <span class="original-price">420,000 FCFA/an</span>
+                  </div>
                 </div>
                 <ul class="pricing-features list-unstyled mb-4">
                   <li class="pricing-feature mb-3">
@@ -148,7 +175,7 @@
             <div class="card border-0 shadow-sm pricing-card-inner">
               <div class="card-body p-4 text-center">
                 <div class="pricing-badge mb-3">
-                  <i class="bi bi-gear-fill text-dark fs-2"></i>
+                  <i class="bi bi-gear text-primary-blue fs-2"></i>
                 </div>
                 <h3 class="pricing-plan-name mb-2">Custom</h3>
                 <div class="pricing-price mb-4">
@@ -174,9 +201,9 @@
                     Formation incluse
                   </li>
                 </ul>
-                <button class="btn btn-outline-primary-custom w-100 pricing-btn">
-                  Nous contacter
-                </button>
+                                 <button class="btn btn-custom w-100 pricing-btn">
+                   Nous contacter
+                 </button>
               </div>
             </div>
           </div>
@@ -200,6 +227,9 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+
+// État de la période de facturation
+const billingPeriod = ref('monthly')
 
 // Animation au montage du composant
 onMounted(() => {
@@ -244,6 +274,71 @@ onMounted(() => {
   animation: slideInUp 0.8s ease-out 0.6s forwards;
 }
 
+/* Toggle Mensuel/Annuel */
+.pricing-toggle-container {
+  opacity: 0;
+  animation: fadeInUp 0.8s ease-out 0.7s forwards;
+}
+
+.pricing-toggle {
+  display: inline-flex;
+  background: rgba(0, 102, 204, 0.1);
+  border-radius: 50px;
+  padding: 8px;
+  border: 2px solid rgba(0, 102, 204, 0.2);
+  position: relative;
+}
+
+.toggle-btn {
+  background: transparent;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 40px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text-dark);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toggle-btn.active {
+  background: var(--primary-blue);
+  color: white;
+  box-shadow: 0 4px 15px rgba(0, 102, 204, 0.3);
+  transform: scale(1.05);
+}
+
+.toggle-btn:hover:not(.active) {
+  background: rgba(0, 102, 204, 0.1);
+  color: var(--primary-blue);
+}
+
+.save-badge {
+  background: var(--primary-blue);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+}
+
+.toggle-btn.active .save-badge {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.toggle-btn:not(.active) .save-badge {
+  background: var(--primary-blue);
+  color: white;
+}
+
 /* Cartes de tarification */
 .pricing-card {
   opacity: 0;
@@ -251,10 +346,10 @@ onMounted(() => {
   transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-.pricing-card:nth-child(1) { animation: slideInUp 0.6s ease-out 0.8s forwards; }
-.pricing-card:nth-child(2) { animation: slideInUp 0.6s ease-out 0.9s forwards; }
-.pricing-card:nth-child(3) { animation: slideInUp 0.6s ease-out 1.0s forwards; }
-.pricing-card:nth-child(4) { animation: slideInUp 0.6s ease-out 1.1s forwards; }
+.pricing-card:nth-child(1) { animation: slideInUp 0.6s ease-out 0.9s forwards; }
+.pricing-card:nth-child(2) { animation: slideInUp 0.6s ease-out 1.0s forwards; }
+.pricing-card:nth-child(3) { animation: slideInUp 0.6s ease-out 1.1s forwards; }
+.pricing-card:nth-child(4) { animation: slideInUp 0.6s ease-out 1.2s forwards; }
 
 .pricing-card:hover {
   transform: translateY(-8px);
@@ -287,22 +382,45 @@ onMounted(() => {
 /* Plan populaire */
 .pricing-popular {
   border-color: var(--primary-blue) !important;
+  border-width: 2px !important;
   position: relative;
   transform: scale(1.05);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 249, 250, 0.95) 100%) !important;
+  box-shadow: 
+    0 15px 35px rgba(0, 102, 204, 0.15),
+    0 8px 20px rgba(0, 102, 204, 0.1),
+    0 4px 10px rgba(0, 0, 0, 0.05) !important;
+  z-index: 10;
+}
+
+.pricing-popular::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(135deg, rgba(0, 102, 204, 0.3) 0%, rgba(0, 123, 255, 0.2) 100%);
+  border-radius: 20px;
+  z-index: -1;
+  opacity: 0.6;
 }
 
 .popular-badge {
   position: absolute;
-  top: -12px;
+  top: -8px;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--gradient-primary);
+  background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
   color: white;
-  padding: 8px 20px;
-  border-radius: 20px;
-  font-size: 0.85rem;
+  padding: 6px 16px;
+  border-radius: 15px;
+  font-size: 0.75rem;
   font-weight: 600;
-  box-shadow: 0 4px 15px rgba(0, 102, 204, 0.3);
+  box-shadow: 0 3px 10px rgba(0, 102, 204, 0.25);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.9;
 }
 
 /* Badge des plans */
@@ -364,6 +482,18 @@ onMounted(() => {
   font-weight: 500;
 }
 
+.price-original {
+  margin-top: 8px;
+}
+
+.original-price {
+  font-size: 0.85rem;
+  color: var(--dark-gray);
+  text-decoration: line-through;
+  opacity: 0.7;
+  font-weight: 500;
+}
+
 /* Fonctionnalités */
 .pricing-features {
   margin-bottom: 2rem;
@@ -400,10 +530,66 @@ onMounted(() => {
   box-shadow: 0 8px 20px rgba(0, 102, 204, 0.3);
 }
 
+/* Bouton Free - Style inspiré des liens actifs navbar */
+.btn-free {
+  background: rgba(0, 102, 204, 0.1);
+  backdrop-filter: blur(15px);
+  border: 2px solid rgba(0, 102, 204, 0.6);
+  color: var(--primary-blue);
+  font-weight: 600;
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 
+    0 4px 20px rgba(0, 102, 204, 0.1),
+    0 2px 8px rgba(0, 102, 204, 0.05);
+}
+
+.btn-free:hover {
+  background: rgba(0, 102, 204, 0.15);
+  backdrop-filter: blur(20px);
+  border-color: var(--primary-blue);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 8px 25px rgba(0, 102, 204, 0.15),
+    0 4px 15px rgba(0, 102, 204, 0.1);
+  color: var(--primary-blue);
+}
+
+.btn-free:active {
+  transform: translateY(0);
+}
+
+/* Bouton Custom - Style inspiré des liens actifs navbar */
+.btn-custom {
+  background: rgba(0, 102, 204, 0.1);
+  backdrop-filter: blur(15px);
+  border: 2px solid rgba(0, 102, 204, 0.6);
+  color: var(--primary-blue);
+  font-weight: 600;
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 
+    0 4px 20px rgba(0, 102, 204, 0.1),
+    0 2px 8px rgba(0, 102, 204, 0.05);
+}
+
+.btn-custom:hover {
+  background: rgba(0, 102, 204, 0.15);
+  backdrop-filter: blur(20px);
+  border-color: var(--primary-blue);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 8px 25px rgba(0, 102, 204, 0.15),
+    0 4px 15px rgba(0, 102, 204, 0.1);
+  color: var(--primary-blue);
+}
+
+.btn-custom:active {
+  transform: translateY(0);
+}
+
 /* Garantie */
 .pricing-guarantee {
   opacity: 0;
-  animation: fadeInUp 0.8s ease-out 1.2s forwards;
+  animation: fadeInUp 0.8s ease-out 1.3s forwards;
   padding: 20px;
   background: rgba(0, 102, 204, 0.05);
   border-radius: 15px;
