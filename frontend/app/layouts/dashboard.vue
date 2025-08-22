@@ -496,7 +496,7 @@ body {
   display: flex;
   align-items: center;
   padding: 1rem 1.5rem;
-  color: var(--dark-gray);
+  color: #495057;
   text-decoration: none;
   font-weight: 500;
   transition: all 0.3s ease;
@@ -510,6 +510,13 @@ body {
   text-decoration: none;
 }
 
+.sidebar-nav-link i {
+  font-size: 1.25rem;
+  width: 24px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
 .mobile-sidebar .sidebar-footer {
   padding: 1rem 1.5rem;
   border-top: 1px solid rgba(0, 102, 204, 0.1);
@@ -519,7 +526,7 @@ body {
 /* SIDEBAR */
 .dashboard-sidebar {
   width: 280px;
-  background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+  background: #ffffff;
   box-shadow: 
     4px 0 20px rgba(0, 102, 204, 0.08),
     2px 0 10px rgba(0, 0, 0, 0.05);
@@ -527,26 +534,29 @@ body {
   flex-direction: column;
   position: fixed;
   height: 100vh;
-  overflow-y: auto;
   z-index: 1000;
   border-right: 1px solid rgba(0, 102, 204, 0.1);
 }
 
 .sidebar-header {
   padding: 2rem 1.5rem 1.5rem;
-  border-bottom: 1px solid rgba(0, 102, 204, 0.15);
-  background: linear-gradient(135deg, rgba(0, 102, 204, 0.08) 0%, rgba(0, 123, 255, 0.12) 100%);
+  background: #ffffff;
   position: relative;
+  flex-shrink: 0;
+  height: 120px; /* Hauteur fixe pour le header */
+  display: flex;
+  align-items: center;
 }
 
 .sidebar-header::after {
   content: '';
   position: absolute;
   bottom: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(0, 102, 204, 0.2), transparent);
+  left: 1.5rem;
+  right: 1.5rem;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(0, 102, 204, 0.3), transparent);
+  border-radius: 1px;
 }
 
 .app-brand {
@@ -572,10 +582,7 @@ body {
 .brand-name {
   font-size: 1.25rem;
   font-weight: 700;
-  background: linear-gradient(135deg, var(--primary-blue) 0%, var(--accent-blue) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--primary-blue);
   font-family: 'Raleway', sans-serif;
   letter-spacing: -0.02em;
 }
@@ -584,6 +591,30 @@ body {
 .sidebar-nav {
   flex: 1;
   padding: 1rem 0;
+  position: relative;
+  overflow-y: auto;
+  min-height: 0;
+  max-height: calc(100vh - 320px); /* Hauteur fixe pour laisser de l'espace au header et footer */
+}
+
+.sidebar-nav::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 1.5rem;
+  right: 1.5rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 102, 204, 0.2), transparent);
+}
+
+.sidebar-nav::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 1.5rem;
+  right: 1.5rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 102, 204, 0.2), transparent);
 }
 
 .nav-menu {
@@ -602,7 +633,7 @@ body {
   align-items: center;
   gap: 0.75rem;
   padding: 1rem 1.5rem;
-  color: #6c757d;
+  color: #495057;
   text-decoration: none;
   font-weight: 500;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
@@ -648,8 +679,8 @@ body {
 }
 
 .nav-link i {
-  font-size: 1.125rem;
-  width: 20px;
+  font-size: 1.25rem;
+  width: 24px;
   text-align: center;
   transition: all 0.3s ease;
 }
@@ -662,26 +693,30 @@ body {
 /* FOOTER SIDEBAR */
 .sidebar-footer {
   padding: 1.5rem;
-  border-top: 1px solid rgba(0, 102, 204, 0.15);
-  margin-top: auto;
-  background: linear-gradient(135deg, rgba(0, 102, 204, 0.08) 0%, rgba(0, 123, 255, 0.12) 100%);
+  background: #ffffff;
   position: relative;
+  flex-shrink: 0;
+  height: 160px; /* Hauteur fixe pour le footer */
+  display: flex;
+  align-items: flex-start;
 }
 
 .sidebar-footer::before {
   content: '';
   position: absolute;
   top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(0, 102, 204, 0.2), transparent);
+  left: 1.5rem;
+  right: 1.5rem;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(0, 102, 204, 0.3), transparent);
+  border-radius: 1px;
 }
 
 .user-section {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  width: 100%;
 }
 
 .user-info {
@@ -689,9 +724,9 @@ body {
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(248, 249, 250, 0.8);
   border-radius: 12px;
-  border: 1px solid rgba(0, 102, 204, 0.15);
+  border: 1px solid rgba(0, 102, 204, 0.1);
   transition: all 0.3s ease;
 }
 
