@@ -260,12 +260,16 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useAuthStore } from '../../stores/auth'
 
-// Store utilisateur simulé (à remplacer par un vrai store plus tard)
-const userStore = ref({
-  fullName: '',
-  email: ''
-})
+// Store d'authentification (côté client seulement)
+const authStore = process.client ? useAuthStore() : null
+
+// Store utilisateur avec les données du store d'authentification
+const userStore = computed(() => ({
+  fullName: authStore?.user?.full_name || 'Utilisateur',
+  email: authStore?.user?.email || 'email@example.com'
+}))
 
 // État de la sidebar mobile
 const isSidebarOpen = ref(false)
@@ -274,20 +278,11 @@ const isSidebarCollapsed = ref(false)
 
 // Fonction de déconnexion
 const handleLogout = async () => {
-  try {
-    // Appel API de déconnexion
-    const response = await fetch('http://127.0.0.1:8000/api/auth/logout/', {
-      method: 'POST',
-      credentials: 'include'
-    })
-    
-    // Redirection vers la page d'accueil
-    await navigateTo('/')
-  } catch (error) {
-    console.error('Erreur lors de la déconnexion:', error)
-    // Redirection même en cas d'erreur
-    await navigateTo('/')
+  if (authStore) {
+    await authStore.logout()
   }
+  // Redirection vers la page de connexion
+  await navigateTo('/login')
 }
 
 // Fonctions pour la sidebar mobile
@@ -319,14 +314,12 @@ onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
 })
 
-// Récupérer les données utilisateur depuis les query params ou le store
-const route = useRoute()
-if (route.query.name) {
-  userStore.value.fullName = route.query.name
-}
-if (route.query.email) {
-  userStore.value.email = route.query.email
-}
+// Initialiser l'authentification au montage
+onMounted(async () => {
+  if (authStore) {
+    await authStore.initAuth()
+  }
+})
 
 // Meta tags pour le dashboard
 useHead({

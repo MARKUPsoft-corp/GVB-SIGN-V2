@@ -9,9 +9,10 @@
 // Import explicite du composant
 import AuthLoginForm from '../../components/auth/LoginForm.vue'
 
-// Définir le layout d'authentification
+// Définir le layout et le middleware
 definePageMeta({
-  layout: 'auth'
+  layout: 'auth',
+  middleware: 'guest'
 })
 
 // Meta tags pour la page de connexion

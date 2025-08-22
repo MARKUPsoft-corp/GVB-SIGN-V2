@@ -275,6 +275,10 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useAuthStore } from '../../stores/auth'
+
+// Store d'authentification (côté client seulement)
+const authStore = process.client ? useAuthStore() : null
 
 // État du formulaire
 const form = ref({
@@ -496,38 +500,26 @@ const handleSignup = async () => {
   isLoading.value = true
   
   try {
-    // Fonction API simple pour l'inscription
-    const API_BASE_URL = 'http://127.0.0.1:8000/api'
+    // Utiliser le store pour l'inscription (côté client seulement)
+    if (!authStore) {
+      throw new Error('Store non disponible')
+    }
     
-    const response = await fetch(`${API_BASE_URL}/auth/register/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({
-        email: form.value.email,
-        first_name: form.value.firstName,
-        last_name: form.value.lastName,
-        password: form.value.password,
-        confirm_password: form.value.confirmPassword
-      })
+    const result = await authStore.register({
+      email: form.value.email,
+      first_name: form.value.firstName,
+      last_name: form.value.lastName,
+      password: form.value.password,
+      confirm_password: form.value.confirmPassword
     })
-    
-    const result = await response.json()
     
     console.log('Réponse complète:', result)
     
-    if (response.ok && result.success) {
-      // Redirection vers le dashboard avec les données utilisateur
-      const userName = result.user ? result.user.full_name : `${form.value.firstName} ${form.value.lastName}`
-      const userEmail = result.user ? result.user.email : form.value.email
-      
+    if (result.success) {
+      // Redirection vers le dashboard
       await navigateTo({
         path: '/dashboard',
         query: {
-          name: userName,
-          email: userEmail,
           from: 'registration'
         }
       })

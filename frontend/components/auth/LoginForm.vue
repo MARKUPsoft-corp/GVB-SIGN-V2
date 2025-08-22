@@ -187,6 +187,10 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useAuthStore } from '../../stores/auth'
+
+// Store d'authentification (côté client seulement)
+const authStore = process.client ? useAuthStore() : null
 
 // État du formulaire
 const form = ref({
@@ -270,33 +274,19 @@ const handleLogin = async () => {
   isLoading.value = true
 
   try {
-    const API_BASE_URL = 'http://127.0.0.1:8000/api'
-    const response = await fetch(`${API_BASE_URL}/auth/login/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({
-        email: form.value.email,
-        password: form.value.password
-      })
+    // Utiliser le store pour la connexion (côté client seulement)
+    if (!authStore) {
+      throw new Error('Store non disponible')
+    }
+    
+    const result = await authStore.login({
+      email: form.value.email,
+      password: form.value.password
     })
 
-    const result = await response.json()
-    console.log('Réponse connexion:', result)
-
-    if (response.ok && result.success) {
-      // Connexion réussie
-      const userName = result.user ? result.user.full_name : form.value.email
-      
-      await navigateTo({
-        path: '/dashboard',
-        query: {
-          name: userName,
-          email: result.user ? result.user.email : form.value.email
-        }
-      })
+    if (result.success) {
+      // Connexion réussie - redirection vers dashboard
+      await navigateTo('/dashboard')
     } else {
       console.error('Erreur de connexion:', result)
       if (result.errors) {
@@ -308,6 +298,7 @@ const handleLogin = async () => {
           if (errorMessage.includes('Identifiants invalides')) {
             // Vérifier si l'email existe dans la base de données
             try {
+              const API_BASE_URL = 'http://127.0.0.1:8000/api'
               const checkResponse = await fetch(`${API_BASE_URL}/auth/check-email/?email=${encodeURIComponent(form.value.email)}`)
               const checkResult = await checkResponse.json()
               

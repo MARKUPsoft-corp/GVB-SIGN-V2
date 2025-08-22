@@ -173,32 +173,32 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useAuthStore } from '../../stores/auth'
 
-// Définir le layout dashboard
+// Définir le middleware et le layout
 definePageMeta({
+  middleware: 'auth',
   layout: 'dashboard'
 })
 
+// Store d'authentification (côté client seulement)
+const authStore = process.client ? useAuthStore() : null
+
 // Données utilisateur
 const route = useRoute()
-const userName = ref('')
-const userEmail = ref('')
+const userName = computed(() => authStore?.user?.full_name || 'Utilisateur')
+const userEmail = computed(() => authStore?.user?.email || '')
 const isFromRegistration = ref(false)
 
 // Initialiser les données utilisateur
-onMounted(() => {
-  // Récupérer les données de la query ou du localStorage
-  if (route.query.name) {
-    userName.value = route.query.name
-  }
-  if (route.query.email) {
-    userEmail.value = route.query.email
+onMounted(async () => {
+  // Initialiser l'authentification
+  if (authStore) {
+    await authStore.initAuth()
   }
   
   // Détecter si l'utilisateur vient de l'inscription ou de la connexion
-  // Si on vient de welcome.vue, c'est une inscription
-  const referrer = document.referrer
-  isFromRegistration.value = referrer.includes('/welcome') || route.query.from === 'registration'
+  isFromRegistration.value = route.query.from === 'registration'
 })
 
 // Messages de bienvenue personnalisés

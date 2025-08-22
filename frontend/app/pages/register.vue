@@ -8,7 +8,8 @@
 import AuthSignupForm from '../../components/auth/SignupForm.vue'
 
 definePageMeta({
-  layout: 'auth'
+  layout: 'auth',
+  middleware: 'guest'
 })
 
 useHead({

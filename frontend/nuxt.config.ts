@@ -35,7 +35,9 @@ export default defineNuxtConfig({
   },
   
   // Configuration des modules
-  modules: [],
+  modules: [
+    '@pinia/nuxt'
+  ],
   
   // Configuration du serveur de développement
   devServer: {
@@ -45,10 +47,6 @@ export default defineNuxtConfig({
   
   // Configuration Vite
   vite: {
-    server: {
-      port: 3000,
-      host: 'localhost'
-    },
     css: {
       preprocessorOptions: {
         scss: {
