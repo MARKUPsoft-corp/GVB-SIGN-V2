@@ -244,8 +244,8 @@
 
     <!-- Contenu principal -->
     <main class="dashboard-main">
-      <!-- Bouton toggle sidebar -->
-      <div class="sidebar-toggle-container">
+      <!-- Bouton toggle sidebar (desktop seulement) -->
+      <div class="sidebar-toggle-container d-none d-lg-block">
         <button class="sidebar-toggle" @click="toggleSidebarCollapse">
           <i class="bi" :class="isSidebarCollapsed ? 'bi-chevron-right' : 'bi-chevron-left'"></i>
         </button>
@@ -560,11 +560,11 @@ body {
 }
 
 .sidebar-header {
-  padding: 2rem 1.5rem 1.5rem;
+  padding: 1.5rem 1.5rem 1rem;
   background: #ffffff;
   position: relative;
   flex-shrink: 0;
-  height: 120px; /* Hauteur fixe pour le header */
+  height: 90px; /* Hauteur fixe pour le header */
   display: flex;
   align-items: center;
 }
@@ -650,7 +650,7 @@ body {
   position: relative;
   overflow-y: auto;
   min-height: 0;
-  max-height: calc(100vh - 320px); /* Hauteur fixe pour laisser de l'espace au header et footer */
+  max-height: calc(100vh - 220px); /* Hauteur fixe pour laisser de l'espace au header et footer */
 }
 
 .sidebar-nav::before {
@@ -663,15 +663,7 @@ body {
   background: linear-gradient(90deg, transparent, rgba(0, 102, 204, 0.2), transparent);
 }
 
-.sidebar-nav::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 1.5rem;
-  right: 1.5rem;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(0, 102, 204, 0.2), transparent);
-}
+
 
 .nav-menu {
   list-style: none;
@@ -763,18 +755,14 @@ body {
 
 /* FOOTER SIDEBAR */
 .sidebar-footer {
-  padding: 1.5rem;
+  padding: 0.25rem 1.5rem 0.5rem;
   background: #ffffff;
   position: relative;
   flex-shrink: 0;
-  height: 160px; /* Hauteur fixe pour le footer */
+  height: 120px; /* Hauteur fixe pour le footer */
   display: flex;
-  align-items: flex-start;
-}
-
-.dashboard-sidebar.collapsed .sidebar-footer {
-  padding: 1rem 0.5rem;
-  align-items: center;
+  align-items: flex-end;
+  justify-content: flex-end;
 }
 
 .sidebar-footer::before {
@@ -784,22 +772,31 @@ body {
   left: 1.5rem;
   right: 1.5rem;
   height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(0, 102, 204, 0.3), transparent);
-  border-radius: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 102, 204, 0.4), transparent);
+  z-index: 1;
 }
+
+.dashboard-sidebar.collapsed .sidebar-footer {
+  padding: 0.75rem 0.5rem 1rem;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+
 
 .user-section {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.5rem;
   width: 100%;
+  margin-bottom: 0;
 }
 
 .user-info {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.75rem;
+  padding: 0.4rem;
   background: rgba(248, 249, 250, 0.8);
   border-radius: 12px;
   border: 1px solid rgba(0, 102, 204, 0.1);
@@ -869,7 +866,7 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.75rem 1rem;
+  padding: 0.4rem 1rem;
   background: linear-gradient(135deg, rgba(220, 53, 69, 0.05) 0%, rgba(220, 53, 69, 0.1) 100%);
   border: 1px solid rgba(220, 53, 69, 0.3);
   color: #dc3545;
