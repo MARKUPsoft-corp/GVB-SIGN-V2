@@ -225,7 +225,7 @@
       <!-- Section utilisateur et déconnexion -->
       <div class="sidebar-footer">
         <div class="user-section">
-          <div class="user-info">
+          <div class="user-info" @click="toggleProfileModal" role="button">
             <div class="user-avatar">
               <i class="bi bi-person-circle"></i>
             </div>
@@ -241,6 +241,123 @@
         </div>
       </div>
     </aside>
+
+    <!-- Modale de profil utilisateur -->
+    <div v-if="isProfileModalOpen" class="profile-modal-overlay" @click="closeProfileModal">
+      <div class="profile-modal" @click.stop>
+        <!-- Menu latéral -->
+        <div class="profile-menu">
+          <div class="profile-menu-header">
+            <div class="profile-avatar">
+              <i class="bi bi-person-circle"></i>
+            </div>
+            <h6>Mon Profil</h6>
+          </div>
+          <ul class="profile-nav">
+            <li class="profile-nav-item" :class="{ active: activeProfileTab === 'profile' }" @click="setActiveProfileTab('profile')">
+              <i class="bi bi-person"></i>
+              <span>Profil</span>
+            </li>
+            <li class="profile-nav-item" :class="{ active: activeProfileTab === 'security' }" @click="setActiveProfileTab('security')">
+              <i class="bi bi-shield-lock"></i>
+              <span>Sécurité</span>
+            </li>
+            <li class="profile-nav-item" :class="{ active: activeProfileTab === 'preferences' }" @click="setActiveProfileTab('preferences')">
+              <i class="bi bi-gear"></i>
+              <span>Préférences</span>
+            </li>
+            <li class="profile-nav-item" :class="{ active: activeProfileTab === 'billing' }" @click="setActiveProfileTab('billing')">
+              <i class="bi bi-credit-card"></i>
+              <span>Facturation</span>
+            </li>
+          </ul>
+        </div>
+        
+        <!-- Contenu principal -->
+        <div class="profile-content">
+          <div class="profile-content-header">
+            <h5>{{ getProfileTabTitle() }}</h5>
+            <button class="close-btn" @click="closeProfileModal">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+          
+          <div class="profile-content-body">
+            <!-- Contenu Profil -->
+            <div v-if="activeProfileTab === 'profile'" class="tab-content">
+              <div class="form-group">
+                <label>Nom complet</label>
+                <input type="text" class="form-control" :value="userStore.fullName" readonly>
+              </div>
+              <div class="form-group">
+                <label>Email</label>
+                <input type="email" class="form-control" :value="userStore.email" readonly>
+              </div>
+              <div class="form-group">
+                <label>Statut</label>
+                <span class="badge bg-success">Actif</span>
+              </div>
+            </div>
+            
+            <!-- Contenu Sécurité -->
+            <div v-if="activeProfileTab === 'security'" class="tab-content">
+              <div class="security-item">
+                <div class="security-info">
+                  <h6>Mot de passe</h6>
+                  <p class="text-muted">Dernière modification : il y a 2 semaines</p>
+                </div>
+                <button class="btn btn-outline-primary btn-sm">Modifier</button>
+              </div>
+              <div class="security-item">
+                <div class="security-info">
+                  <h6>Authentification à deux facteurs</h6>
+                  <p class="text-muted">Non configurée</p>
+                </div>
+                <button class="btn btn-primary btn-sm">Activer</button>
+              </div>
+            </div>
+            
+            <!-- Contenu Préférences -->
+            <div v-if="activeProfileTab === 'preferences'" class="tab-content">
+              <div class="preference-item">
+                <div class="preference-info">
+                  <h6>Langue</h6>
+                  <p class="text-muted">Français</p>
+                </div>
+                <select class="form-select form-select-sm">
+                  <option selected>Français</option>
+                  <option>English</option>
+                  <option>Español</option>
+                </select>
+              </div>
+              <div class="preference-item">
+                <div class="preference-info">
+                  <h6>Notifications email</h6>
+                  <p class="text-muted">Recevoir les notifications par email</p>
+                </div>
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" checked>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Contenu Facturation -->
+            <div v-if="activeProfileTab === 'billing'" class="tab-content">
+              <div class="billing-info">
+                <h6>Plan actuel</h6>
+                <div class="plan-card">
+                  <div class="plan-details">
+                    <h5>Plan Gratuit</h5>
+                    <p class="text-muted">5 signatures par mois</p>
+                  </div>
+                  <button class="btn btn-primary btn-sm">Mettre à niveau</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Contenu principal -->
     <main class="dashboard-main">
@@ -276,6 +393,10 @@ const isSidebarOpen = ref(false)
 const isScrolled = ref(false)
 const isSidebarCollapsed = ref(false)
 
+// État de la modale de profil
+const isProfileModalOpen = ref(false)
+const activeProfileTab = ref('profile')
+
 // Fonction de déconnexion
 const handleLogout = async () => {
   if (authStore) {
@@ -299,6 +420,37 @@ const toggleSidebarCollapse = () => {
   isSidebarCollapsed.value = !isSidebarCollapsed.value
 }
 
+// Fonctions pour la modale de profil
+const toggleProfileModal = () => {
+  isProfileModalOpen.value = !isProfileModalOpen.value
+  
+  // Bloquer/débloquer le scroll du body
+  if (isProfileModalOpen.value) {
+    document.body.style.overflow = 'hidden'
+  } else {
+    document.body.style.overflow = ''
+  }
+}
+
+const closeProfileModal = () => {
+  isProfileModalOpen.value = false
+  document.body.style.overflow = ''
+}
+
+const setActiveProfileTab = (tab) => {
+  activeProfileTab.value = tab
+}
+
+const getProfileTabTitle = () => {
+  const titles = {
+    profile: 'Informations du profil',
+    security: 'Sécurité du compte',
+    preferences: 'Préférences utilisateur',
+    billing: 'Facturation et abonnement'
+  }
+  return titles[activeProfileTab.value] || 'Profil'
+}
+
 // Gestion du scroll pour la navbar
 const handleScroll = () => {
   isScrolled.value = window.scrollY > 50
@@ -312,6 +464,8 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
+  // Restaurer le scroll du body au cas où la modale était ouverte
+  document.body.style.overflow = ''
 })
 
 // Initialiser l'authentification au montage
@@ -1000,6 +1154,597 @@ body {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* Modale de profil utilisateur */
+.profile-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.2);
+  z-index: 9999;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.profile-modal {
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(15px) saturate(120%);
+  -webkit-backdrop-filter: blur(15px) saturate(120%);
+  width: 800px;
+  height: 500px;
+  margin: 20px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.1),
+    inset 1px 0 0 rgba(255, 255, 255, 0.1);
+  display: flex;
+  overflow: hidden;
+  transform: translateY(100px) scale(0.9);
+  animation: modalSlideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalSlideUp {
+  to {
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Menu latéral de la modale - Style glassmorphisme */
+.profile-menu {
+  width: 220px;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+}
+
+.profile-menu::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 1.5rem;
+  right: 1.5rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 102, 204, 0.2), transparent);
+}
+
+.profile-menu-header {
+  padding: 1.5rem;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.profile-avatar {
+  font-size: 2.5rem;
+  color: var(--primary-blue);
+  margin-bottom: 0.5rem;
+}
+
+.profile-menu-header h6 {
+  color: var(--text-dark);
+  margin: 0;
+  font-weight: 600;
+  font-size: 1rem;
+  font-family: 'Raleway', sans-serif;
+}
+
+.profile-nav {
+  list-style: none;
+  margin: 0;
+  padding: 1rem 0;
+  flex: 1;
+  position: relative;
+  overflow-y: auto;
+  max-height: calc(100% - 120px); /* Hauteur maximale pour permettre le scroll */
+}
+
+.profile-nav-item {
+  margin-bottom: 0.25rem;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  color: #495057;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  font-family: 'Raleway', sans-serif;
+  border-radius: 0 12px 12px 0;
+  margin-right: 0.5rem;
+  cursor: pointer;
+}
+
+.profile-nav-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  background: var(--primary-blue);
+  transition: width 0.3s ease;
+  border-radius: 0 12px 12px 0;
+}
+
+.profile-nav-item:hover {
+  color: var(--primary-blue);
+  background: rgba(0, 102, 204, 0.1);
+  text-decoration: none;
+  transform: translateX(4px);
+}
+
+.profile-nav-item:hover::before {
+  width: 4px;
+}
+
+.profile-nav-item.active {
+  color: var(--primary-blue);
+  background: rgba(0, 102, 204, 0.15);
+  border-right: none;
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(0, 102, 204, 0.15);
+}
+
+.profile-nav-item.active::before {
+  width: 4px;
+}
+
+.profile-nav-item i {
+  font-size: 1.25rem;
+  width: 24px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.profile-nav-item:hover i,
+.profile-nav-item.active i {
+  transform: scale(1.1);
+}
+
+/* Style pour la barre de scroll de la navigation */
+.profile-nav::-webkit-scrollbar {
+  width: 6px;
+}
+
+.profile-nav::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.profile-nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+  transition: all 0.3s ease;
+}
+
+.profile-nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Pour Firefox */
+.profile-nav {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.1);
+}
+
+/* Contenu principal de la modale - Style glassmorphisme */
+.profile-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  height: 100%;
+  overflow: hidden;
+}
+
+.profile-content-header {
+  padding: 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  position: relative;
+}
+
+.profile-content-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 2rem;
+  right: 2rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 102, 204, 0.1), transparent);
+}
+
+.profile-content-header h5 {
+  margin: 0;
+  color: var(--text-dark);
+  font-weight: 700;
+  font-size: 1.5rem;
+  flex: 1;
+  font-family: 'Raleway', sans-serif;
+}
+
+.close-btn {
+  background: var(--primary-blue);
+  border: none;
+  color: white;
+  font-size: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(52, 144, 220, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.close-btn:hover {
+  background: var(--primary-blue-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(52, 144, 220, 0.3);
+}
+
+.close-btn i {
+  font-size: 1.1rem;
+}
+
+.profile-content-body {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  max-height: calc(100vh - 200px); /* Hauteur maximale pour permettre le scroll */
+}
+
+/* Style pour la barre de scroll du contenu principal */
+.profile-content-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.profile-content-body::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.profile-content-body::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.profile-content-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Pour Firefox */
+.profile-content-body {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.1);
+}
+
+/* Contenu des onglets */
+.tab-content {
+  animation: fadeInContent 0.3s ease-out;
+}
+
+@keyframes fadeInContent {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Formulaires - Style glassmorphisme */
+.form-group {
+  margin-bottom: 1.5rem;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  padding: 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.form-group:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  font-size: 0.95rem;
+  font-family: 'Raleway', sans-serif;
+}
+
+.form-control {
+  width: 100%;
+  padding: 1rem 1.25rem;
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  font-size: 1rem;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  background: white;
+  font-family: 'Raleway', sans-serif;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 4px rgba(52, 144, 220, 0.1);
+  transform: translateY(-1px);
+}
+
+/* Éléments de sécurité - Style glassmorphisme */
+.security-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.security-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.security-item:last-child {
+  margin-bottom: 0;
+}
+
+.security-info h6 {
+  margin: 0 0 0.5rem 0;
+  color: var(--text-dark);
+  font-weight: 600;
+  font-family: 'Raleway', sans-serif;
+  font-size: 1.1rem;
+}
+
+.security-info p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #6c757d;
+  font-family: 'Raleway', sans-serif;
+}
+
+/* Éléments de préférences - Style glassmorphisme */
+.preference-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.preference-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.preference-item:last-child {
+  margin-bottom: 0;
+}
+
+.preference-info h6 {
+  margin: 0 0 0.5rem 0;
+  color: var(--text-dark);
+  font-weight: 600;
+  font-family: 'Raleway', sans-serif;
+  font-size: 1.1rem;
+}
+
+.preference-info p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #6c757d;
+  font-family: 'Raleway', sans-serif;
+}
+
+.form-select {
+  padding: 8px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  min-width: 120px;
+}
+
+/* Facturation - Style glassmorphisme */
+.billing-info h6 {
+  margin-bottom: 1rem;
+  color: var(--text-dark);
+  font-weight: 600;
+  font-family: 'Raleway', sans-serif;
+  font-size: 1.1rem;
+}
+
+.plan-card {
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.plan-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.plan-details h5 {
+  margin: 0 0 0.5rem 0;
+  color: var(--primary-blue);
+  font-weight: 600;
+  font-family: 'Raleway', sans-serif;
+  font-size: 1.2rem;
+}
+
+.plan-details p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #6c757d;
+  font-family: 'Raleway', sans-serif;
+}
+
+/* Boutons - Style identique à la HeroSection */
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  border: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  cursor: pointer;
+  font-family: 'Raleway', sans-serif;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: var(--primary-blue);
+  color: white;
+  box-shadow: 0 4px 12px rgba(52, 144, 220, 0.2);
+}
+
+.btn-primary:hover {
+  background: var(--primary-blue-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(52, 144, 220, 0.3);
+}
+
+.btn-outline-primary {
+  background: transparent;
+  border: 2px solid var(--primary-blue);
+  color: var(--primary-blue);
+  box-shadow: 0 4px 12px rgba(52, 144, 220, 0.1);
+}
+
+.btn-outline-primary:hover {
+  background: var(--primary-blue);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(52, 144, 220, 0.3);
+}
+
+.btn-sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+}
+
+/* Badge */
+.badge {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.bg-success {
+  background: #28a745 !important;
+  color: white;
+}
+
+/* Switch */
+.form-check-input {
+  width: 3rem;
+  height: 1.5rem;
+  border-radius: 1rem;
+  background-color: #dee2e6;
+  border: none;
+  cursor: pointer;
+}
+
+.form-check-input:checked {
+  background-color: var(--primary-blue);
+}
+
+/* Style pour le profil cliquable */
+.user-info {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.user-info:hover {
+  background: rgba(52, 144, 220, 0.05);
+  transform: translateY(-1px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .profile-modal {
+    width: calc(100vw - 40px);
+    height: calc(100vh - 100px);
+    margin: 20px;
+  }
+  
+  .profile-menu {
+    width: 180px;
+  }
+  
+  .profile-content-body {
+    padding: 20px;
   }
 }
 </style>

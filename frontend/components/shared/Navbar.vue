@@ -112,8 +112,8 @@
     </div>
   </div>
 
-  <!-- Barre de navigation mobile fixe en bas -->
-  <div class="mobile-bottom-nav d-lg-none" :class="{ 'bottom-nav-hidden': isSidebarOpen }">
+  <!-- Barre de navigation mobile fixe en bas (pas sur la page d'accueil) -->
+  <div v-if="$route.path !== '/'" class="mobile-bottom-nav d-lg-none" :class="{ 'bottom-nav-hidden': isSidebarOpen }">
     <div class="bottom-nav-item" :class="{ 'active': $route.path === '/' && !isInFeaturesSection && !isInPricingSection && !isInContactSection }" @click="scrollToTop">
       <i class="bi bi-house"></i>
       <span>Accueil</span>
@@ -796,7 +796,7 @@ onUnmounted(() => {
   }
 }
 
-/* Barre de navigation mobile fixe en bas */
+/* Barre de navigation mobile fixe en bas 
 .mobile-bottom-nav {
   position: fixed;
   bottom: 0;
@@ -901,6 +901,7 @@ onUnmounted(() => {
   transform: translateY(-1px);
   transition: all 0.1s ease;
 }
+  */
 
 /* Animation d'entrée pour la barre */
 .mobile-bottom-nav {
@@ -918,7 +919,7 @@ onUnmounted(() => {
   }
 }
 
-/* Animation pour les éléments */
+/* Animation pour les éléments 
 .bottom-nav-item {
   animation: fadeInUp 0.8s ease-out forwards;
   opacity: 0;
@@ -935,4 +936,5 @@ onUnmounted(() => {
   transform: translateY(100%);
   transition: transform 0.3s ease-in-out;
 }
+  
 </style>
