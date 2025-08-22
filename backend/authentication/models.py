@@ -1,5 +1,41 @@
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
+
+
+class CustomUserManager(BaseUserManager):
+    """
+    Gestionnaire d'utilisateur personnalisé pour utiliser l'email comme identifiant
+    """
+    def create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError('L\'adresse email est obligatoire')
+        email = self.normalize_email(email)
+        
+        # Générer un username unique basé sur l'email
+        username = email.split('@')[0]
+        counter = 1
+        original_username = username
+        
+        while User.objects.filter(username=username).exists():
+            username = f"{original_username}{counter}"
+            counter += 1
+            
+        extra_fields.setdefault('username', username)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError('Le superuser doit avoir is_staff=True.')
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError('Le superuser doit avoir is_superuser=True.')
+
+        return self.create_user(email, password, **extra_fields)
 
 
 class User(AbstractUser):
@@ -15,7 +51,9 @@ class User(AbstractUser):
 
     # Utiliser l'email comme nom d'utilisateur
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
+    REQUIRED_FIELDS = ['first_name', 'last_name']
+    
+    objects = CustomUserManager()
 
     class Meta:
         verbose_name = "Utilisateur"

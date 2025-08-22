@@ -18,8 +18,8 @@
                     <p class="login-subtitle">Connectez-vous à votre compte pour accéder à vos documents sécurisés.</p>
                   </div>
 
-                                      <!-- Formulaire -->
-                    <form class="login-form" @submit.prevent="handleLogin">
+                                                        <!-- Formulaire -->
+                  <form class="login-form" @submit.prevent="handleLogin" v-if="!showLoginError">
                       <!-- Champ Email -->
                       <div class="floating-input-group">
                         <input 
@@ -30,7 +30,7 @@
                           :class="{ 'is-valid': emailValid, 'is-invalid': emailInvalid }"
                           placeholder="exemple@email.com"
                           required
-                          @input="validateEmail"
+                          @input="validateEmail(); validationErrors.email = ''; showLoginError = false"
                           @blur="validateEmail"
                         >
                         <label for="email" class="floating-label">Email</label>
@@ -41,10 +41,10 @@
                           <i :class="emailValid ? 'bi bi-check-circle-fill text-success' : 'bi bi-exclamation-circle-fill text-danger'"></i>
                         </span>
                       </div>
-                      <div class="validation-message" v-if="emailInvalid && form.email && form.email !== 'exemple@email.com'">
+                      <div class="validation-message" v-if="(emailInvalid && form.email && form.email !== 'exemple@email.com') || validationErrors.email">
                         <small class="text-danger">
                           <i class="bi bi-exclamation-circle me-1"></i>
-                          {{ emailErrorMessage }}
+                          {{ validationErrors.email || emailErrorMessage }}
                         </small>
                       </div>
 
@@ -55,8 +55,10 @@
                           id="password"
                           v-model="form.password"
                           class="floating-input"
+                          :class="{ 'is-invalid': validationErrors.password }"
                           placeholder=" "
                           required
+                          @input="validationErrors.password = ''; showLoginError = false"
                         >
                         <label for="password" class="floating-label">Mot de passe</label>
                         <span class="input-icon">
@@ -69,6 +71,12 @@
                         >
                           <i :class="showPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
                         </button>
+                      </div>
+                      <div class="validation-message" v-if="validationErrors.password">
+                        <small class="text-danger">
+                          <i class="bi bi-exclamation-circle me-1"></i>
+                          {{ validationErrors.password }}
+                        </small>
                       </div>
 
                       <!-- Options du formulaire -->
@@ -103,13 +111,49 @@
                     </form>
 
                   <!-- Footer du formulaire -->
-                  <div class="login-footer">
+                  <div class="login-footer" v-if="!showLoginError">
                     <p class="signup-text">
                       Pas encore de compte ? 
                       <NuxtLink to="/register" class="signup-link">
                         Créer un compte
                       </NuxtLink>
                     </p>
+                  </div>
+
+                  <!-- Interface d'erreur de connexion -->
+                  <div v-if="showLoginError" class="login-error">
+                    <div class="error-card">
+                      <div class="error-header">
+                        <div class="error-icon">
+                          <i class="bi bi-exclamation-triangle-fill"></i>
+                        </div>
+                        <h3 class="error-title">
+                          {{ loginErrorType === 'email_not_found' ? 'Email non trouvé' : 'Mot de passe incorrect' }}
+                        </h3>
+                      </div>
+                      <div class="error-content">
+                        <p class="error-message" v-if="loginErrorType === 'email_not_found'">
+                          Aucun compte n'est associé à l'adresse <strong>{{ form.email }}</strong>.
+                        </p>
+                        <p class="error-message" v-if="loginErrorType === 'wrong_password'">
+                          Le mot de passe saisi ne correspond pas à l'adresse <strong>{{ form.email }}</strong>.
+                        </p>
+                        <p class="error-question">
+                          {{ loginErrorType === 'email_not_found' ? 'Souhaitez-vous créer un nouveau compte ?' : 'Voulez-vous réessayer avec un autre mot de passe ?' }}
+                        </p>
+                      </div>
+                      <div class="error-actions">
+                        <button v-if="loginErrorType === 'email_not_found'" @click="goToRegister" class="btn btn-primary-custom btn-error">
+                          Oui
+                        </button>
+                        <button v-if="loginErrorType === 'wrong_password'" @click="showFormAgain" class="btn btn-primary-custom btn-error">
+                          Oui
+                        </button>
+                        <button @click="showFormAgain" class="btn btn-outline-primary-custom btn-error">
+                          Non
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -142,7 +186,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 
 // État du formulaire
 const form = ref({
@@ -199,32 +243,126 @@ const validateEmail = () => {
   emailErrorMessage.value = ''
 }
 
+// Erreurs de validation du serveur
+const validationErrors = ref({
+  email: '',
+  password: ''
+})
+
+// État pour afficher l'interface d'erreur spéciale
+const showLoginError = ref(false)
+const loginErrorType = ref('') // 'email_not_found' ou 'wrong_password'
+
+// Initialiser la validation au montage du composant
+onMounted(() => {
+  validateEmail()
+})
+
 // Gestion de la soumission
 const handleLogin = async () => {
   // Validation avant soumission
   validateEmail()
   
-  if (!emailValid.value) {
+  if (!form.value.email.trim() || !form.value.password.trim()) {
     return
   }
   
   isLoading.value = true
-  
+
   try {
-    // Simulation d'une requête API
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    
-    // Ici on intégrerait l'API de connexion
-    console.log('Connexion avec:', form.value)
-    
-    // Redirection après connexion réussie
-    // await navigateTo('/dashboard')
-    
+    const API_BASE_URL = 'http://127.0.0.1:8000/api'
+    const response = await fetch(`${API_BASE_URL}/auth/login/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        email: form.value.email,
+        password: form.value.password
+      })
+    })
+
+    const result = await response.json()
+    console.log('Réponse connexion:', result)
+
+    if (response.ok && result.success) {
+      // Connexion réussie
+      const userName = result.user ? result.user.full_name : form.value.email
+      
+      await navigateTo({
+        path: '/dashboard',
+        query: {
+          name: userName,
+          email: result.user ? result.user.email : form.value.email
+        }
+      })
+    } else {
+      console.error('Erreur de connexion:', result)
+      if (result.errors) {
+        const errors = result.errors
+        if (errors.non_field_errors) {
+          const errorMessage = Array.isArray(errors.non_field_errors) ? errors.non_field_errors[0] : errors.non_field_errors
+          
+          // Détecter le type d'erreur pour afficher l'interface appropriée
+          if (errorMessage.includes('Identifiants invalides')) {
+            // Vérifier si l'email existe dans la base de données
+            try {
+              const checkResponse = await fetch(`${API_BASE_URL}/auth/check-email/?email=${encodeURIComponent(form.value.email)}`)
+              const checkResult = await checkResponse.json()
+              
+              if (checkResult.exists) {
+                // Email existe mais mot de passe incorrect
+                loginErrorType.value = 'wrong_password'
+                showLoginError.value = true
+                return
+              } else {
+                // Email n'existe pas
+                loginErrorType.value = 'email_not_found'
+                showLoginError.value = true
+                return
+              }
+            } catch (checkError) {
+              // En cas d'erreur de vérification, afficher l'erreur générale
+              validationErrors.value.email = errorMessage
+            }
+          } else {
+            validationErrors.value.email = errorMessage
+          }
+        }
+        if (errors.email) {
+          validationErrors.value.email = Array.isArray(errors.email) ? errors.email[0] : errors.email
+        }
+        if (errors.password) {
+          validationErrors.value.password = Array.isArray(errors.password) ? errors.password[0] : errors.password
+        }
+      }
+      if (result.message) {
+        console.error('Message d\'erreur:', result.message)
+      }
+    }
   } catch (error) {
     console.error('Erreur de connexion:', error)
+    validationErrors.value.email = 'Erreur de connexion au serveur'
   } finally {
     isLoading.value = false
   }
+}
+
+// Fonctions pour gérer les actions de l'interface d'erreur
+const goToRegister = () => {
+  navigateTo('/register')
+}
+
+const showFormAgain = () => {
+  showLoginError.value = false
+  loginErrorType.value = ''
+  // Garder l'email pré-rempli, vider seulement le mot de passe
+  form.value.password = ''
+  validationErrors.value.email = ''
+  validationErrors.value.password = ''
+  // Re-valider l'email pour restaurer les icônes de validation
+  validateEmail()
 }
 </script>
 
@@ -851,6 +989,120 @@ const handleLogin = async () => {
   
   .back-home-link span {
     display: none;
+  }
+}
+
+/* Interface d'erreur de connexion */
+.login-error {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.error-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px var(--shadow-light);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.error-header {
+  margin-bottom: 1rem;
+}
+
+.error-icon {
+  width: 50px;
+  height: 50px;
+  margin: 0 auto 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gradient-primary);
+  border-radius: 50%;
+  color: white;
+  font-size: 1.5rem;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.error-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin: 0;
+}
+
+.error-content {
+  margin-bottom: 1rem;
+}
+
+.error-message {
+  font-size: 0.9rem;
+  color: var(--dark-gray);
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+}
+
+.error-message strong {
+  color: var(--text-dark);
+  background: rgba(0, 102, 204, 0.1);
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+}
+
+.error-question {
+  font-size: 1rem;
+  color: var(--text-dark);
+  margin: 0;
+  font-weight: 600;
+}
+
+.error-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.btn-error {
+  padding: 0.5rem 1rem !important;
+  font-size: 0.85rem !important;
+  border-radius: 8px !important;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(0, 102, 204, 0.4);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 10px rgba(0, 102, 204, 0);
+  }
+}
+
+@media (max-width: 768px) {
+  .error-card {
+    padding: 1.25rem;
+    margin: 1rem;
+  }
+  
+  .error-actions {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .error-title {
+    font-size: 1.1rem;
+  }
+  
+  .error-message {
+    font-size: 0.85rem;
+  }
+  
+  .error-question {
+    font-size: 0.95rem;
   }
 }
 

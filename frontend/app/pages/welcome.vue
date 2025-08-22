@@ -32,13 +32,13 @@
 
           <!-- Actions -->
           <div class="welcome-actions">
-            <NuxtLink to="/" class="btn btn-primary-custom">
+            <NuxtLink to="/" class="btn btn-outline-primary-custom">
               <i class="bi bi-house me-2"></i>
-              Retourner à l'accueil
+              Retour à l'accueil
             </NuxtLink>
-            <NuxtLink to="/login" class="btn btn-outline-primary-custom ms-3">
-              <i class="bi bi-box-arrow-in-right me-2"></i>
-              Se connecter
+            <NuxtLink to="/dashboard" class="btn btn-primary-custom ms-3">
+              <i class="bi bi-person me-2"></i>
+              Accéder à mon espace
             </NuxtLink>
           </div>
         </div>

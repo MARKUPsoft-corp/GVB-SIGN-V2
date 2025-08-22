@@ -66,18 +66,14 @@ class UserLoginSerializer(serializers.Serializer):
         password = attrs.get('password')
 
         if email and password:
-            try:
-                user = User.objects.get(email=email)
-                user = authenticate(username=user.username, password=password)
-                
-                if not user:
-                    raise serializers.ValidationError("Identifiants invalides.")
-                
-                if not user.is_active:
-                    raise serializers.ValidationError("Ce compte est désactivé.")
-                    
-            except User.DoesNotExist:
+            # Authentifier directement avec l'email (USERNAME_FIELD)
+            user = authenticate(username=email, password=password)
+            
+            if not user:
                 raise serializers.ValidationError("Identifiants invalides.")
+            
+            if not user.is_active:
+                raise serializers.ValidationError("Ce compte est désactivé.")
                 
             attrs['user'] = user
             return attrs
