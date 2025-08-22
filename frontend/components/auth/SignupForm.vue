@@ -38,7 +38,7 @@
                   </div>
 
                   <!-- Formulaire -->
-                  <form class="signup-form" @submit.prevent="handleSignup">
+                  <form class="signup-form" @submit.prevent="handleSignup" v-if="!showEmailExistsError">
                     <!-- Champ Prénom -->
                     <div class="floating-input-group">
                       <input 
@@ -102,6 +102,20 @@
                         {{ emailErrorMessage }}
                       </small>
                     </div>
+                    <!-- Erreur serveur pour l'email -->
+                    <div class="validation-message" v-if="validationErrors.email">
+                      <small class="text-danger">
+                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        {{ validationErrors.email }}
+                      </small>
+                      <!-- Bouton de connexion si l'email existe déjà -->
+                      <div v-if="validationErrors.email.includes('déjà utilisé')" class="mt-2">
+                        <NuxtLink to="/login" class="btn btn-sm btn-outline-primary">
+                          <i class="bi bi-box-arrow-in-right me-1"></i>
+                          Se connecter
+                        </NuxtLink>
+                      </div>
+                    </div>
 
                     <!-- Champ Mot de passe -->
                     <div class="floating-input-group">
@@ -135,6 +149,13 @@
                       <small class="text-danger">
                         <i class="bi bi-exclamation-circle me-1"></i>
                         {{ passwordErrorMessage }}
+                      </small>
+                    </div>
+                    <!-- Erreur serveur pour le mot de passe -->
+                    <div class="validation-message" v-if="validationErrors.password">
+                      <small class="text-danger">
+                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        {{ validationErrors.password }}
                       </small>
                     </div>
 
@@ -172,6 +193,13 @@
                         {{ confirmPasswordErrorMessage }}
                       </small>
                     </div>
+                    <!-- Erreur serveur pour la confirmation du mot de passe -->
+                    <div class="validation-message" v-if="validationErrors.confirmPassword">
+                      <small class="text-danger">
+                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        {{ validationErrors.confirmPassword }}
+                      </small>
+                    </div>
 
                     <!-- Conditions d'utilisation -->
                     <div class="form-options">
@@ -190,7 +218,7 @@
                     </div>
 
                     <!-- Bouton d'inscription -->
-                    <button type="submit" class="btn-signup" :disabled="isLoading || !isFormValid">
+                    <button type="submit" class="btn-signup" :disabled="isLoading">
                       <span v-if="!isLoading">
                         <i class="bi bi-person-plus me-2"></i>
                         Créer mon compte
@@ -203,13 +231,37 @@
                   </form>
 
                   <!-- Footer du formulaire -->
-                  <div class="signup-footer">
+                  <div class="signup-footer" v-if="!showEmailExistsError">
                     <p class="login-text">
                       Déjà un compte ? 
                       <NuxtLink to="/login" class="login-link">
                         Se connecter
                       </NuxtLink>
                     </p>
+                  </div>
+
+                  <!-- Message d'erreur pour email existant -->
+                  <div v-if="showEmailExistsError" class="email-exists-error">
+                    <div class="error-card">
+                      <div class="error-header">
+                        <div class="error-icon">
+                          <i class="bi bi-exclamation-triangle-fill"></i>
+                        </div>
+                        <h3 class="error-title">Email déjà utilisé</h3>
+                      </div>
+                      <div class="error-content">
+                        <p class="error-message">
+                          Un compte avec l'adresse <strong>{{ form.email }}</strong> existe déjà.
+                        </p>
+                        <p class="error-question">
+                          Souhaitez-vous vous connecter à votre compte existant ?
+                        </p>
+                      </div>
+                      <div class="error-actions">
+                        <button @click="goToLogin" class="btn btn-primary-custom">Oui</button>
+                        <button @click="showFormAgain" class="btn btn-outline-primary-custom">Non</button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -251,18 +303,57 @@ const confirmPasswordValid = ref(false)
 const confirmPasswordInvalid = ref(false)
 const confirmPasswordErrorMessage = ref('')
 
+// Erreurs de validation
+const validationErrors = ref({
+  email: '',
+  password: '',
+  confirmPassword: ''
+})
+
+// État pour afficher l'erreur d'email existant
+const showEmailExistsError = ref(false)
+
 // Validation des noms
 const validateFirstName = () => {
-  // Validation basique pour les noms
+  const firstName = form.value.firstName.trim()
+  
+  if (!firstName) {
+    return
+  }
+  
+  if (firstName.length < 2) {
+    return
+  }
+  
+  if (firstName.length > 50) {
+    return
+  }
 }
 
 const validateLastName = () => {
-  // Validation basique pour les noms
+  const lastName = form.value.lastName.trim()
+  
+  if (!lastName) {
+    return
+  }
+  
+  if (lastName.length < 2) {
+    return
+  }
+  
+  if (lastName.length > 50) {
+    return
+  }
 }
 
 // Validation de l'email
 const validateEmail = () => {
   const email = form.value.email.trim()
+  
+  // Effacer les erreurs serveur quand l'utilisateur modifie l'email
+  if (validationErrors.value.email) {
+    validationErrors.value.email = ''
+  }
   
   if (!email || email === 'exemple@email.com') {
     emailValid.value = false
@@ -306,6 +397,11 @@ const validateEmail = () => {
 const validatePassword = () => {
   const password = form.value.password
   
+  // Effacer les erreurs serveur quand l'utilisateur modifie le mot de passe
+  if (validationErrors.value.password) {
+    validationErrors.value.password = ''
+  }
+  
   if (!password) {
     passwordValid.value = false
     passwordInvalid.value = false
@@ -341,6 +437,11 @@ const validatePassword = () => {
 const validateConfirmPassword = () => {
   const confirmPassword = form.value.confirmPassword
   
+  // Effacer les erreurs serveur quand l'utilisateur modifie la confirmation
+  if (validationErrors.value.confirmPassword) {
+    validationErrors.value.confirmPassword = ''
+  }
+  
   if (!confirmPassword) {
     confirmPasswordValid.value = false
     confirmPasswordInvalid.value = false
@@ -362,12 +463,14 @@ const validateConfirmPassword = () => {
 
 // Vérification si le formulaire est valide
 const isFormValid = computed(() => {
-  return form.value.firstName.trim() &&
-         form.value.lastName.trim() &&
-         emailValid.value &&
-         passwordValid.value &&
-         confirmPasswordValid.value &&
-         form.value.acceptTerms
+  return Boolean(
+    form.value.firstName.trim() &&
+    form.value.lastName.trim() &&
+    emailValid.value &&
+    passwordValid.value &&
+    confirmPasswordValid.value &&
+    form.value.acceptTerms
+  )
 })
 
 // Gestion de la soumission
@@ -377,27 +480,106 @@ const handleSignup = async () => {
   validatePassword()
   validateConfirmPassword()
   
-  if (!isFormValid.value) {
+  // Vérification manuelle de la validité
+  const isValid = form.value.firstName.trim() &&
+                 form.value.lastName.trim() &&
+                 emailValid.value &&
+                 passwordValid.value &&
+                 confirmPasswordValid.value &&
+                 form.value.acceptTerms
+  
+  if (!isValid) {
+    console.log('Formulaire invalide')
     return
   }
   
   isLoading.value = true
   
   try {
-    // Simulation d'une requête API
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    // Fonction API simple pour l'inscription
+    const API_BASE_URL = 'http://127.0.0.1:8000/api'
     
-    // Ici on intégrerait l'API d'inscription
-    console.log('Inscription avec:', form.value)
+    const response = await fetch(`${API_BASE_URL}/auth/register/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        email: form.value.email,
+        first_name: form.value.firstName,
+        last_name: form.value.lastName,
+        password: form.value.password,
+        confirm_password: form.value.confirmPassword
+      })
+    })
     
-    // Redirection après inscription réussie
-    // await navigateTo('/dashboard')
+    const result = await response.json()
+    
+    console.log('Réponse complète:', result)
+    
+    if (response.ok && result.success) {
+      // Redirection vers la page de bienvenue avec les données utilisateur
+      const userName = result.user ? result.user.full_name : `${form.value.firstName} ${form.value.lastName}`
+      const userEmail = result.user ? result.user.email : form.value.email
+      
+      await navigateTo({
+        path: '/welcome',
+        query: {
+          name: userName,
+          email: userEmail
+        }
+      })
+    } else {
+      // Affichage des erreurs
+      console.error('Erreur d\'inscription:', result)
+      
+      // Gérer les erreurs spécifiques
+      if (result.errors) {
+        const errors = result.errors
+        if (errors.email) {
+          const emailError = Array.isArray(errors.email) ? errors.email[0] : errors.email
+          
+          // Si l'email existe déjà, afficher l'interface spéciale
+          if (emailError.includes('existe déjà') || emailError.includes('already exists')) {
+            showEmailExistsError.value = true
+            return
+          } else {
+            validationErrors.value.email = emailError
+          }
+        }
+        if (errors.password) {
+          validationErrors.value.password = Array.isArray(errors.password) ? errors.password[0] : errors.password
+        }
+        if (errors.confirm_password) {
+          validationErrors.value.confirmPassword = Array.isArray(errors.confirm_password) ? errors.confirm_password[0] : errors.confirm_password
+        }
+      }
+      
+      // Gérer les erreurs générales
+      if (result.message) {
+        console.error('Message d\'erreur:', result.message)
+      }
+    }
     
   } catch (error) {
     console.error('Erreur d\'inscription:', error)
   } finally {
     isLoading.value = false
   }
+}
+
+// Fonction pour aller à la page de connexion
+const goToLogin = () => {
+  navigateTo('/login')
+}
+
+// Fonction pour afficher à nouveau le formulaire
+const showFormAgain = () => {
+  showEmailExistsError.value = false
+  // Effacer l'email pour permettre une nouvelle saisie
+  form.value.email = ''
+  validationErrors.value.email = ''
 }
 </script>
 
@@ -1113,6 +1295,114 @@ const handleSignup = async () => {
     width: 70%;
     height: 40px;
     border-radius: 0 0 0 12px;
+  }
+}
+
+/* Interface d'erreur email existant */
+.email-exists-error {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.error-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 20px;
+  box-shadow: 0 10px 30px var(--shadow-light);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 2rem;
+  text-align: center;
+}
+
+.error-header {
+  margin-bottom: 1.5rem;
+}
+
+.error-icon {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gradient-primary);
+  border-radius: 50%;
+  color: white;
+  font-size: 1.8rem;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.error-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin: 0;
+}
+
+.error-content {
+  margin-bottom: 1.5rem;
+}
+
+.error-message {
+  font-size: 1rem;
+  color: var(--dark-gray);
+  margin-bottom: 0.75rem;
+  line-height: 1.5;
+}
+
+.error-message strong {
+  color: var(--text-dark);
+  background: rgba(0, 102, 204, 0.1);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+.error-question {
+  font-size: 1.1rem;
+  color: var(--text-dark);
+  margin: 0;
+  font-weight: 600;
+}
+
+.error-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.4);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 10px rgba(255, 107, 107, 0);
+  }
+}
+
+@media (max-width: 768px) {
+  .error-card {
+    padding: 1.5rem;
+    margin: 1rem;
+  }
+  
+  .error-actions {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .error-title {
+    font-size: 1.3rem;
+  }
+  
+  .error-message {
+    font-size: 0.95rem;
+  }
+  
+  .error-question {
+    font-size: 1rem;
   }
 }
 </style>

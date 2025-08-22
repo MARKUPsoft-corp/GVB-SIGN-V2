@@ -37,12 +37,31 @@ export default defineNuxtConfig({
   // Configuration des modules
   modules: [],
   
+  // Configuration du serveur de développement
+  devServer: {
+    port: 3000,
+    host: 'localhost'
+  },
+  
+  // Configuration Vite
+  vite: {
+    server: {
+      port: 3000,
+      host: 'localhost'
+    },
+    css: {
+      preprocessorOptions: {
+        scss: {
+          additionalData: '@import "~/assets/styles/main.scss";'
+        }
+      }
+    }
+  },
+  
   // Configuration du build
   build: {
     transpile: ['bootstrap']
   },
-  
-
   
   // Configuration des alias
   alias: {
