@@ -165,12 +165,12 @@
     </div>
 
     <!-- Sidebar Desktop -->
-    <aside class="dashboard-sidebar d-none d-lg-block">
+    <aside class="dashboard-sidebar d-none d-lg-block" :class="{ 'collapsed': isSidebarCollapsed }">
       <!-- Logo et nom de l'app -->
       <div class="sidebar-header">
         <div class="app-brand">
           <img src="/gvb-favicon-1755744029.png" alt="GVB Sign" class="brand-logo">
-          <span class="brand-name">GVB Sign</span>
+          <span class="brand-name" v-show="!isSidebarCollapsed">GVB Sign</span>
         </div>
       </div>
 
@@ -180,43 +180,43 @@
           <li class="nav-item">
             <NuxtLink to="/dashboard" class="nav-link" :class="{ active: $route.path === '/dashboard' }">
               <i class="bi bi-house-door"></i>
-              <span>Tableau de bord</span>
+              <span v-show="!isSidebarCollapsed">Tableau de bord</span>
             </NuxtLink>
           </li>
           <li class="nav-item">
             <NuxtLink to="/dashboard/documents" class="nav-link" :class="{ active: $route.path.includes('/documents') }">
               <i class="bi bi-file-earmark-text"></i>
-              <span>Mes Documents</span>
+              <span v-show="!isSidebarCollapsed">Mes Documents</span>
             </NuxtLink>
           </li>
           <li class="nav-item">
             <NuxtLink to="/dashboard/signature" class="nav-link" :class="{ active: $route.path.includes('/signature') }">
               <i class="bi bi-pen"></i>
-              <span>Signature</span>
+              <span v-show="!isSidebarCollapsed">Signature</span>
             </NuxtLink>
           </li>
           <li class="nav-item">
             <NuxtLink to="/dashboard/qr-codes" class="nav-link" :class="{ active: $route.path.includes('/qr-codes') }">
               <i class="bi bi-qr-code"></i>
-              <span>QR Codes</span>
+              <span v-show="!isSidebarCollapsed">QR Codes</span>
             </NuxtLink>
           </li>
           <li class="nav-item">
             <NuxtLink to="/dashboard/templates" class="nav-link" :class="{ active: $route.path.includes('/templates') }">
               <i class="bi bi-file-earmark-plus"></i>
-              <span>Modèles</span>
+              <span v-show="!isSidebarCollapsed">Modèles</span>
             </NuxtLink>
           </li>
           <li class="nav-item">
             <NuxtLink to="/dashboard/history" class="nav-link" :class="{ active: $route.path.includes('/history') }">
               <i class="bi bi-clock-history"></i>
-              <span>Historique</span>
+              <span v-show="!isSidebarCollapsed">Historique</span>
             </NuxtLink>
           </li>
           <li class="nav-item">
             <NuxtLink to="/dashboard/settings" class="nav-link" :class="{ active: $route.path.includes('/settings') }">
               <i class="bi bi-gear"></i>
-              <span>Paramètres</span>
+              <span v-show="!isSidebarCollapsed">Paramètres</span>
             </NuxtLink>
           </li>
         </ul>
@@ -229,14 +229,14 @@
             <div class="user-avatar">
               <i class="bi bi-person-circle"></i>
             </div>
-            <div class="user-details">
+            <div class="user-details" v-show="!isSidebarCollapsed">
               <span class="user-name">{{ userStore.fullName || 'Utilisateur' }}</span>
               <span class="user-email">{{ userStore.email || 'email@example.com' }}</span>
             </div>
           </div>
           <button @click="handleLogout" class="logout-btn">
             <i class="bi bi-box-arrow-right"></i>
-            <span>Déconnexion</span>
+            <span v-show="!isSidebarCollapsed">Déconnexion</span>
           </button>
         </div>
       </div>
@@ -244,6 +244,13 @@
 
     <!-- Contenu principal -->
     <main class="dashboard-main">
+      <!-- Bouton toggle sidebar -->
+      <div class="sidebar-toggle-container">
+        <button class="sidebar-toggle" @click="toggleSidebarCollapse">
+          <i class="bi" :class="isSidebarCollapsed ? 'bi-chevron-right' : 'bi-chevron-left'"></i>
+        </button>
+      </div>
+      
       <div class="dashboard-content">
         <slot />
       </div>
@@ -263,6 +270,7 @@ const userStore = ref({
 // État de la sidebar mobile
 const isSidebarOpen = ref(false)
 const isScrolled = ref(false)
+const isSidebarCollapsed = ref(false)
 
 // Fonction de déconnexion
 const handleLogout = async () => {
@@ -289,6 +297,11 @@ const toggleSidebar = () => {
 
 const closeSidebar = () => {
   isSidebarOpen.value = false
+}
+
+// Fonction pour replier/déplier la sidebar desktop
+const toggleSidebarCollapse = () => {
+  isSidebarCollapsed.value = !isSidebarCollapsed.value
 }
 
 // Gestion du scroll pour la navbar
@@ -539,6 +552,11 @@ body {
   height: 100vh;
   z-index: 1000;
   border-right: 1px solid rgba(0, 102, 204, 0.1);
+  transition: width 0.3s ease;
+}
+
+.dashboard-sidebar.collapsed {
+  width: 80px;
 }
 
 .sidebar-header {
@@ -588,6 +606,41 @@ body {
   color: var(--primary-blue);
   font-family: 'Raleway', sans-serif;
   letter-spacing: -0.02em;
+}
+
+.sidebar-toggle-container {
+  position: fixed;
+  top: 2rem;
+  left: 290px;
+  z-index: 1001;
+  transition: left 0.3s ease;
+}
+
+.dashboard-sidebar.collapsed + .dashboard-main .sidebar-toggle-container {
+  left: 90px;
+}
+
+.sidebar-toggle {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 102, 204, 0.2);
+  color: var(--primary-blue);
+  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 102, 204, 0.15);
+  backdrop-filter: blur(8px);
+}
+
+.sidebar-toggle:hover {
+  background: rgba(255, 255, 255, 1);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.25);
 }
 
 /* NAVIGATION */
@@ -644,6 +697,16 @@ body {
   position: relative;
   border-radius: 0 12px 12px 0;
   margin-right: 0.5rem;
+  justify-content: center;
+}
+
+.dashboard-sidebar:not(.collapsed) .nav-link {
+  justify-content: flex-start;
+}
+
+.dashboard-sidebar.collapsed .nav-link {
+  padding: 1rem 0.5rem;
+  justify-content: center;
 }
 
 .nav-link::before {
@@ -688,6 +751,11 @@ body {
   transition: all 0.3s ease;
 }
 
+.dashboard-sidebar.collapsed .nav-link i {
+  width: auto;
+  font-size: 1.5rem;
+}
+
 .nav-link:hover i,
 .nav-link.active i {
   transform: scale(1.1);
@@ -702,6 +770,11 @@ body {
   height: 160px; /* Hauteur fixe pour le footer */
   display: flex;
   align-items: flex-start;
+}
+
+.dashboard-sidebar.collapsed .sidebar-footer {
+  padding: 1rem 0.5rem;
+  align-items: center;
 }
 
 .sidebar-footer::before {
@@ -731,6 +804,16 @@ body {
   border-radius: 12px;
   border: 1px solid rgba(0, 102, 204, 0.1);
   transition: all 0.3s ease;
+  justify-content: center;
+}
+
+.dashboard-sidebar:not(.collapsed) .user-info {
+  justify-content: flex-start;
+}
+
+.dashboard-sidebar.collapsed .user-info {
+  padding: 0.75rem 0.5rem;
+  justify-content: center;
 }
 
 .user-info:hover {
@@ -744,6 +827,13 @@ body {
   font-size: 2rem;
   filter: drop-shadow(0 2px 4px rgba(0, 102, 204, 0.2));
   transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dashboard-sidebar.collapsed .user-avatar {
+  font-size: 1.5rem;
 }
 
 .user-info:hover .user-avatar {
@@ -795,6 +885,16 @@ body {
   overflow: hidden;
 }
 
+.dashboard-sidebar:not(.collapsed) .logout-btn {
+  justify-content: center;
+}
+
+.dashboard-sidebar.collapsed .logout-btn {
+  padding: 0.75rem 0.5rem;
+  justify-content: center;
+  min-width: auto;
+}
+
 .logout-btn::before {
   content: '';
   position: absolute;
@@ -827,6 +927,11 @@ body {
   flex: 1;
   margin-left: 280px;
   min-height: 100vh;
+  transition: margin-left 0.3s ease;
+}
+
+.dashboard-sidebar.collapsed + .dashboard-main {
+  margin-left: 80px;
 }
 
 .dashboard-content {
