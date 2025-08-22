@@ -85,6 +85,7 @@
     <div class="mobile-sidebar-overlay" :class="{ 'active': isSidebarOpen }" @click="closeSidebar"></div>
     
     <div class="mobile-sidebar" :class="{ 'active': isSidebarOpen }">
+      <!-- Header fixe -->
       <div class="sidebar-header">
         <div class="sidebar-brand d-flex align-items-center">
           <img src="/gvb-favicon-1755744029.png" alt="GVB Sign" class="sidebar-logo me-2">
@@ -95,7 +96,8 @@
         </button>
       </div>
       
-      <div class="sidebar-content">
+      <!-- Navigation scrollable -->
+      <nav class="sidebar-nav">
         <ul class="sidebar-nav">
           <li class="sidebar-nav-item">
             <NuxtLink to="/dashboard" class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: $route.path === '/dashboard' }" @click="closeSidebar">
@@ -140,24 +142,24 @@
             </NuxtLink>
           </li>
         </ul>
+      </nav>
 
-        <!-- User info et logout dans sidebar mobile -->
-        <div class="sidebar-footer">
-          <div class="user-section">
-            <div class="user-info">
-              <div class="user-avatar">
-                <i class="bi bi-person-circle"></i>
-              </div>
-              <div class="user-details">
-                <span class="user-name">{{ userStore.fullName || 'Utilisateur' }}</span>
-                <span class="user-email">{{ userStore.email || 'email@example.com' }}</span>
-              </div>
+      <!-- Footer fixe -->
+      <div class="sidebar-footer">
+        <div class="user-section">
+          <div class="user-info">
+            <div class="user-avatar">
+              <i class="bi bi-person-circle"></i>
             </div>
-            <button @click="handleLogout" class="logout-btn">
-              <i class="bi bi-box-arrow-right"></i>
-              <span>Déconnexion</span>
-            </button>
+            <div class="user-details">
+              <span class="user-name">{{ userStore.fullName || 'Utilisateur' }}</span>
+              <span class="user-email">{{ userStore.email || 'email@example.com' }}</span>
+            </div>
           </div>
+          <button @click="handleLogout" class="logout-btn">
+            <i class="bi bi-box-arrow-right"></i>
+            <span>Déconnexion</span>
+          </button>
         </div>
       </div>
     </div>
@@ -432,11 +434,12 @@ body {
   left: -100%;
   width: 300px;
   height: 100vh;
-  background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+  background: #ffffff;
   box-shadow: 4px 0 20px rgba(0, 102, 204, 0.15);
   z-index: 1050;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .mobile-sidebar.active {
