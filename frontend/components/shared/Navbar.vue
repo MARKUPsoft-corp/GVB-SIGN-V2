@@ -3,7 +3,7 @@
     <div class="container">
       <!-- Logo et nom de l'application -->
       <NuxtLink to="/" class="navbar-brand d-flex align-items-center navbar-brand-animated">
-        <i class="bi bi-qr-code text-primary-blue fs-2 me-2 navbar-logo"></i>
+        <img src="/gvb-favicon-1755744029.png" alt="GVB Sign" class="navbar-logo me-2">
         <span class="brand-text fw-bold text-primary-blue fs-4 navbar-brand-text">GVB Sign</span>
       </NuxtLink>
 
@@ -63,7 +63,7 @@
   <div class="mobile-sidebar" :class="{ 'active': isSidebarOpen }">
     <div class="sidebar-header">
       <div class="sidebar-brand d-flex align-items-center">
-        <i class="bi bi-qr-code text-primary-blue fs-2 me-2"></i>
+        <img src="/gvb-favicon-1755744029.png" alt="GVB Sign" class="sidebar-logo me-2">
         <span class="brand-text fw-bold text-primary-blue fs-4">GVB Sign</span>
       </div>
       <button class="sidebar-close" @click="closeSidebar">
@@ -320,8 +320,19 @@ onUnmounted(() => {
 }
 
 .navbar-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
   opacity: 0;
   animation: fadeInScale 0.5s ease-out 0.5s forwards;
+}
+
+.sidebar-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
 }
 
 .navbar-brand-text {
