@@ -357,7 +357,8 @@ onMounted(() => {
 
 .pricing-card-inner {
   background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border-radius: 20px;
   border: 2px solid rgba(0, 102, 204, 0.08);
   transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
@@ -386,6 +387,8 @@ onMounted(() => {
   position: relative;
   transform: scale(1.05);
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 249, 250, 0.95) 100%) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   box-shadow: 
     0 15px 35px rgba(0, 102, 204, 0.15),
     0 8px 20px rgba(0, 102, 204, 0.1),

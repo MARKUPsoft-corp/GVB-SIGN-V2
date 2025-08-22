@@ -1,7 +1,169 @@
 <template>
   <div class="dashboard-layout">
-    <!-- Sidebar -->
-    <aside class="dashboard-sidebar">
+    <!-- Navbar Mobile -->
+    <nav class="dashboard-navbar navbar navbar-expand-lg navbar-light fixed-top d-lg-none" :class="{ 'navbar-scrolled': isScrolled }">
+      <div class="container">
+        <!-- Logo et nom de l'application -->
+        <div class="navbar-brand d-flex align-items-center">
+          <img src="/gvb-favicon-1755744029.png" alt="GVB Sign" class="navbar-logo me-2">
+          <span class="brand-text fw-bold text-primary-blue fs-4">GVB Sign</span>
+        </div>
+
+        <!-- Bouton mobile -->
+        <button
+          class="navbar-toggler border-0 d-lg-none"
+          type="button"
+          @click="toggleSidebar"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- Menu de navigation desktop -->
+        <div class="collapse navbar-collapse d-none d-lg-block" id="navbarNav">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-5">
+            <li class="nav-item">
+              <NuxtLink to="/dashboard" class="nav-link fw-500 border-0 bg-transparent" :class="{ active: $route.path === '/dashboard' }">
+                <i class="bi bi-house-door me-2"></i>
+                Tableau de bord
+              </NuxtLink>
+            </li>
+            <li class="nav-item">
+              <NuxtLink to="/dashboard/documents" class="nav-link fw-500 border-0 bg-transparent" :class="{ active: $route.path.includes('/documents') }">
+                <i class="bi bi-file-earmark-text me-2"></i>
+                Mes Documents
+              </NuxtLink>
+            </li>
+            <li class="nav-item">
+              <NuxtLink to="/dashboard/signature" class="nav-link fw-500 border-0 bg-transparent" :class="{ active: $route.path.includes('/signature') }">
+                <i class="bi bi-pen me-2"></i>
+                Signature
+              </NuxtLink>
+            </li>
+            <li class="nav-item">
+              <NuxtLink to="/dashboard/qr-codes" class="nav-link fw-500 border-0 bg-transparent" :class="{ active: $route.path.includes('/qr-codes') }">
+                <i class="bi bi-qr-code me-2"></i>
+                QR Codes
+              </NuxtLink>
+            </li>
+            <li class="nav-item">
+              <NuxtLink to="/dashboard/templates" class="nav-link fw-500 border-0 bg-transparent" :class="{ active: $route.path.includes('/templates') }">
+                <i class="bi bi-file-earmark-plus me-2"></i>
+                Modèles
+              </NuxtLink>
+            </li>
+            <li class="nav-item">
+              <NuxtLink to="/dashboard/history" class="nav-link fw-500 border-0 bg-transparent" :class="{ active: $route.path.includes('/history') }">
+                <i class="bi bi-clock-history me-2"></i>
+                Historique
+              </NuxtLink>
+            </li>
+            <li class="nav-item">
+              <NuxtLink to="/dashboard/settings" class="nav-link fw-500 border-0 bg-transparent" :class="{ active: $route.path.includes('/settings') }">
+                <i class="bi bi-gear me-2"></i>
+                Paramètres
+              </NuxtLink>
+            </li>
+          </ul>
+
+          <!-- User info et logout -->
+          <div class="d-flex align-items-center gap-3">
+            <div class="user-info-navbar">
+              <i class="bi bi-person-circle me-2"></i>
+              <span class="user-name-navbar">{{ userStore.fullName || 'Utilisateur' }}</span>
+            </div>
+            <button class="btn btn-outline-danger btn-sm" @click="handleLogout">
+              <i class="bi bi-box-arrow-right me-2"></i>
+              Déconnexion
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Sidebar Mobile -->
+    <div class="mobile-sidebar-overlay" :class="{ 'active': isSidebarOpen }" @click="closeSidebar"></div>
+    
+    <div class="mobile-sidebar" :class="{ 'active': isSidebarOpen }">
+      <div class="sidebar-header">
+        <div class="sidebar-brand d-flex align-items-center">
+          <img src="/gvb-favicon-1755744029.png" alt="GVB Sign" class="sidebar-logo me-2">
+          <span class="brand-text fw-bold text-primary-blue fs-4">GVB Sign</span>
+        </div>
+        <button class="sidebar-close" @click="closeSidebar">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      
+      <div class="sidebar-content">
+        <ul class="sidebar-nav">
+          <li class="sidebar-nav-item">
+            <NuxtLink to="/dashboard" class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: $route.path === '/dashboard' }" @click="closeSidebar">
+              <i class="bi bi-house-door me-3"></i>
+              Tableau de bord
+            </NuxtLink>
+          </li>
+          <li class="sidebar-nav-item">
+            <NuxtLink to="/dashboard/documents" class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: $route.path.includes('/documents') }" @click="closeSidebar">
+              <i class="bi bi-file-earmark-text me-3"></i>
+              Mes Documents
+            </NuxtLink>
+          </li>
+          <li class="sidebar-nav-item">
+            <NuxtLink to="/dashboard/signature" class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: $route.path.includes('/signature') }" @click="closeSidebar">
+              <i class="bi bi-pen me-3"></i>
+              Signature
+            </NuxtLink>
+          </li>
+          <li class="sidebar-nav-item">
+            <NuxtLink to="/dashboard/qr-codes" class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: $route.path.includes('/qr-codes') }" @click="closeSidebar">
+              <i class="bi bi-qr-code me-3"></i>
+              QR Codes
+            </NuxtLink>
+          </li>
+          <li class="sidebar-nav-item">
+            <NuxtLink to="/dashboard/templates" class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: $route.path.includes('/templates') }" @click="closeSidebar">
+              <i class="bi bi-file-earmark-plus me-3"></i>
+              Modèles
+            </NuxtLink>
+          </li>
+          <li class="sidebar-nav-item">
+            <NuxtLink to="/dashboard/history" class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: $route.path.includes('/history') }" @click="closeSidebar">
+              <i class="bi bi-clock-history me-3"></i>
+              Historique
+            </NuxtLink>
+          </li>
+          <li class="sidebar-nav-item">
+            <NuxtLink to="/dashboard/settings" class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: $route.path.includes('/settings') }" @click="closeSidebar">
+              <i class="bi bi-gear me-3"></i>
+              Paramètres
+            </NuxtLink>
+          </li>
+        </ul>
+
+        <!-- User info et logout dans sidebar mobile -->
+        <div class="sidebar-footer">
+          <div class="user-section">
+            <div class="user-info">
+              <div class="user-avatar">
+                <i class="bi bi-person-circle"></i>
+              </div>
+              <div class="user-details">
+                <span class="user-name">{{ userStore.fullName || 'Utilisateur' }}</span>
+                <span class="user-email">{{ userStore.email || 'email@example.com' }}</span>
+              </div>
+            </div>
+            <button @click="handleLogout" class="logout-btn">
+              <i class="bi bi-box-arrow-right"></i>
+              <span>Déconnexion</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar Desktop -->
+    <aside class="dashboard-sidebar d-none d-lg-block">
       <!-- Logo et nom de l'app -->
       <div class="sidebar-header">
         <div class="app-brand">
@@ -88,13 +250,17 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 // Store utilisateur simulé (à remplacer par un vrai store plus tard)
 const userStore = ref({
   fullName: '',
   email: ''
 })
+
+// État de la sidebar mobile
+const isSidebarOpen = ref(false)
+const isScrolled = ref(false)
 
 // Fonction de déconnexion
 const handleLogout = async () => {
@@ -113,6 +279,30 @@ const handleLogout = async () => {
     await navigateTo('/')
   }
 }
+
+// Fonctions pour la sidebar mobile
+const toggleSidebar = () => {
+  isSidebarOpen.value = !isSidebarOpen.value
+}
+
+const closeSidebar = () => {
+  isSidebarOpen.value = false
+}
+
+// Gestion du scroll pour la navbar
+const handleScroll = () => {
+  isScrolled.value = window.scrollY > 50
+}
+
+// Lifecycle hooks
+onMounted(() => {
+  window.addEventListener('scroll', handleScroll)
+  handleScroll() // Vérification initiale
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll)
+})
 
 // Récupérer les données utilisateur depuis les query params ou le store
 const route = useRoute()
@@ -169,6 +359,163 @@ body {
   background-color: #f8f9fa;
 }
 
+/* NAVBAR MOBILE */
+.dashboard-navbar {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(0, 102, 204, 0.1);
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.dashboard-navbar.navbar-scrolled {
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 4px 20px rgba(0, 102, 204, 0.1);
+}
+
+.navbar-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.navbar-toggler {
+  border: none;
+  padding: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.navbar-toggler:focus {
+  box-shadow: none;
+}
+
+.navbar-toggler-icon {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(0, 102, 204, 0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+.user-info-navbar {
+  display: flex;
+  align-items: center;
+  color: var(--primary-blue);
+  font-weight: 500;
+}
+
+.user-name-navbar {
+  font-family: 'Raleway', sans-serif;
+  font-size: 0.9rem;
+}
+
+/* SIDEBAR MOBILE */
+.mobile-sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1040;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.mobile-sidebar-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.mobile-sidebar {
+  position: fixed;
+  top: 0;
+  left: -100%;
+  width: 300px;
+  height: 100vh;
+  background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+  box-shadow: 4px 0 20px rgba(0, 102, 204, 0.15);
+  z-index: 1050;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  overflow-y: auto;
+}
+
+.mobile-sidebar.active {
+  left: 0;
+}
+
+.mobile-sidebar .sidebar-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(0, 102, 204, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sidebar-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.sidebar-close {
+  background: none;
+  border: none;
+  color: var(--primary-blue);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.sidebar-close:hover {
+  background: rgba(0, 102, 204, 0.1);
+  transform: scale(1.1);
+}
+
+.mobile-sidebar .sidebar-content {
+  padding: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 80px);
+}
+
+.mobile-sidebar .sidebar-nav {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  flex: 1;
+}
+
+.sidebar-nav-item {
+  margin: 0;
+}
+
+.sidebar-nav-link {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  color: var(--dark-gray);
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  font-family: 'Raleway', sans-serif;
+}
+
+.sidebar-nav-link:hover,
+.sidebar-nav-link.active {
+  color: var(--primary-blue);
+  background: linear-gradient(135deg, rgba(0, 102, 204, 0.05) 0%, rgba(0, 123, 255, 0.08) 100%);
+  text-decoration: none;
+}
+
+.mobile-sidebar .sidebar-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid rgba(0, 102, 204, 0.1);
+  margin-top: auto;
+}
+
 /* SIDEBAR */
 .dashboard-sidebar {
   width: 280px;
@@ -187,8 +534,8 @@ body {
 
 .sidebar-header {
   padding: 2rem 1.5rem 1.5rem;
-  border-bottom: 1px solid rgba(0, 102, 204, 0.1);
-  background: linear-gradient(135deg, rgba(0, 102, 204, 0.02) 0%, rgba(0, 123, 255, 0.05) 100%);
+  border-bottom: 1px solid rgba(0, 102, 204, 0.15);
+  background: linear-gradient(135deg, rgba(0, 102, 204, 0.08) 0%, rgba(0, 123, 255, 0.12) 100%);
   position: relative;
 }
 
@@ -279,7 +626,7 @@ body {
 
 .nav-link:hover {
   color: var(--primary-blue);
-  background: linear-gradient(135deg, rgba(0, 102, 204, 0.05) 0%, rgba(0, 123, 255, 0.08) 100%);
+  background: linear-gradient(135deg, rgba(0, 102, 204, 0.12) 0%, rgba(0, 123, 255, 0.18) 100%);
   text-decoration: none;
   transform: translateX(4px);
 }
@@ -290,10 +637,10 @@ body {
 
 .nav-link.active {
   color: var(--primary-blue);
-  background: linear-gradient(135deg, rgba(0, 102, 204, 0.1) 0%, rgba(0, 123, 255, 0.15) 100%);
+  background: linear-gradient(135deg, rgba(0, 102, 204, 0.15) 0%, rgba(0, 123, 255, 0.22) 100%);
   border-right: none;
   transform: translateX(4px);
-  box-shadow: 0 2px 8px rgba(0, 102, 204, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 102, 204, 0.15);
 }
 
 .nav-link.active::before {
@@ -315,9 +662,9 @@ body {
 /* FOOTER SIDEBAR */
 .sidebar-footer {
   padding: 1.5rem;
-  border-top: 1px solid rgba(0, 102, 204, 0.1);
+  border-top: 1px solid rgba(0, 102, 204, 0.15);
   margin-top: auto;
-  background: linear-gradient(135deg, rgba(0, 102, 204, 0.02) 0%, rgba(0, 123, 255, 0.05) 100%);
+  background: linear-gradient(135deg, rgba(0, 102, 204, 0.08) 0%, rgba(0, 123, 255, 0.12) 100%);
   position: relative;
 }
 
@@ -342,9 +689,9 @@ body {
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.8);
   border-radius: 12px;
-  border: 1px solid rgba(0, 102, 204, 0.1);
+  border: 1px solid rgba(0, 102, 204, 0.15);
   transition: all 0.3s ease;
 }
 
@@ -450,7 +797,7 @@ body {
 }
 
 /* RESPONSIVE */
-@media (max-width: 992px) {
+@media (max-width: 991px) {
   .dashboard-sidebar {
     transform: translateX(-100%);
     transition: transform 0.3s ease;
@@ -458,6 +805,7 @@ body {
   
   .dashboard-main {
     margin-left: 0;
+    padding-top: 5rem; /* Espace pour la navbar fixe */
   }
   
   .dashboard-content {

@@ -1,5 +1,5 @@
 <template>
-  <nav class="navbar navbar-expand-lg navbar-light fixed-top navbar-animated" :class="{ 'navbar-scrolled': isScrolled, 'navbar-hidden': isNavbarHidden }">
+  <nav class="navbar navbar-expand-lg navbar-light fixed-top navbar-animated">
     <div class="container">
       <!-- Logo et nom de l'application -->
       <NuxtLink to="/" class="navbar-brand d-flex align-items-center navbar-brand-animated">
@@ -136,34 +136,12 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 
-const isScrolled = ref(false)
 const isSidebarOpen = ref(false)
 const isInFeaturesSection = ref(false)
 const isInPricingSection = ref(false)
 const isInContactSection = ref(false)
-const isNavbarHidden = ref(false)
-const lastScrollY = ref(0)
 
 const handleScroll = () => {
-  const currentScrollY = window.scrollY
-  
-  // Masquer/afficher la navbar selon la direction du scroll (mobile seulement)
-  if (window.innerWidth <= 991) { // Mobile et tablette
-    if (currentScrollY > lastScrollY.value && currentScrollY > 100) {
-      // Scroll vers le bas - masquer la navbar
-      isNavbarHidden.value = true
-    } else if (currentScrollY < lastScrollY.value) {
-      // Scroll vers le haut - afficher la navbar
-      isNavbarHidden.value = false
-    }
-  } else {
-    // Sur desktop, toujours afficher la navbar
-    isNavbarHidden.value = false
-  }
-  
-  lastScrollY.value = currentScrollY
-  isScrolled.value = currentScrollY > 80
-  
   // Détecter si on est dans la section fonctionnalités
   const featuresSection = document.getElementById('fonctionnalites')
   if (featuresSection) {
@@ -299,8 +277,9 @@ onUnmounted(() => {
 
 <style scoped>
 .navbar {
-  backdrop-filter: blur(10px);
-  background-color: rgba(255, 255, 255, 0.6) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  background-color: rgba(255, 255, 255, 0.7) !important;
   transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
   box-shadow: none;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -368,34 +347,7 @@ onUnmounted(() => {
 .navbar-buttons-animated .btn:nth-child(1) { animation-delay: 1.1s; }
 .navbar-buttons-animated .btn:nth-child(2) { animation-delay: 1.2s; }
 
-.navbar-scrolled {
-  background: rgba(255, 255, 255, 0.85) !important;
-  backdrop-filter: blur(25px) saturate(150%);
-  -webkit-backdrop-filter: blur(25px) saturate(150%);
-  box-shadow: 
-    0 8px 30px rgba(0, 0, 0, 0.12),
-    0 2px 15px rgba(0, 102, 204, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-  transform: translateY(-2px) scale(0.98);
-  animation: slideDown 0.3s ease-out forwards;
-}
 
-.navbar-hidden {
-  transform: translateY(-100%) !important;
-  transition: transform 0.3s ease-in-out;
-}
-
-@keyframes slideDown {
-  0% {
-    transform: translateY(-10px) scale(0.95);
-    opacity: 0.8;
-  }
-  100% {
-    transform: translateY(-2px) scale(0.98);
-    opacity: 1;
-  }
-}
 
 @keyframes slideDownNavbar {
   from {
@@ -460,10 +412,7 @@ onUnmounted(() => {
   transition: all 0.3s ease;
 }
 
-.navbar-scrolled .brand-text {
-  transform: scale(0.95);
-  color: var(--primary-blue) !important;
-}
+
 
 .nav-link {
   color: var(--text-dark) !important;
@@ -477,10 +426,7 @@ onUnmounted(() => {
   border: 2px solid transparent;
 }
 
-.navbar-scrolled .nav-link {
-  transform: translateY(-1px);
-  font-size: 0.95em;
-}
+
 
 .nav-link:hover,
 .nav-link.active {
@@ -532,10 +478,7 @@ onUnmounted(() => {
   transform: translateY(0) scale(1);
 }
 
-.navbar-scrolled .btn-sm {
-  transform: translateY(-1px) scale(0.95);
-  padding: 0.4rem 0.8rem;
-}
+
 
 .btn-outline-primary-custom {
   background: rgba(255, 255, 255, 0.05);

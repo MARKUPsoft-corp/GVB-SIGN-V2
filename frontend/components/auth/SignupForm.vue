@@ -519,15 +519,16 @@ const handleSignup = async () => {
     console.log('Réponse complète:', result)
     
     if (response.ok && result.success) {
-      // Redirection vers la page de bienvenue avec les données utilisateur
+      // Redirection vers le dashboard avec les données utilisateur
       const userName = result.user ? result.user.full_name : `${form.value.firstName} ${form.value.lastName}`
       const userEmail = result.user ? result.user.email : form.value.email
       
       await navigateTo({
-        path: '/welcome',
+        path: '/dashboard',
         query: {
           name: userName,
-          email: userEmail
+          email: userEmail,
+          from: 'registration'
         }
       })
     } else {
