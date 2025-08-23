@@ -112,33 +112,15 @@
             </NuxtLink>
           </li>
           <li class="sidebar-nav-item">
-            <NuxtLink to="/dashboard/signature" class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: $route.path.includes('/signature') }" @click="closeSidebar">
+            <NuxtLink to="/dashboard/signatures" class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: $route.path.includes('/signatures') }" @click="closeSidebar">
               <i class="bi bi-pen me-3"></i>
-              Signature
+              Signatures
             </NuxtLink>
           </li>
           <li class="sidebar-nav-item">
-            <NuxtLink to="/dashboard/qr-codes" class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: $route.path.includes('/qr-codes') }" @click="closeSidebar">
-              <i class="bi bi-qr-code me-3"></i>
-              QR Codes
-            </NuxtLink>
-          </li>
-          <li class="sidebar-nav-item">
-            <NuxtLink to="/dashboard/templates" class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: $route.path.includes('/templates') }" @click="closeSidebar">
-              <i class="bi bi-file-earmark-plus me-3"></i>
-              Modèles
-            </NuxtLink>
-          </li>
-          <li class="sidebar-nav-item">
-            <NuxtLink to="/dashboard/history" class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: $route.path.includes('/history') }" @click="closeSidebar">
-              <i class="bi bi-clock-history me-3"></i>
-              Historique
-            </NuxtLink>
-          </li>
-          <li class="sidebar-nav-item">
-            <NuxtLink to="/dashboard/settings" class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: $route.path.includes('/settings') }" @click="closeSidebar">
-              <i class="bi bi-gear me-3"></i>
-              Paramètres
+            <NuxtLink to="/dashboard/organization" class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: $route.path.includes('/organization') }" @click="closeSidebar">
+              <i class="bi bi-building me-3"></i>
+              Organisation
             </NuxtLink>
           </li>
         </ul>
@@ -147,7 +129,7 @@
       <!-- Footer fixe -->
       <div class="sidebar-footer">
         <div class="user-section">
-          <div class="user-info">
+          <div class="user-info" @click="openProfileModalFromMobile" role="button">
             <div class="user-avatar">
               <i class="bi bi-person-circle"></i>
             </div>
@@ -190,33 +172,15 @@
             </NuxtLink>
           </li>
           <li class="nav-item">
-            <NuxtLink to="/dashboard/signature" class="nav-link" :class="{ active: $route.path.includes('/signature') }">
+            <NuxtLink to="/dashboard/signatures" class="nav-link" :class="{ active: $route.path.includes('/signatures') }">
               <i class="bi bi-pen"></i>
-              <span v-show="!isSidebarCollapsed">Signature</span>
+              <span v-show="!isSidebarCollapsed">Signatures</span>
             </NuxtLink>
           </li>
           <li class="nav-item">
-            <NuxtLink to="/dashboard/qr-codes" class="nav-link" :class="{ active: $route.path.includes('/qr-codes') }">
-              <i class="bi bi-qr-code"></i>
-              <span v-show="!isSidebarCollapsed">QR Codes</span>
-            </NuxtLink>
-          </li>
-          <li class="nav-item">
-            <NuxtLink to="/dashboard/templates" class="nav-link" :class="{ active: $route.path.includes('/templates') }">
-              <i class="bi bi-file-earmark-plus"></i>
-              <span v-show="!isSidebarCollapsed">Modèles</span>
-            </NuxtLink>
-          </li>
-          <li class="nav-item">
-            <NuxtLink to="/dashboard/history" class="nav-link" :class="{ active: $route.path.includes('/history') }">
-              <i class="bi bi-clock-history"></i>
-              <span v-show="!isSidebarCollapsed">Historique</span>
-            </NuxtLink>
-          </li>
-          <li class="nav-item">
-            <NuxtLink to="/dashboard/settings" class="nav-link" :class="{ active: $route.path.includes('/settings') }">
-              <i class="bi bi-gear"></i>
-              <span v-show="!isSidebarCollapsed">Paramètres</span>
+            <NuxtLink to="/dashboard/organization" class="nav-link" :class="{ active: $route.path.includes('/organization') }">
+              <i class="bi bi-building"></i>
+              <span v-show="!isSidebarCollapsed">Organisation</span>
             </NuxtLink>
           </li>
         </ul>
@@ -245,8 +209,8 @@
     <!-- Modale de profil utilisateur -->
     <div v-if="isProfileModalOpen" class="profile-modal-overlay" @click="closeProfileModal">
       <div class="profile-modal" @click.stop>
-        <!-- Menu latéral -->
-        <div class="profile-menu">
+        <!-- Menu latéral (desktop seulement) -->
+        <div class="profile-menu d-none d-lg-block">
           <div class="profile-menu-header">
             <div class="profile-avatar">
               <i class="bi bi-person-circle"></i>
@@ -276,7 +240,10 @@
         <!-- Contenu principal -->
         <div class="profile-content">
           <div class="profile-content-header">
-            <h5>{{ getProfileTabTitle() }}</h5>
+            <h5>
+              <i :class="getProfileTabIcon()"></i>
+              {{ getProfileTabTitle() }}
+            </h5>
             <button class="close-btn" @click="closeProfileModal">
               <i class="bi bi-x-lg"></i>
             </button>
@@ -355,6 +322,26 @@
               </div>
             </div>
           </div>
+          
+          <!-- Barre de navigation mobile -->
+          <div class="mobile-nav-bar d-lg-none" :data-active-tab="activeProfileTab">
+            <div class="mobile-nav-item" :class="{ active: activeProfileTab === 'profile' }" @click="setActiveProfileTab('profile')">
+              <i class="bi bi-person"></i>
+              <span>Profil</span>
+            </div>
+            <div class="mobile-nav-item" :class="{ active: activeProfileTab === 'security' }" @click="setActiveProfileTab('security')">
+              <i class="bi bi-shield-lock"></i>
+              <span>Sécurité</span>
+            </div>
+            <div class="mobile-nav-item" :class="{ active: activeProfileTab === 'preferences' }" @click="setActiveProfileTab('preferences')">
+              <i class="bi bi-gear"></i>
+              <span>Préférences</span>
+            </div>
+            <div class="mobile-nav-item" :class="{ active: activeProfileTab === 'billing' }" @click="setActiveProfileTab('billing')">
+              <i class="bi bi-credit-card"></i>
+              <span>Facturation</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -430,6 +417,17 @@ const toggleProfileModal = () => {
   } else {
     document.body.style.overflow = ''
   }
+  
+  // Préserver l'état de la sidebar - ne pas changer isSidebarCollapsed
+}
+
+// Fonction pour ouvrir la modale depuis la sidebar mobile
+const openProfileModalFromMobile = () => {
+  closeSidebar()
+  // Petit délai pour s'assurer que la sidebar se ferme avant d'ouvrir la modale
+  setTimeout(() => {
+    toggleProfileModal()
+  }, 100)
 }
 
 const closeProfileModal = () => {
@@ -449,6 +447,16 @@ const getProfileTabTitle = () => {
     billing: 'Facturation et abonnement'
   }
   return titles[activeProfileTab.value] || 'Profil'
+}
+
+const getProfileTabIcon = () => {
+  const icons = {
+    profile: 'bi bi-person',
+    security: 'bi bi-shield-lock',
+    preferences: 'bi bi-gear',
+    billing: 'bi bi-credit-card'
+  }
+  return icons[activeProfileTab.value] || 'bi bi-person'
 }
 
 // Gestion du scroll pour la navbar
@@ -904,12 +912,16 @@ body {
 .sidebar-footer {
   padding: 0.25rem 1.5rem 0.5rem;
   background: #ffffff;
-  position: relative;
-  flex-shrink: 0;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
   height: 120px; /* Hauteur fixe pour le footer */
   display: flex;
   align-items: flex-end;
   justify-content: flex-end;
+  z-index: 10;
+  border-top: 1px solid rgba(0, 102, 204, 0.1);
 }
 
 .sidebar-footer::before {
@@ -1074,7 +1086,7 @@ body {
   transition: margin-left 0.3s ease;
 }
 
-.dashboard-sidebar.collapsed + .dashboard-main {
+.dashboard-sidebar.collapsed ~ .dashboard-main {
   margin-left: 80px;
 }
 
@@ -1188,6 +1200,223 @@ body {
   overflow: hidden;
   transform: translateY(100px) scale(0.9);
   animation: modalSlideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Responsive pour la modale sur mobile */
+@media (max-width: 991px) {
+  .profile-modal-overlay {
+    align-items: center;
+    justify-content: center;
+    padding: 0rem;
+  }
+  
+  .profile-modal {
+    width: 100%;
+    max-width: 500px;
+    height: 85vh;
+    max-height: 700px;
+    margin: 0;
+    border-radius: 16px;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  
+  /* Cacher complètement le menu sur mobile */
+  .profile-menu {
+    display: none;
+  }
+  
+  /* Contenu principal en pleine largeur */
+  .profile-content {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  
+  /* Header du contenu */
+  .profile-content-header {
+    padding: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  
+  .profile-content-header h5 {
+    font-size: 0.5rem;
+    margin: 0;
+    color: var(--text-dark);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .profile-content-header h5 i {
+    font-size: 1.5rem;
+    color: var(--primary-blue);
+  }
+  
+  /* Body du contenu */
+  .profile-content-body {
+    flex: 1;
+    padding: 1rem;
+    padding-bottom: 5rem; /* Espace pour la barre de navigation */
+    overflow-y: auto;
+    background: rgba(255, 255, 255, 0.02);
+    min-height: 0; /* Important pour que flex fonctionne correctement */
+  }
+  
+  /* Style pour la barre de scroll du contenu */
+  .profile-content-body::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .profile-content-body::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+  }
+  
+  .profile-content-body::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+    transition: all 0.3s ease;
+  }
+  
+  .profile-content-body::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+  }
+  
+  /* Pour Firefox */
+  .profile-content-body {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.1);
+  }
+  
+  /* Barre de navigation mobile */
+  .mobile-nav-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 75px;
+    background: linear-gradient(135deg, rgba(0, 102, 204, 0.15) 0%, rgba(0, 102, 204, 0.08) 100%);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border-top: 1px solid rgba(0, 102, 204, 0.25);
+    border-top-left-radius: 25px;
+    border-top-right-radius: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0.75rem 1.5rem;
+    z-index: 10;
+    box-shadow: 
+      0 -8px 32px rgba(0, 102, 204, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+  
+  .mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    padding: 0.75rem 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    border-radius: 16px;
+    margin: 0 0.3rem;
+    position: relative;
+    min-height: 55px;
+    z-index: 1;
+  }
+  
+  .mobile-nav-item i {
+    font-size: 1.3rem;
+    margin-bottom: 0.35rem;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    color: var(--text-dark);
+    z-index: 2;
+  }
+  
+  .mobile-nav-item span {
+    font-size: 0.7rem;
+    font-weight: 500;
+    text-align: center;
+    line-height: 1.2;
+    color: var(--text-dark);
+    transition: all 0.3s ease;
+    z-index: 2;
+  }
+  
+  /* Effet de loupe qui glisse */
+  .mobile-nav-bar::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    left: 20px;
+    width: calc(25% - 12px);
+    height: calc(100% - 12px);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.2) 100%);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 
+      0 6px 25px rgba(0, 102, 204, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    z-index: 0;
+    transform-origin: center;
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  
+  /* Position de la loupe selon l'onglet actif */
+  .mobile-nav-bar[data-active-tab="profile"]::after {
+    transform: translateX(0%) scale(1.1);
+    opacity: 1;
+  }
+  
+  .mobile-nav-bar[data-active-tab="security"]::after {
+    transform: translateX(100%) scale(1.1);
+    opacity: 1;
+  }
+  
+  .mobile-nav-bar[data-active-tab="preferences"]::after {
+    transform: translateX(200%) scale(1.1);
+    opacity: 1;
+  }
+  
+  .mobile-nav-bar[data-active-tab="billing"]::after {
+    transform: translateX(300%) scale(1.1);
+    opacity: 1;
+  }
+  
+  .mobile-nav-item.active i {
+    color: var(--primary-blue);
+    transform: scale(1.3);
+    font-size: 1.5rem;
+  }
+  
+  .mobile-nav-item.active span {
+    color: var(--primary-blue);
+    font-weight: 600;
+    font-size: 0.8rem;
+  }
+  
+  .mobile-nav-item:hover i {
+    color: var(--primary-blue);
+    transform: scale(1.05);
+  }
+  
+  .mobile-nav-item:hover span {
+    color: var(--primary-blue);
+  }
 }
 
 @keyframes fadeIn {
@@ -1395,25 +1624,25 @@ body {
   background: var(--primary-blue);
   border: none;
   color: white;
-  font-size: 1rem;
-  padding: 0.75rem 1rem;
-  border-radius: 12px;
+  font-size: 0.9rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(52, 144, 220, 0.2);
+  box-shadow: 0 2px 8px rgba(52, 144, 220, 0.2);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .close-btn:hover {
   background: var(--primary-blue-dark);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(52, 144, 220, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(52, 144, 220, 0.3);
 }
 
 .close-btn i {
-  font-size: 1.1rem;
+  font-size: 0.9rem;
 }
 
 .profile-content-body {
@@ -1470,37 +1699,37 @@ body {
 
 /* Formulaires - Style glassmorphisme */
 .form-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   background: rgba(255, 255, 255, 0.4);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  padding: 1.5rem;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  padding: 1rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .form-group:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
   font-weight: 600;
   color: var(--text-dark);
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   font-family: 'Raleway', sans-serif;
 }
 
 .form-control {
   width: 100%;
-  padding: 1rem 1.25rem;
+  padding: 0.75rem 1rem;
   border: 2px solid #e9ecef;
-  border-radius: 12px;
-  font-size: 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   background: white;
   font-family: 'Raleway', sans-serif;
