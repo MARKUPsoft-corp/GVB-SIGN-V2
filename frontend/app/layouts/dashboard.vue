@@ -23,46 +23,46 @@
         <div class="collapse navbar-collapse d-none d-lg-block" id="navbarNav">
           <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-5">
             <li class="nav-item">
-              <NuxtLink to="/dashboard" class="nav-link fw-500 border-0 bg-transparent" :class="{ active: $route.path === '/dashboard' }">
+              <button class="nav-link fw-500 border-0 bg-transparent" :class="{ active: activePage === 'dashboard' }" @click="setActivePage('dashboard')">
                 <i class="bi bi-house-door me-2"></i>
                 Tableau de bord
-              </NuxtLink>
+              </button>
             </li>
             <li class="nav-item">
-              <NuxtLink to="/dashboard/documents" class="nav-link fw-500 border-0 bg-transparent" :class="{ active: $route.path.includes('/documents') }">
+              <button class="nav-link fw-500 border-0 bg-transparent" :class="{ active: activePage === 'documents' }" @click="setActivePage('documents')">
                 <i class="bi bi-file-earmark-text me-2"></i>
                 Mes Documents
-              </NuxtLink>
+              </button>
             </li>
             <li class="nav-item">
-              <NuxtLink to="/dashboard/signature" class="nav-link fw-500 border-0 bg-transparent" :class="{ active: $route.path.includes('/signature') }">
+              <button class="nav-link fw-500 border-0 bg-transparent" :class="{ active: activePage === 'signatures' }" @click="setActivePage('signatures')">
                 <i class="bi bi-pen me-2"></i>
-                Signature
-              </NuxtLink>
+                Signatures
+              </button>
             </li>
             <li class="nav-item">
-              <NuxtLink to="/dashboard/qr-codes" class="nav-link fw-500 border-0 bg-transparent" :class="{ active: $route.path.includes('/qr-codes') }">
+              <button class="nav-link fw-500 border-0 bg-transparent" :class="{ active: activePage === 'qr-codes' }" @click="setActivePage('qr-codes')">
                 <i class="bi bi-qr-code me-2"></i>
                 QR Codes
-              </NuxtLink>
+              </button>
             </li>
             <li class="nav-item">
-              <NuxtLink to="/dashboard/templates" class="nav-link fw-500 border-0 bg-transparent" :class="{ active: $route.path.includes('/templates') }">
+              <button class="nav-link fw-500 border-0 bg-transparent" :class="{ active: activePage === 'templates' }" @click="setActivePage('templates')">
                 <i class="bi bi-file-earmark-plus me-2"></i>
                 Modèles
-              </NuxtLink>
+              </button>
             </li>
             <li class="nav-item">
-              <NuxtLink to="/dashboard/history" class="nav-link fw-500 border-0 bg-transparent" :class="{ active: $route.path.includes('/history') }">
+              <button class="nav-link fw-500 border-0 bg-transparent" :class="{ active: activePage === 'history' }" @click="setActivePage('history')">
                 <i class="bi bi-clock-history me-2"></i>
                 Historique
-              </NuxtLink>
+              </button>
             </li>
             <li class="nav-item">
-              <NuxtLink to="/dashboard/settings" class="nav-link fw-500 border-0 bg-transparent" :class="{ active: $route.path.includes('/settings') }">
+              <button class="nav-link fw-500 border-0 bg-transparent" :class="{ active: activePage === 'settings' }" @click="setActivePage('settings')">
                 <i class="bi bi-gear me-2"></i>
                 Paramètres
-              </NuxtLink>
+              </button>
             </li>
           </ul>
 
@@ -100,28 +100,28 @@
       <nav class="sidebar-nav">
         <ul class="sidebar-nav">
           <li class="sidebar-nav-item">
-            <NuxtLink to="/dashboard" class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: $route.path === '/dashboard' }" @click="closeSidebar">
+            <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: activePage === 'dashboard' }" @click="setActivePage('dashboard')">
               <i class="bi bi-house-door me-3"></i>
               Tableau de bord
-            </NuxtLink>
+            </button>
           </li>
           <li class="sidebar-nav-item">
-            <NuxtLink to="/dashboard/documents" class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: $route.path.includes('/documents') }" @click="closeSidebar">
+            <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: activePage === 'documents' }" @click="setActivePage('documents')">
               <i class="bi bi-file-earmark-text me-3"></i>
               Mes Documents
-            </NuxtLink>
+            </button>
           </li>
           <li class="sidebar-nav-item">
-            <NuxtLink to="/dashboard/signatures" class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: $route.path.includes('/signatures') }" @click="closeSidebar">
+            <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: activePage === 'signatures' }" @click="setActivePage('signatures')">
               <i class="bi bi-pen me-3"></i>
               Signatures
-            </NuxtLink>
+            </button>
           </li>
           <li class="sidebar-nav-item">
-            <NuxtLink to="/dashboard/organization" class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: $route.path.includes('/organization') }" @click="closeSidebar">
+            <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: activePage === 'organization' }" @click="setActivePage('organization')">
               <i class="bi bi-building me-3"></i>
               Organisation
-            </NuxtLink>
+            </button>
           </li>
         </ul>
       </nav>
@@ -160,28 +160,28 @@
       <nav class="sidebar-nav">
         <ul class="nav-menu">
           <li class="nav-item">
-            <NuxtLink to="/dashboard" class="nav-link" :class="{ active: $route.path === '/dashboard' }">
+            <button class="nav-link" :class="{ active: activePage === 'dashboard' }" @click="setActivePage('dashboard')">
               <i class="bi bi-house-door"></i>
               <span v-show="!isSidebarCollapsed">Tableau de bord</span>
-            </NuxtLink>
+            </button>
           </li>
           <li class="nav-item">
-            <NuxtLink to="/dashboard/documents" class="nav-link" :class="{ active: $route.path.includes('/documents') }">
+            <button class="nav-link" :class="{ active: activePage === 'documents' }" @click="setActivePage('documents')">
               <i class="bi bi-file-earmark-text"></i>
               <span v-show="!isSidebarCollapsed">Mes Documents</span>
-            </NuxtLink>
+            </button>
           </li>
           <li class="nav-item">
-            <NuxtLink to="/dashboard/signatures" class="nav-link" :class="{ active: $route.path.includes('/signatures') }">
+            <button class="nav-link" :class="{ active: activePage === 'signatures' }" @click="setActivePage('signatures')">
               <i class="bi bi-pen"></i>
               <span v-show="!isSidebarCollapsed">Signatures</span>
-            </NuxtLink>
+            </button>
           </li>
           <li class="nav-item">
-            <NuxtLink to="/dashboard/organization" class="nav-link" :class="{ active: $route.path.includes('/organization') }">
+            <button class="nav-link" :class="{ active: activePage === 'organization' }" @click="setActivePage('organization')">
               <i class="bi bi-building"></i>
               <span v-show="!isSidebarCollapsed">Organisation</span>
-            </NuxtLink>
+            </button>
           </li>
         </ul>
       </nav>
@@ -210,7 +210,7 @@
     <div v-if="isProfileModalOpen" class="profile-modal-overlay" @click="closeProfileModal">
       <div class="profile-modal" @click.stop>
         <!-- Menu latéral (desktop seulement) -->
-        <div class="profile-menu d-none d-lg-block">
+        <div class="profile-menu d-none d-lg-block" :data-active-tab="activeProfileTab">
           <div class="profile-menu-header">
             <div class="profile-avatar">
               <i class="bi bi-person-circle"></i>
@@ -356,7 +356,22 @@
       </div>
       
       <div class="dashboard-content">
-        <slot />
+        <!-- Affichage conditionnel des pages -->
+        <div v-if="activePage === 'dashboard'">
+          <slot />
+        </div>
+        <div v-else-if="activePage === 'documents'">
+          <DocumentsPage @navigate-to-signature="handleSignatureNavigation" />
+        </div>
+        <div v-else>
+          <div class="page-placeholder">
+            <div class="text-center py-5">
+              <i class="bi bi-gear fs-1 text-muted mb-3"></i>
+              <h4 class="text-muted">Page en développement</h4>
+              <p class="text-muted">Cette section sera bientôt disponible.</p>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
   </div>
@@ -365,6 +380,8 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../../stores/auth'
+import DocumentsPage from '../../components/dashboard/DocumentsPage.vue'
+import SignImmediatelyPage from '../../components/dashboard/SignImmediatelyPage.vue'
 
 // Store d'authentification (côté client seulement)
 const authStore = process.client ? useAuthStore() : null
@@ -383,6 +400,22 @@ const isSidebarCollapsed = ref(false)
 // État de la modale de profil
 const isProfileModalOpen = ref(false)
 const activeProfileTab = ref('profile')
+
+// État de la navigation du dashboard
+const activePage = ref('dashboard')
+
+// Fonctions de navigation
+const setActivePage = (page) => {
+  activePage.value = page
+  closeSidebar()
+}
+
+// Fonction pour gérer la navigation vers la signature
+const handleSignatureNavigation = (type) => {
+  console.log('Navigation vers signature:', type)
+  // Pour l'instant, nous allons directement modifier DocumentsPage pour inclure SignImmediatelyPage
+  // La logique sera dans DocumentsPage pour afficher SignImmediatelyPage
+}
 
 // Fonction de déconnexion
 const handleLogout = async () => {
@@ -672,6 +705,7 @@ body {
   font-weight: 500;
   transition: all 0.3s ease;
   font-family: 'Raleway', sans-serif;
+  cursor: pointer;
 }
 
 .sidebar-nav-link:hover,
@@ -845,6 +879,11 @@ body {
   border-radius: 0 12px 12px 0;
   margin-right: 0.5rem;
   justify-content: center;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
 }
 
 .dashboard-sidebar:not(.collapsed) .nav-link {
@@ -1264,7 +1303,7 @@ body {
   .profile-content-body {
     flex: 1;
     padding: 1rem;
-    padding-bottom: 5rem; /* Espace pour la barre de navigation */
+    padding-bottom: 6rem; /* Plus d'espace pour la barre de navigation */
     overflow-y: auto;
     background: rgba(255, 255, 255, 0.02);
     min-height: 0; /* Important pour que flex fonctionne correctement */
@@ -1317,6 +1356,8 @@ body {
     box-shadow: 
       0 -8px 32px rgba(0, 102, 204, 0.15),
       inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    perspective: 1000px;
+    transform-style: preserve-3d;
   }
   
   .mobile-nav-item {
@@ -1367,33 +1408,35 @@ body {
     border-radius: 16px;
     border: 1px solid rgba(255, 255, 255, 0.4);
     box-shadow: 
-      0 6px 25px rgba(0, 102, 204, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      0 8px 32px rgba(0, 102, 204, 0.4),
+      0 4px 16px rgba(0, 0, 0, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.1);
     transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
     z-index: 0;
     transform-origin: center;
     opacity: 0;
-    transform: scale(0.8);
+    transform: scale(0.8) translateZ(0);
   }
   
   /* Position de la loupe selon l'onglet actif */
   .mobile-nav-bar[data-active-tab="profile"]::after {
-    transform: translateX(0%) scale(1.1);
+    transform: translateX(0%) scale(1.1) translateZ(10px);
     opacity: 1;
   }
   
   .mobile-nav-bar[data-active-tab="security"]::after {
-    transform: translateX(100%) scale(1.1);
+    transform: translateX(100%) scale(1.1) translateZ(10px);
     opacity: 1;
   }
   
   .mobile-nav-bar[data-active-tab="preferences"]::after {
-    transform: translateX(200%) scale(1.1);
+    transform: translateX(200%) scale(1.1) translateZ(10px);
     opacity: 1;
   }
   
   .mobile-nav-bar[data-active-tab="billing"]::after {
-    transform: translateX(300%) scale(1.1);
+    transform: translateX(300%) scale(1.1) translateZ(10px);
     opacity: 1;
   }
   
@@ -1487,6 +1530,30 @@ body {
   max-height: calc(100% - 120px); /* Hauteur maximale pour permettre le scroll */
 }
 
+/* Effet de loupe pour le menu PC */
+.profile-nav::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.2) 100%);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 
+    0 6px 25px rgba(0, 102, 204, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  z-index: 0;
+  transform-origin: center;
+  opacity: 0;
+  transform: scale(0.8);
+  margin: 0 0.5rem;
+}
+
 .profile-nav-item {
   margin-bottom: 0.25rem;
   position: relative;
@@ -1502,6 +1569,7 @@ body {
   border-radius: 0 12px 12px 0;
   margin-right: 0.5rem;
   cursor: pointer;
+  z-index: 1;
 }
 
 .profile-nav-item::before {
@@ -1525,6 +1593,27 @@ body {
 
 .profile-nav-item:hover::before {
   width: 4px;
+}
+
+/* Position de la loupe selon l'onglet actif pour PC */
+.profile-nav[data-active-tab="profile"]::after {
+  transform: translateY(0px) scale(1.1);
+  opacity: 1;
+}
+
+.profile-nav[data-active-tab="security"]::after {
+  transform: translateY(60px) scale(1.1);
+  opacity: 1;
+}
+
+.profile-nav[data-active-tab="preferences"]::after {
+  transform: translateY(120px) scale(1.1);
+  opacity: 1;
+}
+
+.profile-nav[data-active-tab="billing"]::after {
+  transform: translateY(180px) scale(1.1);
+  opacity: 1;
 }
 
 .profile-nav-item.active {
@@ -1975,5 +2064,22 @@ body {
   .profile-content-body {
     padding: 20px;
   }
+}
+
+/* PAGE PLACEHOLDER */
+.page-placeholder {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 18px;
+  border: 2px solid rgba(0, 102, 204, 0.08);
+  box-shadow: 
+    0 8px 25px rgba(0, 102, 204, 0.08),
+    0 4px 15px rgba(0, 0, 0, 0.05);
+  margin: 2rem 0;
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>
