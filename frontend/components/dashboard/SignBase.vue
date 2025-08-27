@@ -1,17 +1,10 @@
 <template>
   <div class="sign-base-container">
-    <div class="sign-header">
-      <h4>
-        <i class="bi bi-pen-fill"></i> 
-        Positionnement de la signature électronique
-      </h4>
-      <p>Positionnez votre signature et le QR code de vérification sur le document, puis choisissez les pages à signer.</p>
-    </div>
 
     <!-- Section d'upload de signature -->
     <div class="signature-upload-section">
-      <h5><i class="bi bi-pen"></i> Signature manuscrite</h5>
-      <div v-if="!signatureImage" class="upload-zone">
+      
+      <div v-if="!signatureImage" class="upload-dropzone">
         <input 
           type="file" 
           id="signature-upload" 
@@ -20,28 +13,37 @@
           class="file-input"
         >
         <label for="signature-upload" class="upload-label">
-          <i class="bi bi-cloud-upload-fill"></i>
-          <span>Déposer une image de signature ou cliquer pour sélectionner</span>
+          <div class="upload-icon">
+            <i class="bi bi-pen-fill"></i>
+          </div>
+          <div class="upload-text">
+            <h3>Déposez votre signature manuscrite ici</h3>
+            <p>ou <span class="link">cliquez pour sélectionner</span></p>
+            <small>Formats acceptés: PNG, JPEG, GIF, BMP, WEBP, SVG • Taille max: 10MB</small>
+          </div>
         </label>
       </div>
+      
       <div v-else class="signature-preview-section">
-        <img :src="signatureImageUrl" alt="Signature" class="signature-preview-img">
-        <div class="signature-controls-section">
-          <div class="size-slider">
-            <label for="signature-size">Taille: {{ signatureSize }}% de la page</label>
-            <input 
-              type="range" 
-              id="signature-size" 
-              v-model="signatureSize" 
-              min="10" 
-              max="100" 
-              step="5"
-              @input="updateSignatureSize"
-            >
+        <div class="signature-preview-container">
+          <img :src="signatureImageUrl" alt="Signature" class="signature-preview-img">
+          <div class="signature-controls-section">
+            <div class="size-slider">
+              <label for="signature-size">Taille: {{ signatureSize }}% de la page</label>
+              <input 
+                type="range" 
+                id="signature-size" 
+                v-model="signatureSize" 
+                min="10" 
+                max="100" 
+                step="5"
+                @input="updateSignatureSize"
+              >
+            </div>
+            <button @click="removeSignature" class="remove-signature-btn">
+              <i class="bi bi-trash3"></i> Supprimer
+            </button>
           </div>
-          <button @click="removeSignature" class="remove-signature-btn">
-            <i class="bi bi-trash3"></i> Supprimer
-          </button>
         </div>
       </div>
     </div>
@@ -1478,62 +1480,39 @@ watch(() => props.preloadedPositions, (newVal) => {
   --radius-lg: 16px;
 }
 
-/* Conteneur principal avec le style du dashboard */
+/* Conteneur principal avec le style glassmorphique de la modale profil */
 .sign-base-container {
-  background: transparent;
-  border-radius: 0;
-  padding: 0;
-  box-shadow: none;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(15px) saturate(120%);
+  -webkit-backdrop-filter: blur(15px) saturate(120%);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.1),
+    inset 1px 0 0 rgba(255, 255, 255, 0.1);
   position: relative;
   min-height: 100vh;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  padding: 20px;
 }
 
-/* Header avec style dashboard moderne */
-.sign-header {
-  background: var(--bg-primary);
-  border-radius: var(--radius-lg);
-  padding: 32px;
-  margin-bottom: 32px;
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--border-color);
-  backdrop-filter: blur(10px);
-}
 
-.sign-header h4 {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: var(--text-color);
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 16px;
-  letter-spacing: -0.025em;
-}
 
-.sign-header h4 i {
-  color: var(--primary-color);
-  font-size: 1.5rem;
-}
-
-.sign-header p {
-  color: var(--text-secondary);
-  margin: 0;
-  font-size: 1.125rem;
-  line-height: 1.6;
-  font-weight: 400;
-}
-
-/* Section d'upload de signature avec style dashboard */
+/* Section d'upload de signature avec style glassmorphique */
 .signature-upload-section {
-  background: var(--bg-primary);
-  border-radius: var(--radius-lg);
-  padding: 32px;
-  margin-bottom: 32px;
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--border-color);
-  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  text-align: center;
+  width: 100%;
 }
+
+
 
 .signature-upload-section h5 {
   font-size: 1.25rem;
@@ -1551,22 +1530,26 @@ watch(() => props.preloadedPositions, (newVal) => {
 }
 
 /* Zone d'upload moderne */
-.upload-zone {
-  border: 2px dashed var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 40px;
+.upload-dropzone {
+  border: 3px dashed #e2e8f0;
+  border-radius: 12px;
+  padding: 30px 20px;
   text-align: center;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background: var(--bg-light);
+  background: #f8f9fa;
   position: relative;
   overflow: hidden;
+  min-height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.upload-zone:hover {
-  border-color: var(--primary-color);
-  background: rgba(58, 134, 255, 0.04);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+.upload-dropzone:hover {
+  border-color: var(--primary-blue);
+  background: rgba(0, 102, 204, 0.04);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
 .file-input {
@@ -1582,63 +1565,102 @@ watch(() => props.preloadedPositions, (newVal) => {
 
 .upload-label {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   gap: 16px;
   cursor: pointer;
-  color: var(--text-secondary);
+  color: var(--dark-gray);
   font-size: 1rem;
   font-weight: 500;
   transition: all 0.3s ease;
 }
 
-.upload-label i {
-  font-size: 3rem;
-  color: var(--primary-color);
+.upload-icon {
+  width: 50px;
+  height: 50px;
+  background: rgba(0, 102, 204, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: var(--primary-blue);
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  flex-shrink: 0;
 }
 
-.upload-zone:hover .upload-label i {
+.upload-dropzone:hover .upload-icon {
   transform: scale(1.1) rotate(5deg);
-  color: var(--primary-dark);
+  background: rgba(0, 102, 204, 0.15);
 }
 
-.upload-label span {
-  font-weight: 500;
-  color: var(--text-color);
+.upload-text h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin: 0 0 4px 0;
+}
+
+.upload-text p {
+  margin: 0 0 8px 0;
+  color: var(--dark-gray);
+  font-size: 0.9rem;
+}
+
+.upload-text .link {
+  color: var(--primary-blue);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.upload-text small {
+  color: #6c757d;
+  font-size: 0.75rem;
 }
 
 /* Prévisualisation de signature moderne */
 .signature-preview-section {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  background: var(--bg-light);
-  border-radius: var(--radius-md);
-  padding: 24px;
-  border: 1px solid var(--border-color);
+  gap: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  text-align: center;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.signature-preview-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
 }
 
 .signature-preview-img {
-  max-width: 240px;
-  max-height: 120px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-color);
-  background: var(--bg-primary);
-  align-self: center;
-  box-shadow: var(--shadow-sm);
+  max-width: 180px;
+  max-height: 90px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .signature-controls-section {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
+  width: 100%;
 }
 
 .size-slider {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  width: 100%;
 }
 
 .size-slider label {
@@ -1651,11 +1673,12 @@ watch(() => props.preloadedPositions, (newVal) => {
   width: 100%;
   height: 8px;
   border-radius: 4px;
-  background: var(--bg-light);
+  background: rgba(0, 0, 0, 0.2);
   outline: none;
   cursor: pointer;
   appearance: none;
   -webkit-appearance: none;
+  min-width: 200px;
 }
 
 .size-slider input[type="range"]::-webkit-slider-thumb {
@@ -1664,60 +1687,70 @@ watch(() => props.preloadedPositions, (newVal) => {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: var(--primary-color);
+  background: var(--primary-blue);
   cursor: pointer;
-  border: 2px solid var(--bg-primary);
-  box-shadow: var(--shadow-md);
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   transition: all 0.2s ease;
 }
 
 .size-slider input[type="range"]::-webkit-slider-thumb:hover {
   transform: scale(1.1);
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
 }
 
 .remove-signature-btn {
-  background: linear-gradient(135deg, var(--error-color), #dc2626);
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-weight: 600;
   display: flex;
   align-items: center;
   gap: 8px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  align-self: flex-start;
+  padding: 0.6rem 1.2rem;
+  border-radius: 12px;
+  font-weight: 600;
   font-size: 0.9rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: none;
+  min-width: 120px;
+  justify-content: center;
+  text-decoration: none;
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
 }
 
 .remove-signature-btn:hover {
-  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(239, 68, 68, 0.25);
+  box-shadow: 0 8px 25px rgba(220, 38, 38, 0.4);
 }
 
-/* Grille principale moderne */
+.remove-signature-btn i {
+  font-size: 1rem;
+}
+
+/* Grille principale avec style glassmorphique */
 .main-content-grid {
-  background: var(--bg-primary);
-  border-radius: var(--radius-lg);
-  padding: 32px;
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: 32px;
+  grid-template-columns: 1fr 280px;
+  gap: 24px;
   align-items: start;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 /* Zone d'aperçu du document */
 .document-preview-area {
-  background: var(--bg-light);
-  border-radius: var(--radius-md);
-  padding: 24px;
-  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 .preview-header-section {
@@ -1731,10 +1764,21 @@ watch(() => props.preloadedPositions, (newVal) => {
 
 .preview-header-section h5 {
   margin: 0;
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--text-color);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-dark);
   position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  letter-spacing: -0.025em;
+}
+
+.preview-header-section h5::before {
+  content: '\F4C3';
+  font-family: 'bootstrap-icons';
+  font-size: 1.1rem;
+  color: var(--primary-blue);
 }
 
 .preview-header-section h5::after {
@@ -1742,10 +1786,11 @@ watch(() => props.preloadedPositions, (newVal) => {
   position: absolute;
   bottom: -16px;
   left: 0;
-  width: 40px;
+  width: 60px;
   height: 3px;
-  background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+  background: linear-gradient(90deg, var(--primary-blue), #007bff);
   border-radius: 2px;
+  box-shadow: 0 2px 4px rgba(0, 102, 204, 0.3);
 }
 
 .page-navigation {
@@ -1793,10 +1838,12 @@ watch(() => props.preloadedPositions, (newVal) => {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 24px;
-  background: var(--bg-primary);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 .document-page {
@@ -1961,28 +2008,48 @@ watch(() => props.preloadedPositions, (newVal) => {
 .controls-panel {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
+  max-width: 260px;
 }
 
 .pages-overview, .pages-selection-section, .qr-size-controls {
-  background: var(--bg-light);
-  border-radius: var(--radius-md);
-  padding: 20px;
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-sm);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 /* Titres des sections avec style moderne */
 .pages-overview h5, .pages-selection-section h5, .qr-size-controls h5 {
-  margin: 0 0 20px 0;
+  margin: 0 0 16px 0;
   font-size: 1rem;
-  font-weight: 600;
-  color: var(--text-color);
+  font-weight: 700;
+  color: var(--text-dark);
   display: flex;
   align-items: center;
   gap: 10px;
   position: relative;
   padding-bottom: 10px;
+  letter-spacing: -0.025em;
+}
+
+/* Icône pour "Pages du document" */
+.pages-overview h5::before {
+  content: '\F4C3';
+  font-family: 'bootstrap-icons';
+  font-size: 1rem;
+  color: var(--primary-blue);
+}
+
+/* Icône pour "Appliquer les éléments sur" */
+.pages-selection-section h5::before {
+  content: '\F4C3';
+  font-family: 'bootstrap-icons';
+  font-size: 1rem;
+  color: var(--primary-blue);
 }
 
 .pages-overview h5::after, 
@@ -1992,18 +2059,19 @@ watch(() => props.preloadedPositions, (newVal) => {
   position: absolute;
   bottom: 0;
   left: 0;
-  width: 35px;
+  width: 50px;
   height: 3px;
-  background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+  background: linear-gradient(90deg, var(--primary-blue), #007bff);
   border-radius: 2px;
+  box-shadow: 0 2px 4px rgba(0, 102, 204, 0.3);
 }
 
 /* Grille de pages moderne */
 .pages-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
-  gap: 12px;
-  max-height: 200px;
+  grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+  gap: 10px;
+  max-height: 180px;
   overflow-y: auto;
 }
 
@@ -2847,8 +2915,24 @@ watch(() => props.preloadedPositions, (newVal) => {
   background: var(--text-secondary);
 }
 
-/* Responsive design moderne */
-@media (max-width: 1024px) {
+/* Responsive design moderne - Écrans PC */
+@media (min-width: 1600px) {
+  .main-content-grid {
+    grid-template-columns: 1fr 300px;
+    gap: 28px;
+    padding: 28px;
+  }
+  
+  .controls-panel {
+    max-width: 280px;
+  }
+  
+  .pages-overview, .pages-selection-section, .qr-size-controls {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 1599px) and (min-width: 1400px) {
   .main-content-grid {
     grid-template-columns: 1fr 280px;
     gap: 24px;
@@ -2856,11 +2940,106 @@ watch(() => props.preloadedPositions, (newVal) => {
   }
   
   .controls-panel {
-    gap: 16px;
+    max-width: 260px;
+  }
+  
+  .pages-overview, .pages-selection-section, .qr-size-controls {
+    padding: 18px;
+  }
+  
+  .pages-grid {
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    gap: 10px;
+    max-height: 180px;
+  }
+}
+
+@media (max-width: 1399px) and (min-width: 1200px) {
+  .main-content-grid {
+    grid-template-columns: 1fr 260px;
+    gap: 20px;
+    padding: 20px;
+  }
+  
+  .controls-panel {
+    max-width: 240px;
   }
   
   .pages-overview, .pages-selection-section, .qr-size-controls {
     padding: 16px;
+  }
+  
+  .pages-grid {
+    grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
+    gap: 8px;
+    max-height: 160px;
+  }
+  
+  .pages-overview h5, .pages-selection-section h5, .qr-size-controls h5 {
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+  }
+}
+
+@media (max-width: 1199px) and (min-width: 1024px) {
+  .main-content-grid {
+    grid-template-columns: 1fr 240px;
+    gap: 16px;
+    padding: 16px;
+  }
+  
+  .controls-panel {
+    max-width: 220px;
+  }
+  
+  .pages-overview, .pages-selection-section, .qr-size-controls {
+    padding: 14px;
+  }
+  
+  .pages-grid {
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 6px;
+    max-height: 140px;
+  }
+  
+  .pages-overview h5, .pages-selection-section h5, .qr-size-controls h5 {
+    font-size: 0.85rem;
+    margin-bottom: 14px;
+  }
+  
+  .page-label {
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 1023px) {
+  .main-content-grid {
+    grid-template-columns: 1fr 220px;
+    gap: 12px;
+    padding: 12px;
+  }
+  
+  .controls-panel {
+    max-width: 200px;
+  }
+  
+  .pages-overview, .pages-selection-section, .qr-size-controls {
+    padding: 12px;
+  }
+  
+  .pages-grid {
+    grid-template-columns: repeat(auto-fill, minmax(55px, 1fr));
+    gap: 5px;
+    max-height: 120px;
+  }
+  
+  .pages-overview h5, .pages-selection-section h5, .qr-size-controls h5 {
+    font-size: 0.8rem;
+    margin-bottom: 12px;
+  }
+  
+  .page-label {
+    font-size: 8px;
   }
 }
 
@@ -2926,14 +3105,9 @@ watch(() => props.preloadedPositions, (newVal) => {
     font-size: 0.85rem;
   }
 
-  .sign-header,
   .signature-upload-section {
     padding: 24px 20px;
     margin-bottom: 24px;
-  }
-
-  .sign-header h4 {
-    font-size: 1.5rem;
   }
 
   .upload-zone {
@@ -2946,19 +3120,9 @@ watch(() => props.preloadedPositions, (newVal) => {
 }
 
 @media (max-width: 480px) {
-  .sign-header,
   .signature-upload-section,
   .main-content-grid {
     padding: 16px;
-  }
-
-  .sign-header h4 {
-    font-size: 1.25rem;
-    gap: 12px;
-  }
-
-  .sign-header p {
-    font-size: 1rem;
   }
 
   .upload-zone {
