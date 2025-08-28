@@ -12,6 +12,17 @@
       <div class="header-container">
         <div class="header-content">
 
+          <div class="header-top-row">
+            <div class="page-header">
+              <h1 class="page-title">
+                <span class="title-main">Signature</span>
+                <span class="title-accent"> Immédiate</span>
+              </h1>
+              <p class="page-subtitle">
+                Signez vos documents rapidement et en toute sécurité avec votre certificat personnel
+              </p>
+            </div>
+          </div>
           <div class="header-bottom-row">
             <button @click="goBack" class="mobile-back-btn">
               <i class="bi bi-arrow-left"></i>
@@ -1091,9 +1102,40 @@ onUnmounted(() => {
   display: none;
 }
 
+/* Titre de la page */
+.page-header {
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+.page-title {
+  font-size: 2.8rem;
+  font-weight: 700;
+  margin: 0 0 1rem 0;
+  line-height: 1.2;
+  font-family: 'Raleway', sans-serif;
+}
+
+.title-main {
+  color: var(--text-dark);
+}
+
+.title-accent {
+  color: var(--primary-blue);
+}
+
+.page-subtitle {
+  font-size: 1.2rem;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.5;
+  font-weight: 400;
+  text-align: center;
+}
+
 /* Stepper moderne - Jauge circulaire */
 .progress-stepper {
-  padding: 1.5rem 0;
+  padding: 0;
   margin-bottom: 1rem;
   opacity: 0;
   animation: slideInLeft 1s ease-out 0.5s forwards;
@@ -2543,6 +2585,21 @@ onUnmounted(() => {
     justify-content: center;
     align-items: center;
     gap: 0;
+    text-align: center;
+  }
+  
+  .page-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+  
+  .page-title {
+    font-size: 2.5rem;
+    text-align: center;
+  }
+  
+  .page-subtitle {
+    font-size: 1rem;
     text-align: center;
   }
   
