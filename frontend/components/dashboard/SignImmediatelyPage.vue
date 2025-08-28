@@ -63,7 +63,6 @@
             <div class="stepper-progress-total">/ {{ steps.length }}</div>
           </div>
         </div>
-        <div class="stepper-line stepper-line-right"></div>
         <div class="stepper-info">
           <div class="stepper-title">
             {{ steps[currentStep - 1]?.title || 'Étape' }}
@@ -72,6 +71,7 @@
             {{ steps[currentStep - 1]?.description || 'Description de l\'étape' }}
           </div>
         </div>
+        <div class="stepper-line stepper-line-right"></div>
       </div>
 
       <!-- Mobile: Indicateur de progression simple -->
@@ -88,7 +88,7 @@
               :style="{ width: `${(currentStep / steps.length) * 100}%` }"
             ></div>
           </div>
-        </div>
+          </div>
         <div class="mobile-step-info">
           <h3 class="mobile-step-title">{{ steps[currentStep - 1]?.title || 'Étape' }}</h3>
           <p class="mobile-step-description">{{ steps[currentStep - 1]?.description || 'Description de l\'étape' }}</p>
@@ -1127,6 +1127,27 @@ onUnmounted(() => {
   animation: stepperLineGlow 2s ease-in-out infinite alternate;
 }
 
+.stepper-line {
+  animation: stepperLineFloat 4s ease-in-out infinite;
+}
+
+.stepper-line-left {
+  animation-delay: 0s;
+}
+
+.stepper-line-right {
+  animation-delay: 2s;
+}
+
+@keyframes stepperLineFloat {
+  0%, 100% {
+    transform: translateX(0px);
+  }
+  50% {
+    transform: translateX(5px);
+  }
+}
+
 .stepper-line-left {
   transform: translateX(-10px);
 }
@@ -1151,6 +1172,18 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  animation: stepperContainerFloat 3s ease-in-out infinite;
+  overflow: hidden;
+  border-radius: 50%;
+}
+
+@keyframes stepperContainerFloat {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
 }
 
 .stepper-progress-ring {
@@ -1165,6 +1198,21 @@ onUnmounted(() => {
 .stepper-progress-ring-fill {
   transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1);
   filter: drop-shadow(0 2px 4px rgba(0, 102, 204, 0.4));
+  animation: stepperProgressPulse 2s ease-in-out infinite;
+  transform-origin: center;
+}
+
+@keyframes stepperProgressPulse {
+  0%, 100% {
+    filter: drop-shadow(0 2px 4px rgba(0, 102, 204, 0.4));
+    stroke-width: 8;
+    transform: scale(1);
+  }
+  50% {
+    filter: drop-shadow(0 4px 12px rgba(0, 102, 204, 0.6));
+    stroke-width: 10;
+    transform: scale(1.02);
+  }
 }
 
 .stepper-progress-content {
@@ -1182,6 +1230,18 @@ onUnmounted(() => {
   color: var(--primary-blue);
   line-height: 1;
   text-shadow: 0 2px 4px rgba(0, 102, 204, 0.3);
+  animation: stepperNumberGlow 2s ease-in-out infinite;
+}
+
+@keyframes stepperNumberGlow {
+  0%, 100% {
+    text-shadow: 0 2px 4px rgba(0, 102, 204, 0.3);
+    transform: scale(1);
+  }
+  50% {
+    text-shadow: 0 4px 12px rgba(0, 102, 204, 0.5);
+    transform: scale(1.05);
+  }
 }
 
 .stepper-progress-total {
