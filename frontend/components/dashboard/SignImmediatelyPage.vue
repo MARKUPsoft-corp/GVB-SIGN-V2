@@ -22,30 +22,76 @@
       </div>
     </div>
 
-    <!-- Indicateur de progression (Stepper) -->
+    <!-- Indicateur de progression -->
     <div class="progress-stepper">
-      <div class="stepper-container">
-        <!-- Ligne de fond pour le stepper -->
-        <div class="stepper-background-line"></div>
-        
-        <div 
-          v-for="(step, index) in steps" 
-          :key="index"
-          :class="['step-item', {
-            'active': currentStep === index + 1,
-            'completed': currentStep > index + 1,
-            'disabled': currentStep < index + 1,
-            'mobile-hidden': currentStep !== index + 1
-          }]"
-        >
-          <div class="step-circle">
-            <i v-if="currentStep > index + 1" class="bi bi-check-lg"></i>
-            <span v-else>{{ index + 1 }}</span>
+      <!-- Desktop: Jauge circulaire -->
+      <div class="stepper-container desktop-only">
+        <div class="stepper-line stepper-line-left"></div>
+        <div class="stepper-circular-progress">
+          <svg class="stepper-progress-ring" width="120" height="120">
+            <defs>
+              <linearGradient id="stepperGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#0066cc;stop-opacity:1" />
+                <stop offset="50%" style="stop-color:#007bff;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#0056b3;stop-opacity:1" />
+              </linearGradient>
+            </defs>
+            <circle
+              class="stepper-progress-ring-bg"
+              stroke="rgba(255, 255, 255, 0.2)"
+              stroke-width="8"
+              fill="transparent"
+              r="52"
+              cx="60"
+              cy="60"
+            />
+            <circle
+              class="stepper-progress-ring-fill"
+              stroke="url(#stepperGradient)"
+              stroke-width="8"
+              fill="transparent"
+              r="52"
+              cx="60"
+              cy="60"
+              :stroke-dasharray="stepperCircumference"
+              :stroke-dashoffset="stepperStrokeDashoffset"
+              stroke-linecap="round"
+            />
+          </svg>
+          <div class="stepper-progress-content">
+            <div class="stepper-progress-number">{{ currentStep }}</div>
+            <div class="stepper-progress-total">/ {{ steps.length }}</div>
           </div>
-          <div class="step-content">
-            <h4>{{ step.title }}</h4>
-            <p>{{ step.description }}</p>
+        </div>
+        <div class="stepper-line stepper-line-right"></div>
+        <div class="stepper-info">
+          <div class="stepper-title">
+            {{ steps[currentStep - 1]?.title || 'Étape' }}
           </div>
+          <div class="stepper-description">
+            {{ steps[currentStep - 1]?.description || 'Description de l\'étape' }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile: Indicateur de progression simple -->
+      <div class="mobile-stepper mobile-only">
+        <div class="mobile-stepper-header">
+          <div class="mobile-step-indicator">
+            <span class="mobile-step-number">{{ currentStep }}</span>
+            <span class="mobile-step-separator">/</span>
+            <span class="mobile-step-total">{{ steps.length }}</span>
+          </div>
+          <div class="mobile-progress-bar">
+            <div 
+              class="mobile-progress-fill" 
+              :style="{ width: `${(currentStep / steps.length) * 100}%` }"
+            ></div>
+          </div>
+        </div>
+        <div class="mobile-step-info">
+          <h3 class="mobile-step-title">{{ steps[currentStep - 1]?.title || 'Étape' }}</h3>
+          <p class="mobile-step-description">{{ steps[currentStep - 1]?.description || 'Description de l\'étape' }}</p>
         </div>
       </div>
     </div>
@@ -566,6 +612,13 @@ const strokeDashoffset = computed(() => {
   return circumference.value * (1 - progress)
 })
 
+// Propriétés pour la jauge circulaire du stepper
+const stepperCircumference = computed(() => 2 * Math.PI * 52) // 2πr avec r=52
+const stepperStrokeDashoffset = computed(() => {
+  const progress = steps.length > 0 ? (currentStep.value - 1) / (steps.length - 1) : 0
+  return stepperCircumference.value * (1 - progress)
+})
+
 // Données de test pour le certificat dans l'étape 4
 const certificateInfo = ref({
   subject: {
@@ -1029,10 +1082,19 @@ onUnmounted(() => {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-/* Stepper moderne - Style cohérent avec le header */
+/* Classes de visibilité */
+.desktop-only {
+  display: flex;
+}
+
+.mobile-only {
+  display: none;
+}
+
+/* Stepper moderne - Jauge circulaire */
 .progress-stepper {
-  padding: 1rem 0;
-  margin-bottom: 0.5rem;
+  padding: 1.5rem 0;
+  margin-bottom: 1rem;
   opacity: 0;
   animation: slideInLeft 1s ease-out 0.5s forwards;
 }
@@ -1040,117 +1102,193 @@ onUnmounted(() => {
 .stepper-container {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 2rem;
+  justify-content: center;
   position: relative;
 }
 
-.stepper-background-line {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  right: 20px;
+.stepper-line {
+  width: 20vw;
   height: 2px;
-  background: #e2e8f0;
-  z-index: 0;
+  background: linear-gradient(90deg, transparent 0%, rgba(0, 102, 204, 0.3) 50%, transparent 100%);
+  border-radius: 1px;
+  position: relative;
 }
 
-.stepper-background-line::after {
+.stepper-line::before {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
-  height: 100%;
-  background: #28a745;
-  transition: width 0.3s ease;
-  width: 0%;
-}
-
-/* Progression de la ligne selon l'étape actuelle */
-.progress-0 .stepper-background-line::after {
-  width: 0%;
-}
-
-.progress-1 .stepper-background-line::after {
-  width: 25%;
-}
-
-.progress-2 .stepper-background-line::after {
-  width: 50%;
-}
-
-.progress-3 .stepper-background-line::after {
-  width: 75%;
-}
-
-.progress-4 .stepper-background-line::after {
   width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent 0%, rgba(0, 102, 204, 0.6) 50%, transparent 100%);
+  border-radius: 1px;
+  animation: stepperLineGlow 2s ease-in-out infinite alternate;
 }
 
-.step-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex: 1;
+.stepper-line-left {
+  transform: translateX(-10px);
+}
+
+.stepper-line-right {
+  transform: translateX(10px);
+}
+
+@keyframes stepperLineGlow {
+  0% {
+    opacity: 0.3;
+    transform: scaleX(0.8);
+  }
+  100% {
+    opacity: 0.8;
+    transform: scaleX(1.2);
+  }
+}
+
+.stepper-circular-progress {
   position: relative;
-  z-index: 2;
-}
-
-.step-circle {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
-  font-size: 0.9rem;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  margin-bottom: 12px;
-  border: 2px solid #e2e8f0;
-  background: #f8f9fa;
-  color: #6c757d;
 }
 
-.step-item.active .step-circle {
-  background: var(--primary-blue);
-  color: white;
-  border-color: var(--primary-blue);
-  box-shadow: 0 0 0 4px rgba(0, 102, 204, 0.1);
-  transform: scale(1.1);
+.stepper-progress-ring {
+  transform: rotate(-90deg);
+  filter: drop-shadow(0 4px 8px rgba(0, 102, 204, 0.3));
 }
 
-.step-item.completed .step-circle {
-  background: #28a745;
-  color: white;
-  border-color: #28a745;
+.stepper-progress-ring-bg {
+  transition: stroke 0.3s ease;
 }
 
-.step-content {
+.stepper-progress-ring-fill {
+  transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  filter: drop-shadow(0 2px 4px rgba(0, 102, 204, 0.4));
+}
+
+.stepper-progress-content {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
-  min-height: 40px;
 }
 
-.step-content h4 {
-  font-size: 0.9rem;
+.stepper-progress-number {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--primary-blue);
+  line-height: 1;
+  text-shadow: 0 2px 4px rgba(0, 102, 204, 0.3);
+}
+
+.stepper-progress-total {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  opacity: 0.8;
+}
+
+.stepper-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 250px;
+}
+
+.stepper-title {
   font-weight: 600;
-  color: var(--text-dark);
-  margin: 0 0 2px 0;
-  transition: color 0.3s ease;
+  color: var(--primary-blue);
+  font-size: 1.2rem;
+  text-align: left;
 }
 
-.step-content p {
-  font-size: 0.75rem;
-  color: var(--dark-gray);
-  margin: 0;
-  line-height: 1.3;
+.stepper-description {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  opacity: 0.8;
+  text-align: left;
+  line-height: 1.4;
 }
 
-.step-item.active .step-content h4 {
+/* Mobile Stepper */
+.mobile-stepper {
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  margin: 0 1rem;
+}
+
+.mobile-stepper-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.mobile-step-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: rgba(0, 102, 204, 0.1);
+  padding: 0.5rem 0.75rem;
+  border-radius: 20px;
+  border: 1px solid rgba(0, 102, 204, 0.2);
+}
+
+.mobile-step-number {
+  font-weight: 700;
+  font-size: 1.1rem;
   color: var(--primary-blue);
 }
 
-.step-item.completed .step-content h4 {
-  color: #28a745;
+.mobile-step-separator {
+  font-weight: 500;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.mobile-step-total {
+  font-weight: 600;
+  color: var(--text-dark);
+  font-size: 1rem;
+}
+
+.mobile-progress-bar {
+  flex: 1;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.mobile-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary-blue) 0%, #007bff 100%);
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.mobile-step-info {
+  text-align: center;
+}
+
+.mobile-step-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--primary-blue);
+  margin: 0 0 0.5rem 0;
+}
+
+.mobile-step-description {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.4;
 }
 
 
@@ -2373,7 +2511,7 @@ onUnmounted(() => {
     text-align: center;
   }
   
-
+  
   
 
   
@@ -2391,21 +2529,32 @@ onUnmounted(() => {
     display: none;
   }
   
-  .stepper-container {
-    justify-content: center;
-    align-items: center;
+  .desktop-only {
+    display: none;
   }
   
-  .step-item {
-    flex: none;
-    width: auto;
-    text-align: center;
+  .mobile-only {
+    display: block;
   }
   
-  .step-content {
-    text-align: center;
-    min-width: 200px;
+  .mobile-stepper {
+    margin: 0 0.5rem;
   }
+  
+  .mobile-stepper-header {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .mobile-step-indicator {
+    align-self: center;
+  }
+  
+  .mobile-progress-bar {
+    width: 100%;
+  }
+  
+
   
   .close-button-container {
     display: none;
@@ -2508,7 +2657,7 @@ onUnmounted(() => {
     gap: 12px;
   }
   
-
+  
   
 
   
