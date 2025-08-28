@@ -282,14 +282,12 @@
     <div v-if="showPreviewModal" class="preview-modal-overlay" @click.self="closePreviewModal">
       <div class="preview-modal">
         <div class="modal-header">
-          <div class="header-content">
-            <div class="header-icon">
-              <i class="bi bi-eye-fill"></i>
-            </div>
-            <div class="header-text">
-              <h4>Aperçu final du document</h4>
-              <p>Visualisation du document avec QR code et signature</p>
-            </div>
+          <div class="header-icon">
+            <i class="bi bi-eye-fill"></i>
+          </div>
+          <div class="header-text">
+            <h4>Aperçu final du document</h4>
+            <p>Visualisation du document avec QR code et signature</p>
           </div>
           <button @click="closePreviewModal" class="close-modal-btn">
             <i class="bi bi-x-lg"></i>
@@ -2691,131 +2689,117 @@ watch(() => props.preloadedPositions, (newVal) => {
   to { transform: rotate(360deg); }
 }
 
-/* Modal d'aperçu moderne avec style dashboard */
+/* Modal d'aperçu final stylisée - Cohérent avec la modale du profil utilisateur */
 .preview-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.2);
+  z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10000;
-  padding: 20px;
-  animation: modalOverlayFadeIn 0.3s ease-out;
-}
-
-@keyframes modalOverlayFadeIn {
-  from {
-    opacity: 0;
-    backdrop-filter: blur(0px);
-  }
-  to {
-    opacity: 1;
-    backdrop-filter: blur(8px);
-  }
+  animation: fadeIn 0.3s ease-out;
 }
 
 .preview-modal {
-  background: var(--bg-primary);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.3) !important;
+  backdrop-filter: blur(15px) saturate(120%) !important;
+  -webkit-backdrop-filter: blur(15px) saturate(120%) !important;
   width: 90%;
   max-width: 1200px;
-  max-height: 85%;
+  height: 120vh;
+  max-height: 1200px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.1),
+    inset 1px 0 0 rgba(255, 255, 255, 0.1) !important;
   display: flex;
   flex-direction: column;
-  animation: modalSlideIn 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
   overflow: hidden;
-  border: 1px solid var(--border-color);
-  backdrop-filter: blur(10px);
-}
-
-@keyframes modalSlideIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95) translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
+  transform: translateY(100px) scale(0.9);
+  animation: modalSlideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 .modal-header {
-  background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
-  color: white;
-  padding: 28px 32px;
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
   display: flex;
   justify-content: space-between;
   align-items: center;
   position: relative;
 }
 
-.header-content {
-  display: flex;
-  align-items: center;
-  gap: 20px;
+.header-text {
+  flex: 1;
+  text-align: center;
 }
 
 .header-icon {
-  width: 52px;
-  height: 52px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: var(--radius-md);
+  width: 48px;
+  height: 48px;
+  background: rgba(0, 102, 204, 0.15);
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
+  font-size: 1.25rem;
+  color: var(--primary-blue);
   backdrop-filter: blur(4px);
 }
 
 .header-text h4 {
-  margin: 0 0 6px 0;
-  font-size: 1.5rem;
-  font-weight: 700;
+  margin: 0 0 0.25rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937 !important;
   letter-spacing: -0.025em;
+  text-align: center;
 }
 
 .header-text p {
   margin: 0;
-  opacity: 0.9;
-  font-size: 0.95rem;
+  color: #6b7280 !important;
+  font-size: 0.875rem;
   font-weight: 400;
 }
 
 .close-modal-btn {
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  border-radius: var(--radius-md);
-  width: 48px;
-  height: 48px;
+  background: #0066cc;
+  border: 1px solid #0066cc;
+  border-radius: 12px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  backdrop-filter: blur(4px);
 }
 
 .close-modal-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: #0052a3;
+  border-color: #0052a3;
   transform: scale(1.05);
 }
 
 .modal-body {
-  padding: 32px;
   flex: 1;
+  padding: 2.5rem;
+  padding-bottom: 6rem;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  background: var(--bg-light);
+  background: rgba(255, 255, 255, 0.02) !important;
+  min-height: 0;
 }
 
 /* États de chargement modernes */
@@ -2828,21 +2812,22 @@ watch(() => props.preloadedPositions, (newVal) => {
 
 .loading-content {
   text-align: center;
-  padding: 48px;
-  background: var(--bg-primary);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  border: 1px solid var(--border-color);
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .spinner {
-  width: 64px;
-  height: 64px;
-  border: 4px solid var(--bg-light);
+  width: 48px;
+  height: 48px;
+  border: 3px solid rgba(255, 255, 255, 0.2);
   border-radius: 50%;
-  border-top-color: var(--primary-color);
+  border-top-color: var(--primary-blue);
   animation: spinnerRotate 1s linear infinite;
-  margin: 0 auto 24px;
+  margin: 0 auto 1.5rem;
 }
 
 @keyframes spinnerRotate {
@@ -2874,11 +2859,12 @@ watch(() => props.preloadedPositions, (newVal) => {
 
 .error-content, .fallback-content {
   text-align: center;
-  padding: 48px;
-  background: var(--bg-primary);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  border-left: 4px solid var(--error-color);
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   max-width: 600px;
 }
 
@@ -2887,15 +2873,15 @@ watch(() => props.preloadedPositions, (newVal) => {
 }
 
 .error-icon, .fallback-icon {
-  width: 80px;
-  height: 80px;
+  width: 64px;
+  height: 64px;
   background: rgba(239, 68, 68, 0.1);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 24px;
-  font-size: 2.5rem;
+  margin: 0 auto 1.5rem;
+  font-size: 2rem;
   color: var(--error-color);
 }
 
@@ -2905,16 +2891,16 @@ watch(() => props.preloadedPositions, (newVal) => {
 }
 
 .error-text h5, .fallback-text h5 {
-  margin: 0 0 16px 0;
-  color: var(--text-color);
-  font-size: 1.25rem;
+  margin: 0 0 1rem 0;
+  color: var(--text-dark);
+  font-size: 1.125rem;
   font-weight: 600;
 }
 
 .error-text p, .fallback-text p {
-  margin: 0 0 24px 0;
-  color: var(--text-secondary);
-  font-size: 1rem;
+  margin: 0 0 1.5rem 0;
+  color: var(--text-muted);
+  font-size: 0.875rem;
   line-height: 1.6;
 }
 
@@ -2947,25 +2933,27 @@ watch(() => props.preloadedPositions, (newVal) => {
 }
 
 .retry-btn {
-  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-  color: white;
-  border: none;
-  border-radius: var(--radius-md);
-  padding: 14px 24px;
-  font-size: 0.95rem;
+  background: rgba(0, 102, 204, 0.15);
+  color: var(--primary-blue);
+  border: 1px solid rgba(0, 102, 204, 0.3);
+  border-radius: 12px;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 0.5rem;
   margin: 0 auto;
+  backdrop-filter: blur(4px);
 }
 
 .retry-btn:hover {
-  background: linear-gradient(135deg, var(--primary-dark), #1d4ed8);
+  background: rgba(0, 102, 204, 0.25);
+  border-color: rgba(0, 102, 204, 0.5);
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(58, 134, 255, 0.3);
+  box-shadow: 0 8px 25px rgba(0, 102, 204, 0.2);
 }
 
 /* Aperçu PDF moderne */
@@ -2973,82 +2961,112 @@ watch(() => props.preloadedPositions, (newVal) => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  min-height: 600px;
+  min-height: 900px;
 }
 
 .pdf-wrapper {
   flex: 1;
   background: white;
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-lg);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   overflow: hidden;
-  border: 1px solid var(--border-color);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
 .pdf-iframe {
   width: 100%;
   height: 100%;
-  min-height: 600px;
+  min-height: 900px;
   border: none;
   display: block;
 }
 
 /* Footer de modal moderne */
 .modal-footer {
-  background: var(--bg-secondary);
-  padding: 24px 32px;
-  border-top: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.3) !important;
+  padding: 1.5rem;
+  border-top: 1px solid #e5e7eb !important;
 }
 
 .footer-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 16px;
+  gap: 1rem;
 }
 
 .footer-btn {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 14px 24px;
-  border-radius: var(--radius-md);
-  font-size: 0.95rem;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  border: none;
-  min-width: 160px;
+  border: 1px solid;
+  min-width: 140px;
   justify-content: center;
 }
 
 .footer-btn.cancel {
-  background: var(--bg-light);
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
+  background: white !important;
+  color: #0066cc !important;
+  border: 1px solid #0066cc !important;
 }
 
 .footer-btn.cancel:hover {
-  background: var(--bg-secondary);
+  background: #f8fafc !important;
   transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 8px 25px rgba(0, 102, 204, 0.2);
 }
 
 .footer-btn.confirm {
-  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-  color: white;
+  background: #0066cc !important;
+  color: white !important;
+  border: 1px solid #0066cc !important;
 }
 
 .footer-btn.confirm:hover:not(:disabled) {
-  background: linear-gradient(135deg, var(--primary-dark), #1d4ed8);
+  background: #0052a3 !important;
+  border-color: #0052a3 !important;
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(58, 134, 255, 0.3);
+  box-shadow: 0 8px 25px rgba(0, 102, 204, 0.3);
 }
 
 .footer-btn.confirm:disabled {
-  background: var(--text-muted);
+  background: #9ca3af !important;
+  color: white !important;
+  border-color: #9ca3af !important;
   cursor: not-allowed;
   opacity: 0.6;
   transform: none;
+}
+
+/* Scrollbars personnalisées pour la modale */
+.modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+  transition: all 0.3s ease;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Pour Firefox */
+.modal-body {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.1);
 }
 
 /* Scrollbars personnalisées modernes */
