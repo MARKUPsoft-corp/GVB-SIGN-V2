@@ -11,13 +11,7 @@
     <div class="documents-header">
       <div class="header-container">
         <div class="header-content">
-          <div class="header-top-row">
-            <h1 class="section-title">
-              <span class="text-dark">Signature</span>
-              <span class="text-primary-blue"> Immédiate</span>
-            </h1>
-          </div>
-          <p class="section-subtitle">Signez vos documents rapidement et en toute sécurité</p>
+
           <div class="header-bottom-row">
             <button @click="goBack" class="mobile-back-btn">
               <i class="bi bi-arrow-left"></i>
@@ -186,7 +180,7 @@
                     <i class="bi bi-download"></i>
                     Télécharger le PDF
                   </a>
-                </div>
+                  </div>
               </div>
             </div>
           </div>
@@ -217,7 +211,57 @@
             <i class="bi bi-pen-fill"></i>
             Positionnement de la signature
           </h2>
-          <p>Positionnez votre signature et le QR code sur le document</p>
+          <p>Positionnez votre signature et le QR code sur chaque document</p>
+          
+                      <!-- Indicateur de progrès -->
+            <div class="progress-indicator" v-if="uploadedFiles.length > 1">
+              <div class="circular-progress-container">
+                <div class="circular-progress">
+                  <svg class="progress-ring" width="120" height="120">
+                    <defs>
+                      <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#0066cc;stop-opacity:1" />
+                        <stop offset="50%" style="stop-color:#007bff;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#0056b3;stop-opacity:1" />
+                      </linearGradient>
+                    </defs>
+                    <circle
+                      class="progress-ring-bg"
+                      stroke="rgba(255, 255, 255, 0.2)"
+                      stroke-width="8"
+                      fill="transparent"
+                      r="52"
+                      cx="60"
+                      cy="60"
+                    />
+                    <circle
+                      class="progress-ring-fill"
+                      stroke="url(#progressGradient)"
+                      stroke-width="8"
+                      fill="transparent"
+                      r="52"
+                      cx="60"
+                      cy="60"
+                      :stroke-dasharray="circumference"
+                      :stroke-dashoffset="strokeDashoffset"
+                      stroke-linecap="round"
+                    />
+                  </svg>
+                  <div class="progress-content">
+                    <div class="progress-number">{{ processedDocuments.size }}</div>
+                    <div class="progress-total">/ {{ uploadedFiles.length }}</div>
+                  </div>
+                </div>
+                <div class="progress-info">
+                  <div class="progress-text">
+                    Document {{ activeSignBaseTabIndex + 1 }} sur {{ uploadedFiles.length }}
+                  </div>
+                  <div class="progress-status">
+                    {{ processedDocuments.size }} document(s) traité(s)
+                  </div>
+                </div>
+              </div>
+            </div>
         </div>
 
         <div class="signbase-container">
@@ -245,15 +289,15 @@
           </div>
 
           <ClientOnly>
-                          <SignBase
+            <SignBase
                 v-if="currentSignBaseFile"
                 :pdf-file="currentSignBaseFile.file"
                 :total-pages="currentSignBaseFile.pages || 1"
-                @position-confirmed="handlePositionConfirmed"
-                @position-changed="handlePositionChanged"
-                @signature-uploaded="handleSignatureUploaded"
-                @pdf-generated="handlePdfGenerated"
-              />
+              @position-confirmed="handlePositionConfirmed"
+              @position-changed="handlePositionChanged"
+              @signature-uploaded="handleSignatureUploaded"
+              @pdf-generated="handlePdfGenerated"
+            />
             <template #fallback>
               <div class="loading-placeholder">
                 <div class="loading-spinner"></div>
@@ -270,16 +314,15 @@
           </button>
           <button 
             @click="nextStep" 
-            :disabled="!isPositionConfigured"
+            :disabled="!allDocumentsProcessed"
             class="action-btn primary"
           >
-            <span>Configurer le certificat</span>
+            <span v-if="allDocumentsProcessed">Finaliser la signature</span>
+            <span v-else>Traitement en cours... ({{ processedDocuments.size }}/{{ uploadedFiles.length }})</span>
             <i class="bi bi-arrow-right"></i>
           </button>
         </div>
       </div>
-
-
 
       <!-- Étape 4: Signature finale -->
       <div v-if="currentStep === 4" class="step-content" :key="currentStep">
@@ -291,67 +334,140 @@
           <p>Vérifiez les informations et procédez à la signature du document</p>
         </div>
 
-        <div class="signature-summary">
-          <div class="summary-section">
-            <h3>
-              <i class="bi bi-file-earmark-text"></i>
-              Document à signer
-            </h3>
-            <div class="document-info">
-              <div class="doc-preview">
+        <div class="signature-summary-section">
+          
+          <!-- Résumé du document -->
+          <div class="summary-status-card">
+            <div class="summary-header">
+              <div class="summary-status-icon">
                 <i class="bi bi-file-earmark-pdf-fill"></i>
-                <div class="doc-details">
-                  <h4>{{ currentSignBaseFile?.name }}</h4>
-                  <p>{{ currentSignBaseFile?.pages || 1 }} page(s) • {{ formatFileSize(currentSignBaseFile?.size || 0) }}</p>
+            </div>
+              <div class="summary-title">
+                <h6 class="mb-0">Documents à signer</h6>
+                <span class="summary-subtitle text-primary">
+                  {{ uploadedFiles.length }} document(s) sélectionné(s)
+                </span>
                 </div>
-              </div>
+              <div class="summary-status-badge">
+                <span class="badge bg-primary">{{ currentSignBaseFile?.pages || 1 }} page(s)</span>
             </div>
           </div>
 
-          <div class="summary-section">
-            <h3>
-              <i class="bi bi-shield-check"></i>
-              Certificat utilisé
-            </h3>
-            <div class="certificate-info">
-              <div class="cert-preview">
-                <i class="bi bi-award-fill"></i>
-                <div class="cert-details">
-                  <h4>{{ certificateFile?.name }}</h4>
-                  <p>Certificat de signature électronique</p>
-                </div>
-              </div>
+                         <div class="summary-content">
+               <div class="summary-section">
+                                  <div class="info-grid">
+                   <div class="info-item">
+                     <span class="info-label">Nom du fichier</span>
+                     <span class="info-value">{{ currentSignBaseFile?.name || 'Document PDF' }}</span>
             </div>
+                   <div class="info-item">
+                     <span class="info-label">Taille totale</span>
+                     <span class="info-value">{{ formatFileSize(uploadedFiles.reduce((total, file) => total + (file.size || 0), 0)) }}</span>
           </div>
-
-          <div class="summary-section">
-            <h3>
-              <i class="bi bi-geo-alt-fill"></i>
-              Positionnement
-            </h3>
-            <div class="position-info">
-              <div class="position-details">
-                <div class="position-item">
-                  <i class="bi bi-pen"></i>
-                  <span>Signature manuscrite positionnée</span>
-                </div>
-                <div class="position-item">
-                  <i class="bi bi-qr-code"></i>
-                  <span>QR code de vérification ajouté</span>
-                </div>
-              </div>
+                   <div class="info-item">
+                     <span class="info-label">Pages totales</span>
+                     <span class="info-value">{{ uploadedFiles.reduce((total, file) => total + (file.pages || 1), 0) }} page(s)</span>
+            </div>
+                   <div class="info-item">
+                     <span class="info-label">Format</span>
+                     <span class="info-value">PDF</span>
             </div>
           </div>
         </div>
+        </div>
+      </div>
 
-        <div class="signature-actions">
-          <div class="final-warning">
-            <div class="warning-icon">
-              <i class="bi bi-exclamation-triangle-fill"></i>
+          <!-- Résumé du positionnement -->
+          <div class="summary-status-card">
+            <div class="summary-header">
+              <div class="summary-status-icon">
+                <i class="bi bi-geo-alt-fill"></i>
+              </div>
+              <div class="summary-title">
+                <h6 class="mb-0">Positionnement des éléments</h6>
+                <span class="summary-subtitle" :class="isPositionConfigured ? 'text-success' : 'text-warning'">
+                  {{ isPositionConfigured ? 'Éléments positionnés avec succès' : 'Aucun élément positionné' }}
+                </span>
+              </div>
+              <div class="summary-status-badge">
+                <span class="badge" :class="isPositionConfigured ? 'bg-success' : 'bg-warning'">
+                  {{ isPositionConfigured ? 'Prêt' : 'En attente' }}
+                </span>
+              </div>
+        </div>
+
+                         <div class="summary-content">
+          <div class="summary-section">
+                                 <div class="positioning-info">
+                  <div v-if="signatureData" class="positioning-item">
+                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                    <div class="positioning-details">
+                      <span class="positioning-title">Signature manuscrite</span>
+                      <span class="positioning-subtitle">Position: {{ positionData?.signature?.x || 'N/A' }}, {{ positionData?.signature?.y || 'N/A' }}</span>
+                    </div>
+                  </div>
+                  <div v-if="positionData?.qrCode" class="positioning-item">
+                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                    <div class="positioning-details">
+                      <span class="positioning-title">QR code de vérification</span>
+                      <span class="positioning-subtitle">Taille: {{ positionData?.qrCode?.size || 'Moyenne' }} | Position: {{ positionData?.qrCode?.x || 'N/A' }}, {{ positionData?.qrCode?.y || 'N/A' }}</span>
+                    </div>
+                  </div>
+                  <div v-if="!signatureData && !positionData?.qrCode" class="positioning-item">
+                    <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+                    <div class="positioning-details">
+                      <span class="positioning-title">Aucun élément positionné</span>
+                      <span class="positioning-subtitle">Veuillez configurer au moins une signature ou un QR code</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="warning-content">
-              <h4>Attention</h4>
-              <p>La signature électronique aura la même valeur juridique qu'une signature manuscrite. Cette action est irréversible.</p>
+          </div>
+
+          <!-- Résumé du certificat -->
+          <div class="summary-status-card">
+            <div class="summary-header">
+              <div class="summary-status-icon">
+              <i class="bi bi-shield-check"></i>
+                </div>
+              <div class="summary-title">
+                <h6 class="mb-0">Certificat de signature</h6>
+                <span class="summary-subtitle text-success">
+                  Certificat valide et prêt
+                </span>
+              </div>
+              <div class="summary-status-badge">
+                <span class="badge bg-success">Valide</span>
+            </div>
+          </div>
+
+            <div class="summary-content">
+          <div class="summary-section">
+                <h6 class="section-title">
+                  <i class="bi bi-person me-2"></i>
+                  Informations essentielles
+                </h6>
+                <div class="info-grid">
+                  <div class="info-item">
+                    <span class="info-label">Titulaire</span>
+                    <span class="info-value">{{ certificateInfo?.subject?.commonName || 'Emmanuel Dupont' }}</span>
+                </div>
+                  <div class="info-item">
+                    <span class="info-label">Organisation</span>
+                    <span class="info-value">{{ certificateInfo?.subject?.organization || 'GVB Solutions' }}</span>
+                </div>
+                  <div class="info-item">
+                    <span class="info-label">Numéro de série</span>
+                    <span class="info-value serial-number">{{ certificateInfo?.serialNumber || '12:34:56:78:9A:BC:DE:F0' }}</span>
+              </div>
+                  <div class="info-item">
+                    <span class="info-label">Validité</span>
+                    <span class="info-value text-success">{{ certificateInfo?.validity?.isValid ? 'Valide' : 'Jusqu\'au 15/01/2025' }}</span>
+            </div>
+          </div>
+        </div>
+            </div>
             </div>
           </div>
 
@@ -360,12 +476,11 @@
               <i class="bi bi-arrow-left"></i>
               <span>Retour</span>
             </button>
-            <button @click="proceedSignature" class="action-btn signature">
-              <i class="bi bi-lightning-charge-fill"></i>
+          <button @click="proceedToSignature" class="action-btn primary">
               <span>Signer le document</span>
+            <i class="bi bi-lightning-charge-fill"></i>
             </button>
           </div>
-        </div>
       </div>
     </div>
   </div>
@@ -374,9 +489,9 @@
   <div v-if="hoveredTabIndex >= 0" class="tab-preview" :style="previewStyle">
     <div class="preview-content">
       <div class="preview-header">
-        <i class="bi bi-file-earmark-pdf-fill"></i>
+                <i class="bi bi-file-earmark-pdf-fill"></i>
         <span>{{ uploadedFiles[hoveredTabIndex]?.name }}</span>
-      </div>
+                </div>
       <div class="preview-body">
         <div class="preview-pdf">
           <iframe 
@@ -384,7 +499,7 @@
             class="preview-iframe"
             frameborder="0"
           ></iframe>
-        </div>
+              </div>
         <div class="preview-info">
           <span>{{ uploadedFiles[hoveredTabIndex]?.pages || 1 }} pages</span>
           <span>{{ formatFileSize(uploadedFiles[hoveredTabIndex]?.size || 0) }}</span>
@@ -437,6 +552,32 @@ const isPositionConfigured = ref(false)
 const signatureData = ref(null)
 const positionData = ref(null)
 
+// État pour le traitement multiple des documents
+const processedDocuments = ref(new Set()) // Documents traités (index)
+const currentDocumentIndex = ref(0) // Index du document en cours de traitement
+const allDocumentsProcessed = computed(() => {
+  return processedDocuments.value.size === uploadedFiles.value.length
+})
+
+// Propriétés pour la jauge circulaire
+const circumference = computed(() => 2 * Math.PI * 52) // 2πr avec r=52
+const strokeDashoffset = computed(() => {
+  const progress = uploadedFiles.value.length > 0 ? processedDocuments.value.size / uploadedFiles.value.length : 0
+  return circumference.value * (1 - progress)
+})
+
+// Données de test pour le certificat dans l'étape 4
+const certificateInfo = ref({
+  subject: {
+    commonName: 'Emmanuel Dupont',
+    organization: 'GVB Solutions'
+  },
+  serialNumber: '12:34:56:78:9A:BC:DE:F0',
+  validity: {
+    isValid: true
+  }
+})
+
 // Références DOM
 const fileInput = ref(null)
 const pdfContainer = ref(null)
@@ -457,6 +598,14 @@ const currentSignBaseFile = computed(() => {
   if (activeSignBaseTabIndex.value >= 0 && uploadedFiles.value[activeSignBaseTabIndex.value]) {
     return uploadedFiles.value[activeSignBaseTabIndex.value]
   }
+  // Retourner des données de test pour l'étape 4 si aucun fichier n'est sélectionné
+  if (currentStep.value === 4) {
+    return {
+      name: 'document-test.pdf',
+      size: 1024000,
+      pages: 2
+    }
+  }
   return null
 })
 
@@ -466,6 +615,15 @@ const currentSignBaseFile = computed(() => {
 function nextStep() {
   if (currentStep.value < steps.length) {
     currentStep.value++
+    
+    // Réinitialiser l'état quand on entre dans l'étape 3
+    if (currentStep.value === 3) {
+      processedDocuments.value.clear()
+      activeSignBaseTabIndex.value = 0
+      isPositionConfigured.value = false
+      positionData.value = null
+      signatureData.value = null
+    }
   }
 }
 
@@ -662,6 +820,29 @@ function handlePositionConfirmed(data) {
   console.log('Position confirmée:', data)
   positionData.value = data
   isPositionConfigured.value = true
+  
+  // Marquer le document actuel comme traité
+  processedDocuments.value.add(activeSignBaseTabIndex.value)
+  
+  // Passer automatiquement au document suivant
+  moveToNextDocument()
+}
+
+// Fonction pour passer au document suivant
+function moveToNextDocument() {
+  const nextIndex = activeSignBaseTabIndex.value + 1
+  
+  if (nextIndex < uploadedFiles.value.length) {
+    // Passer au document suivant
+    activeSignBaseTabIndex.value = nextIndex
+    // Réinitialiser l'état pour le nouveau document
+    isPositionConfigured.value = false
+    positionData.value = null
+    signatureData.value = null
+  } else {
+    // Tous les documents ont été traités
+    console.log('Tous les documents ont été traités')
+  }
 }
 
 // Debug: Log du fichier actuel pour SignBase
@@ -682,17 +863,7 @@ function handlePdfGenerated(data) {
   // Le PDF avec la signature et QR code est prêt
 }
 
-// Signature finale
-function proceedSignature() {
-  // TODO: Implémenter la logique de signature avec le backend
-  console.log('Procéder à la signature...')
-  console.log('Fichier PDF:', currentSignBaseFile.value)
-  console.log('Position:', positionData.value)
-  console.log('Signature:', signatureData.value)
-  
-  // Pour l'instant, afficher un message
-  alert('Fonctionnalité de signature en cours d\'implémentation. Les données sont prêtes pour le backend.')
-}
+
 
 // Utilitaires
 function formatFileSize(bytes) {
@@ -711,13 +882,25 @@ const canProceedToNext = computed(() => {
     case 2:
       return true // Aperçu toujours accessible
     case 3:
-      return isPositionConfigured.value
+      return allDocumentsProcessed.value
     case 4:
       return true // Dernière étape
     default:
       return false
   }
 })
+
+// Fonction pour procéder à la signature
+function proceedToSignature() {
+  // TODO: Implémenter la logique de signature finale
+  console.log('Procéder à la signature finale...')
+  console.log('Fichier PDF:', currentSignBaseFile.value)
+  console.log('Position:', positionData.value)
+  console.log('Signature:', signatureData.value)
+  
+  // Pour l'instant, afficher un message
+  alert('Fonctionnalité de signature finale en cours d\'implémentation.')
+}
 
 // Cycle de vie
 onMounted(() => {
@@ -729,7 +912,7 @@ onUnmounted(() => {
   uploadedFiles.value.forEach(file => {
     if (file.url) {
       URL.revokeObjectURL(file.url)
-    }
+  }
   })
 })
 </script>
@@ -810,20 +993,7 @@ onUnmounted(() => {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-.section-title {
-  font-size: 2.8rem;
-  font-weight: 700;
-  font-family: 'Raleway', sans-serif;
-  margin-bottom: 0.5rem;
-  line-height: 1.2;
-}
 
-.section-subtitle {
-  font-size: 1.2rem;
-  color: #6c757d;
-  margin-bottom: 0;
-  font-weight: 400;
-}
 
 .close-button-container {
   position: absolute;
@@ -1088,6 +1258,91 @@ onUnmounted(() => {
   margin: 0;
   font-size: 1.125rem;
   line-height: 1.6;
+}
+
+/* Indicateur de progrès - Jauge circulaire */
+.progress-indicator {
+  margin-top: 1rem;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.circular-progress-container {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  justify-content: center;
+}
+
+.circular-progress {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.progress-ring {
+  transform: rotate(-90deg);
+  filter: drop-shadow(0 4px 8px rgba(0, 102, 204, 0.3));
+}
+
+.progress-ring-bg {
+  transition: stroke 0.3s ease;
+}
+
+.progress-ring-fill {
+  transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  filter: drop-shadow(0 2px 4px rgba(0, 102, 204, 0.4));
+}
+
+.progress-content {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.progress-number {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--primary-blue);
+  line-height: 1;
+  text-shadow: 0 2px 4px rgba(0, 102, 204, 0.3);
+}
+
+.progress-total {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  opacity: 0.8;
+}
+
+.progress-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 200px;
+}
+
+.progress-text {
+  font-weight: 600;
+  color: var(--text-dark);
+  font-size: 1rem;
+  text-align: left;
+}
+
+.progress-status {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  opacity: 0.8;
+  text-align: left;
 }
 
 /* Zone d'upload avec drag & drop */
@@ -1680,130 +1935,233 @@ onUnmounted(() => {
 
 
 
-/* Résumé de signature */
-.signature-summary {
+
+
+/* Section de résumé de signature */
+.signature-summary-section {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
 
-.summary-section {
-  background: #f8f9fa;
-  border-radius: 12px;
-  padding: 24px;
-  border: 1px solid #e2e8f0;
-}
-
-.summary-section h3 {
-  font-size: 1.125rem;
-  font-weight: 600;
+.signature-summary-section h6 {
+  margin-bottom: 1rem;
   color: var(--text-dark);
-  margin: 0 0 16px 0;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.summary-section h3 i {
-  color: var(--primary-blue);
-}
-
-.document-info, .certificate-info {
-  background: white;
-  border-radius: var(--radius-sm);
-  padding: 16px;
-  border: 1px solid var(--border-color);
-}
-
-.doc-preview {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.doc-preview i {
-  font-size: 2rem;
-  color: #dc2626;
-}
-
-.doc-details {
-  flex: 1;
-}
-
-.doc-details h4 {
-  font-size: 1rem;
   font-weight: 600;
-  color: var(--text-color);
-  margin: 0 0 4px 0;
+  font-family: 'Raleway', sans-serif;
+  font-size: 1.1rem;
 }
 
-.doc-details p {
-  color: var(--text-secondary);
-  margin: 0;
-  font-size: 0.9rem;
-}
-
-.position-details {
-  background: white;
-  border-radius: var(--radius-sm);
-  padding: 16px;
-  border: 1px solid var(--border-color);
-}
-
-.position-item {
+.summary-status-card {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 0;
-  color: var(--text-color);
-  font-weight: 500;
-}
-
-.position-item i {
-  color: var(--success-color);
-}
-
-.position-item:not(:last-child) {
-  border-bottom: 1px solid var(--border-color);
-}
-
-/* Avertissement final */
-.final-warning {
-  display: flex;
   gap: 16px;
-  background: rgba(255, 193, 7, 0.05);
-  border: 1px solid rgba(255, 193, 7, 0.2);
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 24px;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(15px) saturate(120%);
+  -webkit-backdrop-filter: blur(15px) saturate(120%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 10px 30px rgba(0, 0, 0, 0.1),
+    inset 1px 0 0 rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  flex-direction: column;
+  align-items: stretch;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-.warning-icon {
-  width: 40px;
-  height: 40px;
-  background: rgba(255, 193, 7, 0.1);
-  border-radius: 50%;
+.summary-status-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 15px 40px rgba(0, 0, 0, 0.15),
+    inset 1px 0 0 rgba(255, 255, 255, 0.2);
+}
+
+.summary-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  margin-bottom: 1.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.summary-status-icon {
+  width: 48px;
+  height: 48px;
+  background: rgba(0, 102, 204, 0.2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 102, 204, 0.3);
+  color: var(--primary-blue);
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.2);
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.25rem;
-  color: #ffc107;
+  font-size: 1.5rem;
   flex-shrink: 0;
 }
 
-.warning-content h4 {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text-dark);
-  margin: 0 0 8px 0;
+.summary-title {
+  flex: 1;
 }
 
-.warning-content p {
-  color: var(--dark-gray);
+.summary-title h6 {
+  color: var(--text-dark);
+  font-weight: 600;
   margin: 0;
+  font-family: 'Raleway', sans-serif;
+}
+
+.summary-subtitle {
+  color: #6c757d;
   font-size: 0.9rem;
-  line-height: 1.5;
+  font-weight: 400;
+  font-family: 'Raleway', sans-serif;
+}
+
+.summary-status-badge {
+  flex-shrink: 0;
+}
+
+.summary-content {
+  width: 100%;
+}
+
+.summary-section {
+  margin-bottom: 1.5rem;
+}
+
+.summary-section:last-child {
+  margin-bottom: 0;
+}
+
+.section-title {
+  color: var(--text-dark);
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-family: 'Raleway', sans-serif;
+}
+
+.section-title i {
+  color: var(--primary-blue);
+  margin-right: 0.5rem;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 0.75rem;
+  transition: all 0.3s ease;
+}
+
+.info-item:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.info-label {
+  font-size: 0.8rem;
+  color: var(--primary-blue);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-family: 'Raleway', sans-serif;
+}
+
+.info-value {
+  font-size: 0.9rem;
+  color: var(--text-dark);
+  font-weight: 500;
+  word-break: break-word;
+  font-family: 'Raleway', sans-serif;
+}
+
+.serial-number {
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.positioning-info {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 1rem;
+  flex-wrap: wrap;
+}
+
+.positioning-item {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: var(--text-dark);
+  transition: all 0.3s ease;
+  font-family: 'Raleway', sans-serif;
+}
+
+.positioning-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(2px);
+}
+
+.positioning-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-left: 0.5rem;
+}
+
+.positioning-title {
+  font-weight: 600;
+  color: var(--text-dark);
+  font-size: 0.9rem;
+}
+
+.positioning-subtitle {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  opacity: 0.8;
 }
 
 /* Actions des étapes */
@@ -1990,10 +2348,7 @@ onUnmounted(() => {
     text-align: center;
   }
   
-  .section-title {
-    text-align: center;
-    margin-bottom: 0;
-  }
+
   
   .header-bottom-row {
     display: flex;
@@ -2018,13 +2373,9 @@ onUnmounted(() => {
     text-align: center;
   }
   
-  .section-title {
-    font-size: 3rem;
-  }
+
   
-  .section-subtitle {
-    font-size: 1.25rem;
-  }
+
   
   .progress-stepper,
   .main-content {
@@ -2099,6 +2450,42 @@ onUnmounted(() => {
     min-width: auto;
   }
   
+  /* Responsive pour la jauge circulaire */
+  .circular-progress-container {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .progress-ring {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .progress-ring circle {
+    r: 42;
+    cx: 50;
+    cy: 50;
+    stroke-width: 6;
+  }
+  
+  .progress-number {
+    font-size: 1.5rem;
+  }
+  
+  .progress-total {
+    font-size: 0.9rem;
+  }
+  
+  .progress-info {
+    min-width: auto;
+    text-align: center;
+  }
+  
+  .progress-text,
+  .progress-status {
+    text-align: center;
+  }
+  
   .file-info {
     flex-direction: column;
     text-align: center;
@@ -2121,13 +2508,9 @@ onUnmounted(() => {
     gap: 12px;
   }
   
-  .section-title {
-    font-size: 2.1rem;
-  }
+
   
-  .section-subtitle {
-    font-size: 1rem;
-  }
+
   
   .mobile-back-btn {
     padding: 4px 8px;
