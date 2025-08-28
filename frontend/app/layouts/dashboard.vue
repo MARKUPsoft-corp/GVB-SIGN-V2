@@ -328,7 +328,8 @@
             
             <!-- Contenu Certificat -->
             <div v-if="activeProfileTab === 'certificate'" class="tab-content">
-              <div class="certificate-upload-section">
+              <!-- Section d'importation - affichée seulement s'il n'y a pas de certificat -->
+              <div v-if="!certificateInfo" class="certificate-upload-section">
                 <h6>Importer votre certificat</h6>
                 <div class="certificate-action-item">
                   <div class="action-info">
@@ -346,7 +347,7 @@
                 </div>
               </div>
               
-              <div class="certificate-info-section">
+              <div class="certificate-info-section" :class="{ 'certificate-info-section-top': certificateInfo }">
                 <h6>Informations du certificat</h6>
                 <div v-if="certificateInfo" class="certificate-status-card certificate-imported" :class="{ 'certificate-expired': !certificateInfo.validity.isValid }">
                   <div class="certificate-header">
@@ -476,13 +477,17 @@
                     </div>
                   </div>
                 </div>
-                <div v-else class="certificate-status-card">
-                  <div class="certificate-status-icon">
-                    <i class="bi bi-shield-x"></i>
-                  </div>
-                  <div class="certificate-status-content">
-                    <h6>Aucun certificat importé</h6>
-                    <p class="text-muted">Aucun certificat n'est actuellement configuré. Importez un certificat pour commencer à signer vos documents.</p>
+                <div v-else class="certificate-status-card certificate-empty">
+                  <div class="certificate-empty-content">
+                    <div class="certificate-empty-icon">
+                      <i class="bi bi-shield-slash text-muted"></i>
+                    </div>
+                    <div class="certificate-empty-text">
+                      <h6 class="mb-2">Aucun certificat importé</h6>
+                      <p class="text-muted mb-0">
+                        Importez un certificat PFX ou P12 pour pouvoir signer vos documents numériquement.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -534,7 +539,8 @@
                 {{ certificateError }}
               </div>
               
-              <div class="certificate-upload-zone">
+              <!-- Zone d'import - masquée si fichier déjà sélectionné -->
+              <div v-if="!selectedCertificateFile" class="certificate-upload-zone">
                 <div class="drop-zone" 
                      :class="{ 'dragging': isDraggingCertificate }"
                      @dragenter="handleDragEnter"
@@ -554,16 +560,23 @@
                     <p>Glissez-déposez votre fichier .pfx/.p12</p>
                   </div>
                 </div>
-                <div v-if="selectedCertificateFile" class="selected-file">
-                  <i class="bi bi-shield-check"></i>
-                  <span>{{ selectedCertificateFile.name }}</span>
-                  <button @click="removeCertificateFile" class="remove-file-btn">
+              </div>
+              
+              <!-- Fichier sélectionné avec possibilité de suppression -->
+              <div v-if="selectedCertificateFile" class="selected-file-container">
+                <div class="selected-file">
+                  <div class="selected-file-info">
+                    <i class="bi bi-shield-check text-success"></i>
+                    <span class="selected-file-name">{{ selectedCertificateFile.name }}</span>
+                  </div>
+                  <button @click="removeCertificateFile" class="remove-file-btn" title="Supprimer le fichier">
                     <i class="bi bi-x"></i>
                   </button>
                 </div>
               </div>
 
-              <div class="certificate-password-section">
+              <!-- Section mot de passe - affichée seulement si fichier sélectionné -->
+              <div v-if="selectedCertificateFile" class="certificate-password-section">
                 <div class="password-input-group">
                   <input 
                     v-model="certificatePassword"
@@ -576,6 +589,8 @@
                   </button>
                 </div>
               </div>
+              
+
             </div>
             
             <div class="certificate-modal-footer">
@@ -610,7 +625,10 @@
           <slot />
         </div>
         <div v-else-if="activePage === 'documents'">
-          <DocumentsPage @navigate-to-signature="handleSignatureNavigation" />
+          <DocumentsPage 
+            @navigate-to-signature="handleSignatureNavigation" 
+            @open-profile-modal="handleOpenProfileModal" 
+          />
         </div>
         <div v-else>
           <div class="page-placeholder">
@@ -680,6 +698,20 @@ const handleSignatureNavigation = (type) => {
   console.log('Navigation vers signature:', type)
   // Pour l'instant, nous allons directement modifier DocumentsPage pour inclure SignImmediatelyPage
   // La logique sera dans DocumentsPage pour afficher SignImmediatelyPage
+}
+
+// Fonction pour ouvrir la modale de profil depuis DocumentsPage
+const handleOpenProfileModal = (tab = 'profile') => {
+  // Ouvrir la modale de profil
+  isProfileModalOpen.value = true
+  
+  // Définir l'onglet actif si spécifié
+  if (tab) {
+    activeProfileTab.value = tab
+  }
+  
+  // Bloquer le scroll du body
+  document.body.style.overflow = 'hidden'
 }
 
 // Fonction de déconnexion
@@ -2516,6 +2548,10 @@ body {
   margin-top: 2rem;
 }
 
+.certificate-info-section-top {
+  margin-top: 0;
+}
+
 .certificate-info-section h6 {
   margin-bottom: 1rem;
   color: var(--text-dark);
@@ -2966,6 +3002,147 @@ body {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
+}
+
+/* Styles pour l'état vide du certificat */
+.certificate-empty {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(15px) saturate(120%);
+  -webkit-backdrop-filter: blur(15px) saturate(120%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 10px 30px rgba(0, 0, 0, 0.1),
+    inset 1px 0 0 rgba(255, 255, 255, 0.05);
+}
+
+.certificate-empty-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
+.certificate-empty-icon {
+  font-size: 2.5rem;
+  color: #6c757d;
+  flex-shrink: 0;
+}
+
+.certificate-empty-text h6 {
+  color: var(--text-dark);
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+.certificate-empty-text p {
+  color: #6c757d;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Styles pour le message "certificat déjà importé" dans la modale */
+.certificate-already-imported {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(15px) saturate(120%);
+  -webkit-backdrop-filter: blur(15px) saturate(120%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  box-shadow: 
+    0 10px 30px rgba(0, 0, 0, 0.1),
+    inset 1px 0 0 rgba(255, 255, 255, 0.05);
+}
+
+.certificate-already-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
+.certificate-already-icon {
+  font-size: 2.5rem;
+  color: #28a745;
+  flex-shrink: 0;
+}
+
+.certificate-already-text h6 {
+  color: var(--text-dark);
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+.certificate-already-text p {
+  color: #6c757d;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Styles pour le fichier sélectionné */
+.selected-file-container {
+  margin-bottom: 1rem;
+}
+
+.selected-file {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(15px) saturate(120%);
+  -webkit-backdrop-filter: blur(15px) saturate(120%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.selected-file:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.selected-file-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.selected-file-info i {
+  font-size: 1.2rem;
+  color: #28a745;
+}
+
+.selected-file-name {
+  font-weight: 500;
+  color: var(--text-dark);
+  font-size: 0.9rem;
+}
+
+.remove-file-btn {
+  background: rgba(220, 53, 69, 0.1);
+  border: 1px solid rgba(220, 53, 69, 0.2);
+  color: #dc3545;
+  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.remove-file-btn:hover {
+  background: rgba(220, 53, 69, 0.2);
+  border-color: rgba(220, 53, 69, 0.3);
+  color: #dc3545;
+  transform: scale(1.05);
 }
 
 @keyframes contextMenuFadeIn {

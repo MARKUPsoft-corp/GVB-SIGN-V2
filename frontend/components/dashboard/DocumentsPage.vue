@@ -456,15 +456,55 @@
         </div>
       </div>
     </div>
+    
+    <!-- Popup d'erreur de certificat -->
+    <div v-if="isCertificateErrorModalOpen" class="signature-modal-overlay" @click="closeCertificateErrorModal">
+      <div class="signature-modal certificate-error-modal" @click.stop ref="certificateErrorModal">
+        <div class="signature-modal-header">
+          <h5>
+            <i class="bi bi-exclamation-triangle-fill text-warning"></i>
+            Certificat non valide
+          </h5>
+          <button class="close-btn" @click="closeCertificateErrorModal">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <div class="signature-modal-content">
+          <div class="certificate-error-content">
+            <div class="error-header">
+              <div class="error-icon">
+                <i class="bi bi-shield-x text-danger"></i>
+              </div>
+              <div class="error-text">
+                <h6 class="error-title">Certificat invalide</h6>
+                <p class="error-message">
+                  Votre certificat n'est pas valide ou a expiré. Importez un certificat valide pour signer.
+                </p>
+              </div>
+            </div>
+            <div class="error-actions">
+              <button class="btn btn-primary btn-sm" @click="goToCertificateImport">
+                <i class="bi bi-shield-fill-check me-2"></i>
+                Importer
+              </button>
+              <button class="btn btn-outline-secondary btn-sm" @click="closeCertificateErrorModal">
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </template>
 
 <script setup>
 import { ref, computed, onMounted, nextTick, defineEmits } from 'vue'
 import DocumentEditor from './DocumentEditor.vue'
 import SignImmediatelyPage from './SignImmediatelyPage.vue'
+import { CertificateService } from '../../services/CertificateService'
 
 // Émissions
-const emit = defineEmits(['navigate-to-signature'])
+const emit = defineEmits(['navigate-to-signature', 'open-profile-modal'])
 
 // État pour afficher la liste complète des documents
 const showAllDocuments = ref(false)
@@ -476,10 +516,17 @@ const showEditor = ref(false)
 const showSignaturePage = ref(false)
 const currentDocument = ref(null)
 
+// Service de certificat
+const certificateService = new CertificateService()
+
 // État pour la modale de signature
 const isSignatureModalOpen = ref(false)
 const signBtn = ref(null)
 const signatureModal = ref(null)
+
+// État pour la popup d'erreur de certificat
+const isCertificateErrorModalOpen = ref(false)
+const certificateErrorModal = ref(null)
 
 // Pagination
 const currentPage = ref(1)
@@ -615,6 +662,15 @@ const prevPage = () => {
 
 // Fonctions pour la modale de signature
 const toggleSignatureModal = () => {
+  // Vérifier la validité du certificat avant d'ouvrir la modale
+  certificateService.initialize()
+  
+  if (!certificateService.canUseCertificate()) {
+    // Afficher directement la popup d'erreur de certificat avec positionnement contextuel
+    openCertificateErrorModal()
+    return
+  }
+  
   isSignatureModalOpen.value = !isSignatureModalOpen.value
   
   if (isSignatureModalOpen.value) {
@@ -711,6 +767,108 @@ const toggleSignatureModal = () => {
 const closeSignatureModal = () => {
   isSignatureModalOpen.value = false
   document.body.style.overflow = ''
+}
+
+const closeCertificateErrorModal = () => {
+  isCertificateErrorModalOpen.value = false
+  document.body.style.overflow = ''
+}
+
+// Fonction pour ouvrir la popup d'erreur de certificat avec positionnement contextuel
+const openCertificateErrorModal = () => {
+  isCertificateErrorModalOpen.value = true
+  
+  nextTick(() => {
+    if (signBtn.value && certificateErrorModal.value && window.innerWidth > 768) {
+      const buttonRect = signBtn.value.getBoundingClientRect()
+      const modal = certificateErrorModal.value
+      
+      // Dimensions de la modale (même que la modale de signature)
+      const modalWidth = 320
+      const modalHeight = 280
+      
+      // Marge de sécurité
+      const margin = 20
+      
+      // Calculer l'espace disponible dans chaque direction
+      const spaceRight = window.innerWidth - buttonRect.right
+      const spaceLeft = buttonRect.left
+      const spaceBelow = window.innerHeight - buttonRect.bottom
+      const spaceAbove = buttonRect.top
+      
+      let leftPosition, topPosition
+      
+      // Positionner horizontalement selon l'espace disponible
+      if (spaceRight >= modalWidth + margin) {
+        // Plus d'espace à droite
+        leftPosition = buttonRect.right + 10
+      } else if (spaceLeft >= modalWidth + margin) {
+        // Plus d'espace à gauche
+        leftPosition = buttonRect.left - modalWidth - 10
+      } else {
+        // Pas assez d'espace, centrer horizontalement
+        leftPosition = (window.innerWidth - modalWidth) / 2
+      }
+      
+      // Positionner verticalement selon l'espace disponible
+      if (spaceBelow >= modalHeight + margin) {
+        // Plus d'espace en bas
+        topPosition = buttonRect.bottom + 10
+      } else if (spaceAbove >= modalHeight + margin) {
+        // Plus d'espace en haut
+        topPosition = buttonRect.top - modalHeight - 10
+      } else {
+        // Pas assez d'espace, centrer verticalement
+        topPosition = (window.innerHeight - modalHeight) / 2
+      }
+      
+      // GARANTIR que la modale reste entièrement dans les limites de l'écran
+      // Vérification horizontale
+      if (leftPosition < margin) {
+        leftPosition = margin
+      } else if (leftPosition + modalWidth > window.innerWidth - margin) {
+        leftPosition = window.innerWidth - modalWidth - margin
+      }
+      
+      // Vérification verticale
+      if (topPosition < margin) {
+        topPosition = margin
+      } else if (topPosition + modalHeight > window.innerHeight - margin) {
+        topPosition = window.innerHeight - modalHeight - margin
+      }
+      
+      // Vérification finale - si la modale est encore trop grande pour l'écran
+      if (modalWidth > window.innerWidth - 2 * margin) {
+        // Modale trop large, centrer et réduire la largeur
+        leftPosition = margin
+        modal.style.width = (window.innerWidth - 2 * margin) + 'px'
+      } else {
+        modal.style.width = modalWidth + 'px'
+      }
+      
+      if (modalHeight > window.innerHeight - 2 * margin) {
+        // Modale trop haute, centrer et réduire la hauteur
+        topPosition = margin
+        modal.style.height = (window.innerHeight - 2 * margin) + 'px'
+        modal.style.overflowY = 'auto'
+      } else {
+        modal.style.height = 'auto'
+        modal.style.overflowY = 'visible'
+      }
+      
+      modal.style.left = leftPosition + 'px'
+      modal.style.top = topPosition + 'px'
+    }
+  })
+  
+  // Bloquer le scroll en arrière-plan
+  document.body.style.overflow = 'hidden'
+}
+
+const goToCertificateImport = () => {
+  closeCertificateErrorModal()
+  // Émettre un événement pour ouvrir la modale de profil sur l'onglet certificat
+  emit('open-profile-modal', 'certificate')
 }
 
 const selectSignatureOption = (option) => {
@@ -956,6 +1114,84 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+
+/* Styles pour la popup d'erreur de certificat */
+.certificate-error-modal {
+  max-width: 320px;
+  width: 320px;
+  height: auto;
+  min-height: 280px;
+}
+
+.certificate-error-content {
+  padding: 0.75rem;
+}
+
+.error-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.error-icon {
+  font-size: 2rem;
+  color: #dc3545;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.error-text {
+  flex: 1;
+}
+
+.error-title {
+  color: var(--text-dark);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+  text-align: left;
+}
+
+.error-message {
+  color: #6c757d;
+  line-height: 1.4;
+  font-size: 0.85rem;
+  text-align: left;
+  margin-bottom: 0;
+}
+
+.error-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.error-actions .btn {
+  min-width: 120px;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  font-size: 0.85rem;
+  transition: all 0.3s ease;
+}
+
+.error-actions .btn-primary {
+  background: var(--primary-blue);
+  border-color: var(--primary-blue);
+}
+
+.error-actions .btn-primary:hover {
+  background: var(--primary-blue-dark);
+  border-color: var(--primary-blue-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+}
+
+.error-actions .btn-outline-secondary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
 }
 
 .signature-option {
