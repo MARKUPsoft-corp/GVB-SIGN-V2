@@ -143,10 +143,19 @@
               :key="index"
               :class="['pdf-tab', { 'active': activeTabIndex === index }]"
               @click="switchTab(index)"
+              @mouseenter="showTabPreview(index, $event)"
+              @mouseleave="hideTabPreview"
             >
               <i class="bi bi-file-earmark-pdf-fill"></i>
               <span class="tab-title">{{ file.name }}</span>
               <span class="tab-pages" v-if="file.pages">{{ file.pages }} pages</span>
+              <button 
+                @click.stop="removeFile(index)" 
+                class="tab-close-btn"
+                title="Fermer cet onglet"
+              >
+                <i class="bi bi-x"></i>
+              </button>
             </div>
           </div>
 
@@ -219,10 +228,19 @@
               :key="index"
               :class="['signbase-tab', { 'active': activeSignBaseTabIndex === index }]"
               @click="switchSignBaseTab(index)"
+              @mouseenter="showTabPreview(index, $event)"
+              @mouseleave="hideTabPreview"
             >
               <i class="bi bi-file-earmark-pdf-fill"></i>
               <span class="tab-title">{{ file.name }}</span>
               <span class="tab-pages" v-if="file.pages">{{ file.pages }} pages</span>
+              <button 
+                @click.stop="removeFile(index)" 
+                class="tab-close-btn"
+                title="Fermer cet onglet"
+              >
+                <i class="bi bi-x"></i>
+              </button>
             </div>
           </div>
 
@@ -261,96 +279,10 @@
         </div>
       </div>
 
-      <!-- Étape 4: Certificat PFX -->
+
+
+      <!-- Étape 4: Signature finale -->
       <div v-if="currentStep === 4" class="step-content" :key="currentStep">
-        <div class="step-header">
-          <h2>
-            <i class="bi bi-shield-fill-check"></i>
-            Certificat de signature
-          </h2>
-          <p>Téléchargez votre certificat PFX et saisissez le mot de passe</p>
-        </div>
-
-        <div class="certificate-section">
-          <div class="certificate-upload">
-            <h3>
-              <i class="bi bi-file-earmark-lock-fill"></i>
-              Fichier certificat (.pfx)
-            </h3>
-            <div class="upload-zone">
-              <input 
-                type="file" 
-                id="certificate-upload" 
-                accept=".pfx,.p12" 
-                @change="handleCertificateSelect" 
-                class="file-input"
-              >
-              <label for="certificate-upload" class="upload-label">
-                <i class="bi bi-cloud-upload"></i>
-                <span>Sélectionner le certificat PFX</span>
-              </label>
-            </div>
-            <div v-if="certificateFile" class="certificate-info">
-              <div class="cert-preview">
-                <i class="bi bi-shield-check"></i>
-                <div class="cert-details">
-                  <h4>{{ certificateFile.name }}</h4>
-                  <p>{{ formatFileSize(certificateFile.size) }}</p>
-                </div>
-                <button @click="removeCertificate" class="remove-btn">
-                  <i class="bi bi-x-lg"></i>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div class="password-section">
-            <h3>
-              <i class="bi bi-key-fill"></i>
-              Mot de passe du certificat
-            </h3>
-            <div class="password-input-group">
-              <input 
-                v-model="certificatePassword"
-                :type="showPassword ? 'text' : 'password'"
-                placeholder="Entrez le mot de passe de votre certificat"
-                class="password-input"
-              >
-              <button @click="togglePasswordVisibility" class="password-toggle">
-                <i :class="showPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
-              </button>
-            </div>
-          </div>
-
-          <div class="security-notice">
-            <div class="notice-icon">
-              <i class="bi bi-info-circle-fill"></i>
-            </div>
-            <div class="notice-content">
-              <h4>Sécurité et confidentialité</h4>
-              <p>Votre certificat et mot de passe sont traités de manière sécurisée et ne sont jamais stockés sur nos serveurs.</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="step-actions">
-          <button @click="previousStep" class="action-btn secondary">
-            <i class="bi bi-arrow-left"></i>
-            <span>Retour</span>
-          </button>
-          <button 
-            @click="nextStep" 
-            :disabled="!certificateFile || !certificatePassword"
-            class="action-btn primary"
-          >
-            <span>Valider le certificat</span>
-            <i class="bi bi-arrow-right"></i>
-          </button>
-        </div>
-      </div>
-
-      <!-- Étape 5: Signature finale -->
-      <div v-if="currentStep === 5" class="step-content" :key="currentStep">
         <div class="step-header">
           <h2>
             <i class="bi bi-pen-fill"></i>
@@ -437,6 +369,29 @@
       </div>
     </div>
   </div>
+
+  <!-- Aperçu de l'onglet survolé -->
+  <div v-if="hoveredTabIndex >= 0" class="tab-preview" :style="previewStyle">
+    <div class="preview-content">
+      <div class="preview-header">
+        <i class="bi bi-file-earmark-pdf-fill"></i>
+        <span>{{ uploadedFiles[hoveredTabIndex]?.name }}</span>
+      </div>
+      <div class="preview-body">
+        <div class="preview-pdf">
+          <iframe 
+            :src="getFilePreviewUrl(uploadedFiles[hoveredTabIndex])"
+            class="preview-iframe"
+            frameborder="0"
+          ></iframe>
+        </div>
+        <div class="preview-info">
+          <span>{{ uploadedFiles[hoveredTabIndex]?.pages || 1 }} pages</span>
+          <span>{{ formatFileSize(uploadedFiles[hoveredTabIndex]?.size || 0) }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -462,10 +417,6 @@ const steps = [
     description: 'Placez la signature et le QR code'
   },
   {
-    title: 'Certificat',
-    description: 'Configurez votre certificat'
-  },
-  {
     title: 'Signer',
     description: 'Finalisez la signature'
   }
@@ -476,11 +427,10 @@ const uploadedFiles = ref([])
 const activeTabIndex = ref(-1)
 const activeSignBaseTabIndex = ref(0) // Onglet actif pour SignBase
 const isDragging = ref(false)
+const hoveredTabIndex = ref(-1) // Index de l'onglet survolé pour l'aperçu
+const previewStyle = ref({}) // Style de positionnement de l'aperçu
 
-// État du certificat
-const certificateFile = ref(null)
-const certificatePassword = ref('')
-const showPassword = ref(false)
+
 
 // État de la signature
 const isPositionConfigured = ref(false)
@@ -527,6 +477,44 @@ function switchTab(index) {
 // Gestion des onglets SignBase
 function switchSignBaseTab(index) {
   activeSignBaseTabIndex.value = index
+}
+
+// Fonctions pour l'aperçu des onglets
+function showTabPreview(index, event) {
+  hoveredTabIndex.value = index
+  
+  // Positionner l'aperçu par rapport à l'onglet survolé
+  const rect = event.target.getBoundingClientRect()
+  const previewWidth = 400
+  const previewHeight = 300
+  
+  // Calculer la position optimale
+  let left = rect.left + (rect.width / 2) - (previewWidth / 2)
+  let top = rect.bottom + 10
+  
+  // Ajuster si l'aperçu dépasse les bords de l'écran
+  if (left < 20) left = 20
+  if (left + previewWidth > window.innerWidth - 20) {
+    left = window.innerWidth - previewWidth - 20
+  }
+  if (top + previewHeight > window.innerHeight - 20) {
+    top = rect.top - previewHeight - 10
+  }
+  
+  previewStyle.value = {
+    position: 'fixed',
+    left: `${left}px`,
+    top: `${top}px`,
+    zIndex: 10000
+  }
+}
+
+function hideTabPreview() {
+  hoveredTabIndex.value = -1
+}
+
+function getFilePreviewUrl(file) {
+  return file.url
 }
 
 function previousStep() {
@@ -667,25 +655,7 @@ function onPdfLoadError(error) {
 
 
 
-// Gestion du certificat
-function handleCertificateSelect(event) {
-  const file = event.target.files[0]
-  if (file && (file.name.endsWith('.pfx') || file.name.endsWith('.p12'))) {
-    certificateFile.value = file
-    console.log('Certificat sélectionné:', file.name)
-  } else {
-    alert('Veuillez sélectionner un fichier certificat valide (.pfx ou .p12).')
-  }
-}
 
-function removeCertificate() {
-  certificateFile.value = null
-  certificatePassword.value = ''
-}
-
-function togglePasswordVisibility() {
-  showPassword.value = !showPassword.value
-}
 
 // Gestion de SignBase
 function handlePositionConfirmed(data) {
@@ -717,8 +687,6 @@ function proceedSignature() {
   // TODO: Implémenter la logique de signature avec le backend
   console.log('Procéder à la signature...')
   console.log('Fichier PDF:', currentSignBaseFile.value)
-  console.log('Certificat:', certificateFile.value)
-  console.log('Mot de passe:', certificatePassword.value)
   console.log('Position:', positionData.value)
   console.log('Signature:', signatureData.value)
   
@@ -745,8 +713,6 @@ const canProceedToNext = computed(() => {
     case 3:
       return isPositionConfigured.value
     case 4:
-      return certificateFile.value !== null && certificatePassword.value !== ''
-    case 5:
       return true // Dernière étape
     default:
       return false
@@ -1132,71 +1098,185 @@ onUnmounted(() => {
   gap: 24px;
 }
 
-/* Onglets PDF */
+/* Onglets PDF - Style Dashboard */
 .pdf-tabs {
   display: flex;
-  gap: 8px;
-  margin-bottom: 24px;
+  gap: 0;
+  margin-bottom: 20px;
   overflow-x: auto;
-  padding-bottom: 8px;
-  justify-content: center;
+  padding: 0 8px 0 0;
+  justify-content: flex-start;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 8px 8px 0 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  position: relative;
 }
 
 .pdf-tab {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.8);
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  gap: 6px;
+  padding: 8px 12px 8px 16px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
   cursor: pointer;
   transition: all 0.3s ease;
   white-space: nowrap;
   min-width: 0;
   flex-shrink: 0;
+  position: relative;
+  margin-right: 2px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 .pdf-tab:hover {
-  background: rgba(255, 255, 255, 1);
-  border-color: var(--primary-blue);
-  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 .pdf-tab.active {
-  background: rgba(0, 102, 204, 0.15);
+  background: rgba(0, 102, 204, 0.2);
   color: var(--primary-blue);
-  border-color: var(--primary-blue);
-  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.2);
+  border-color: rgba(0, 102, 204, 0.5);
+  border-bottom: 1px solid rgba(0, 102, 204, 0.2);
+  z-index: 1;
 }
 
 .pdf-tab i {
-  font-size: 1.1rem;
-  color: #dc2626;
+  font-size: 0.9rem;
+  color: var(--text-dark);
 }
 
 .pdf-tab.active i {
-  color: #dc2626;
+  color: var(--primary-blue);
 }
 
 .tab-title {
   font-weight: 500;
-  font-size: 0.9rem;
-  max-width: 150px;
+  font-size: 0.8rem;
+  max-width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: var(--text-dark);
 }
 
 .tab-pages {
-  font-size: 0.8rem;
-  opacity: 0.8;
+  font-size: 0.7rem;
+  opacity: 0.7;
   background: rgba(0, 0, 0, 0.1);
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: 1px 5px;
+  border-radius: 10px;
+  color: var(--text-dark);
 }
 
 .pdf-tab.active .tab-pages {
   background: rgba(0, 102, 204, 0.1);
+  color: var(--primary-blue);
+}
+
+/* Bouton de fermeture des onglets */
+.tab-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: none;
+  background: transparent;
+  color: var(--text-dark);
+  cursor: pointer;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  margin-left: 4px;
+  opacity: 0.7;
+}
+
+.tab-close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--text-dark);
+  opacity: 1;
+}
+
+.tab-close-btn i {
+  font-size: 0.75rem;
+}
+
+/* Aperçu des onglets */
+.tab-preview {
+  animation: previewFadeIn 0.2s ease-out;
+}
+
+.preview-content {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  width: 400px;
+  height: 300px;
+}
+
+.preview-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: rgba(0, 102, 204, 0.1);
+  border-bottom: 1px solid rgba(0, 102, 204, 0.2);
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.preview-header i {
+  color: #dc2626;
+  font-size: 1rem;
+}
+
+.preview-body {
+  padding: 12px;
+  height: calc(100% - 60px);
+  display: flex;
+  flex-direction: column;
+}
+
+.preview-pdf {
+  flex: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f8f9fa;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.preview-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.preview-info {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+@keyframes previewFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* Message si aucun fichier */
@@ -1517,262 +1597,88 @@ onUnmounted(() => {
   flex-direction: column;
 }
 
-/* Onglets SignBase */
+/* Onglets SignBase - Style Dashboard */
 .signbase-tabs {
   display: flex;
-  gap: 8px;
+  gap: 0;
   margin-bottom: 20px;
   overflow-x: auto;
-  padding-bottom: 8px;
-  justify-content: center;
+  padding: 0 8px 0 0;
+  justify-content: flex-start;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 8px 8px 0 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  position: relative;
 }
 
 .signbase-tab {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.8);
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  padding: 12px 16px 12px 20px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
   cursor: pointer;
   transition: all 0.3s ease;
   white-space: nowrap;
   min-width: 0;
   flex-shrink: 0;
+  position: relative;
+  margin-right: 2px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 .signbase-tab:hover {
-  background: rgba(255, 255, 255, 1);
-  border-color: var(--primary-blue);
-  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 .signbase-tab.active {
-  background: rgba(0, 102, 204, 0.15);
+  background: rgba(0, 102, 204, 0.2);
   color: var(--primary-blue);
-  border-color: var(--primary-blue);
-  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.2);
+  border-color: rgba(0, 102, 204, 0.5);
+  border-bottom: 1px solid rgba(0, 102, 204, 0.2);
+  z-index: 1;
 }
 
 .signbase-tab i {
-  font-size: 1.1rem;
-  color: #dc2626;
+  font-size: 1rem;
+  color: var(--text-dark);
 }
 
 .signbase-tab.active i {
-  color: #dc2626;
+  color: var(--primary-blue);
 }
 
 .signbase-tab .tab-title {
   font-weight: 500;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   max-width: 150px;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: var(--text-dark);
 }
 
 .signbase-tab .tab-pages {
-  font-size: 0.8rem;
-  opacity: 0.8;
+  font-size: 0.75rem;
+  opacity: 0.7;
   background: rgba(0, 0, 0, 0.1);
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: 12px;
+  color: var(--text-dark);
 }
 
 .signbase-tab.active .tab-pages {
   background: rgba(0, 102, 204, 0.1);
-}
-
-/* Section certificat */
-.certificate-section {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 32px;
-}
-
-.certificate-upload, .password-section {
-  background: #f8f9fa;
-  border-radius: 12px;
-  padding: 24px;
-  border: 1px solid #e2e8f0;
-}
-
-.certificate-upload h3, .password-section h3 {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--text-dark);
-  margin: 0 0 16px 0;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.certificate-upload h3 i, .password-section h3 i {
-  color: #ffc107;
-}
-
-.upload-zone {
-  border: 2px dashed #e2e8f0;
-  border-radius: 12px;
-  padding: 32px;
-  text-align: center;
-  transition: all 0.3s ease;
-  background: white;
-  position: relative;
-}
-
-.upload-zone:hover {
-  border-color: var(--primary-blue);
-  background: rgba(0, 102, 204, 0.02);
-}
-
-.upload-zone .upload-label {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
-  color: var(--dark-gray);
-  font-weight: 500;
-}
-
-.upload-zone .upload-label i {
-  font-size: 2rem;
   color: var(--primary-blue);
 }
 
-.certificate-info {
-  margin-top: 16px;
-}
 
-.cert-preview {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  background: white;
-  padding: 16px;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-}
-
-.cert-preview i {
-  font-size: 1.5rem;
-  color: #28a745;
-}
-
-.cert-details {
-  flex: 1;
-}
-
-.cert-details h4 {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text-dark);
-  margin: 0 0 4px 0;
-}
-
-.cert-details p {
-  color: var(--dark-gray);
-  margin: 0;
-  font-size: 0.9rem;
-}
-
-.remove-btn {
-  background: rgba(220, 53, 69, 0.1);
-  color: #dc3545;
-  border: none;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.remove-btn:hover {
-  background: rgba(220, 53, 69, 0.2);
-  transform: scale(1.1);
-}
-
-.password-input-group {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.password-input {
-  width: 100%;
-  padding: 14px 50px 14px 16px;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  font-size: 1rem;
-  background: white;
-  color: var(--text-dark);
-  transition: all 0.2s ease;
-}
-
-.password-input:focus {
-  outline: none;
-  border-color: var(--primary-blue);
-  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
-}
-
-.password-toggle {
-  position: absolute;
-  right: 12px;
-  background: none;
-  border: none;
-  color: #6c757d;
-  cursor: pointer;
-  padding: 8px;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-}
-
-.password-toggle:hover {
-  color: var(--dark-gray);
-  background: #f8f9fa;
-}
-
-.security-notice {
-  display: flex;
-  gap: 16px;
-  background: rgba(40, 167, 69, 0.05);
-  border: 1px solid rgba(40, 167, 69, 0.2);
-  border-radius: 12px;
-  padding: 20px;
-}
-
-.notice-icon {
-  width: 40px;
-  height: 40px;
-  background: rgba(40, 167, 69, 0.1);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.25rem;
-  color: #28a745;
-  flex-shrink: 0;
-}
-
-.notice-content h4 {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text-dark);
-  margin: 0 0 8px 0;
-}
-
-.notice-content p {
-  color: var(--dark-gray);
-  margin: 0;
-  font-size: 0.9rem;
-  line-height: 1.5;
-}
 
 /* Résumé de signature */
 .signature-summary {

@@ -222,6 +222,10 @@
               <i class="bi bi-person"></i>
               <span>Profil</span>
             </li>
+            <li class="profile-nav-item" :class="{ active: activeProfileTab === 'certificate' }" @click="setActiveProfileTab('certificate')">
+              <i class="bi bi-shield-fill-check"></i>
+              <span>Certificat</span>
+            </li>
             <li class="profile-nav-item" :class="{ active: activeProfileTab === 'security' }" @click="setActiveProfileTab('security')">
               <i class="bi bi-shield-lock"></i>
               <span>Sécurité</span>
@@ -321,6 +325,168 @@
                 </div>
               </div>
             </div>
+            
+            <!-- Contenu Certificat -->
+            <div v-if="activeProfileTab === 'certificate'" class="tab-content">
+              <div class="certificate-upload-section">
+                <h6>Importer votre certificat</h6>
+                <div class="certificate-action-item">
+                  <div class="action-info">
+                    <h6>Certificat de signature</h6>
+                    <p class="text-muted certificate-description">
+                      Importez votre certificat PFX ou P12 pour signer vos documents.
+                    </p>
+                  </div>
+                  <div class="action-button">
+                    <button class="btn btn-outline-primary btn-sm" @click="openCertificateModal">
+                      <i class="bi bi-upload me-2"></i>
+                      Importer
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="certificate-info-section">
+                <h6>Informations du certificat</h6>
+                <div v-if="certificateInfo" class="certificate-status-card certificate-imported" :class="{ 'certificate-expired': !certificateInfo.validity.isValid }">
+                  <div class="certificate-header">
+                    <div class="certificate-status-icon">
+                      <i :class="certificateInfo.validity.isValid ? 'bi bi-shield-check' : 'bi bi-shield-x'"></i>
+                    </div>
+                    <div class="certificate-title">
+                      <h6 class="mb-0">Certificat importé</h6>
+                      <span class="certificate-subtitle" :class="certificateInfo.validity.isValid ? 'text-success' : 'text-danger'">
+                        {{ certificateInfo.validity.isValid ? 'Prêt pour la signature' : 'Ne peut pas être utilisé - Certificat expiré' }}
+                      </span>
+                    </div>
+                    <div class="certificate-status-badge">
+                      <span :class="certificateInfo.validity.isValid ? 'badge bg-success' : 'badge bg-danger'">
+                        {{ certificateInfo.validity.isValid ? 'Valide' : 'Expiré' }}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div class="certificate-content">
+                    <div class="certificate-section">
+                      <h6 class="section-title">
+                        <i class="bi bi-person me-2"></i>
+                        Informations du titulaire
+                      </h6>
+                      <div class="info-grid">
+                        <div class="info-item">
+                          <span class="info-label">Nom</span>
+                          <span class="info-value">{{ certificateInfo.subject.commonName }}</span>
+                        </div>
+                        <div class="info-item">
+                          <span class="info-label">Organisation</span>
+                          <span class="info-value">{{ certificateInfo.subject.organization }}</span>
+                        </div>
+                        <div class="info-item">
+                          <span class="info-label">Numéro de série</span>
+                          <span class="info-value serial-number">{{ certificateInfo.serialNumber }}</span>
+                        </div>
+                        <div class="info-item">
+                          <span class="info-label">Pays</span>
+                          <span class="info-value">{{ certificateInfo.subject.country }}</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="certificate-section">
+                      <h6 class="section-title">
+                        <i class="bi bi-building me-2"></i>
+                        Autorité de certification
+                      </h6>
+                      <div class="info-grid">
+                        <div class="info-item">
+                          <span class="info-label">Émetteur</span>
+                          <span class="info-value">{{ certificateInfo.issuer.commonName }}</span>
+                        </div>
+                        <div class="info-item">
+                          <span class="info-label">Organisation</span>
+                          <span class="info-value">{{ certificateInfo.issuer.organization }}</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="certificate-section">
+                      <h6 class="section-title">
+                        <i class="bi bi-calendar-check me-2"></i>
+                        Validité
+                      </h6>
+                      <div class="validity-info">
+                        <div class="validity-item">
+                          <span class="validity-label">Émis le</span>
+                          <span class="validity-date">{{ new Date(certificateInfo.validity.notBefore).toLocaleDateString('fr-FR') }}</span>
+                        </div>
+                        <div class="validity-item">
+                          <span class="validity-label">Expire le</span>
+                          <span class="validity-date" :class="certificateInfo.validity.isValid ? 'text-success' : 'text-danger'">
+                            {{ new Date(certificateInfo.validity.notAfter).toLocaleDateString('fr-FR') }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="certificate-section">
+                      <h6 class="section-title">
+                        <i class="bi bi-key me-2"></i>
+                        Clés et sécurité
+                      </h6>
+                      <div class="security-info">
+                        <div class="security-item">
+                          <i class="bi bi-check-circle-fill text-success me-2"></i>
+                          <span>Clé privée disponible</span>
+                        </div>
+                        <div class="security-item">
+                          <i class="bi bi-check-circle-fill text-success me-2"></i>
+                          <span>Clé publique disponible</span>
+                        </div>
+                        <div class="security-item">
+                          <i class="bi bi-shield-lock me-2"></i>
+                          <span>Algorithme: {{ certificateInfo.signatureAlgorithm }}</span>
+                        </div>
+                        <div v-if="!certificateInfo.validity.isValid" class="security-item security-warning">
+                          <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+                          <span class="text-warning fw-bold">Les clés ne peuvent pas être utilisées - Certificat expiré</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="certificate-section">
+                      <h6 class="section-title">
+                        <i class="bi bi-fingerprint me-2"></i>
+                        Empreinte du certificat
+                      </h6>
+                      <div class="fingerprint-container">
+                        <code class="fingerprint-code">{{ certificateInfo.fingerprint }}</code>
+                        <button class="btn btn-sm btn-outline-secondary copy-btn" @click="copyFingerprint">
+                          <i class="bi bi-clipboard"></i>
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div class="certificate-section">
+                      <div class="certificate-actions">
+                        <button class="btn btn-danger btn-sm remove-certificate-btn" @click="removeCertificate">
+                          <i class="bi bi-trash me-2"></i>
+                          Supprimer le certificat
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div v-else class="certificate-status-card">
+                  <div class="certificate-status-icon">
+                    <i class="bi bi-shield-x"></i>
+                  </div>
+                  <div class="certificate-status-content">
+                    <h6>Aucun certificat importé</h6>
+                    <p class="text-muted">Aucun certificat n'est actuellement configuré. Importez un certificat pour commencer à signer vos documents.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           
           <!-- Barre de navigation mobile -->
@@ -328,6 +494,10 @@
             <div class="mobile-nav-item" :class="{ active: activeProfileTab === 'profile' }" @click="setActiveProfileTab('profile')">
               <i class="bi bi-person"></i>
               <span>Profil</span>
+            </div>
+            <div class="mobile-nav-item" :class="{ active: activeProfileTab === 'certificate' }" @click="setActiveProfileTab('certificate')">
+              <i class="bi bi-shield-fill-check"></i>
+              <span>Certificat</span>
             </div>
             <div class="mobile-nav-item" :class="{ active: activeProfileTab === 'security' }" @click="setActiveProfileTab('security')">
               <i class="bi bi-shield-lock"></i>
@@ -340,6 +510,85 @@
             <div class="mobile-nav-item" :class="{ active: activeProfileTab === 'billing' }" @click="setActiveProfileTab('billing')">
               <i class="bi bi-credit-card"></i>
               <span>Facturation</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Modale d'import de certificat (enfant de la modale du profil) -->
+        <div v-if="isCertificateModalOpen" class="certificate-modal-overlay" @click="closeCertificateModal">
+          <div class="certificate-modal" @click.stop>
+            <div class="certificate-modal-header">
+              <h6>
+                <i class="bi bi-shield-fill-check"></i>
+                Importer un certificat
+              </h6>
+              <button class="close-btn" @click="closeCertificateModal">
+                <i class="bi bi-x"></i>
+              </button>
+            </div>
+            
+            <div class="certificate-modal-body">
+              <!-- Affichage des erreurs -->
+              <div v-if="certificateError" class="alert alert-danger mb-3">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                {{ certificateError }}
+              </div>
+              
+              <div class="certificate-upload-zone">
+                <div class="drop-zone" 
+                     :class="{ 'dragging': isDraggingCertificate }"
+                     @dragenter="handleDragEnter"
+                     @dragover="handleDragOver"
+                     @dragleave="handleDragLeave"
+                     @drop="handleDrop">
+                  <input 
+                    type="file" 
+                    id="certificate-file" 
+                    accept=".pfx,.p12" 
+                    @change="handleCertificateFileSelect" 
+                    class="file-input"
+                    ref="certificateFileInput"
+                  >
+                  <div class="drop-zone-content">
+                    <i class="bi bi-cloud-upload"></i>
+                    <p>Glissez-déposez votre fichier .pfx/.p12</p>
+                  </div>
+                </div>
+                <div v-if="selectedCertificateFile" class="selected-file">
+                  <i class="bi bi-shield-check"></i>
+                  <span>{{ selectedCertificateFile.name }}</span>
+                  <button @click="removeCertificateFile" class="remove-file-btn">
+                    <i class="bi bi-x"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div class="certificate-password-section">
+                <div class="password-input-group">
+                  <input 
+                    v-model="certificatePassword"
+                    :type="showCertificatePassword ? 'text' : 'password'"
+                    placeholder="Mot de passe du certificat"
+                    class="password-input"
+                  >
+                  <button @click="toggleCertificatePasswordVisibility" class="password-toggle">
+                    <i :class="showCertificatePassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+            <div class="certificate-modal-footer">
+              <button @click="closeCertificateModal" class="btn btn-outline-secondary btn-sm">
+                Annuler
+              </button>
+              <button 
+                @click="importCertificate" 
+                :disabled="!selectedCertificateFile || !certificatePassword"
+                class="btn btn-primary btn-sm"
+              >
+                Importer
+              </button>
             </div>
           </div>
         </div>
@@ -382,6 +631,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../../stores/auth'
 import DocumentsPage from '../../components/dashboard/DocumentsPage.vue'
 import SignImmediatelyPage from '../../components/dashboard/SignImmediatelyPage.vue'
+import { CertificateService } from '../../services/CertificateService'
 
 // Store d'authentification (côté client seulement)
 const authStore = process.client ? useAuthStore() : null
@@ -401,6 +651,21 @@ const isSidebarCollapsed = ref(false)
 const isProfileModalOpen = ref(false)
 const activeProfileTab = ref('profile')
 
+// Service de certificat
+const certificateService = new CertificateService()
+
+// État de la modale de certificat
+const isCertificateModalOpen = ref(false)
+const selectedCertificateFile = ref(null)
+const certificatePassword = ref('')
+const showCertificatePassword = ref(false)
+const isDraggingCertificate = ref(false)
+const certificateFileInput = ref(null)
+
+// État des informations du certificat
+const certificateInfo = ref(null)
+const certificateError = ref(null)
+
 // État de la navigation du dashboard
 const activePage = ref('dashboard')
 
@@ -419,6 +684,10 @@ const handleSignatureNavigation = (type) => {
 
 // Fonction de déconnexion
 const handleLogout = async () => {
+  // Nettoyer les données du certificat
+  certificateService.clearCertificate()
+  certificateInfo.value = null
+  
   if (authStore) {
     await authStore.logout()
   }
@@ -468,6 +737,101 @@ const closeProfileModal = () => {
   document.body.style.overflow = ''
 }
 
+// Fonctions pour la modale de certificat
+const openCertificateModal = (event) => {
+  // La modale sera centrée automatiquement par l'overlay
+  isCertificateModalOpen.value = true
+}
+
+const closeCertificateModal = () => {
+  isCertificateModalOpen.value = false
+  selectedCertificateFile.value = null
+  certificatePassword.value = ''
+  showCertificatePassword.value = false
+  document.body.style.overflow = ''
+}
+
+const handleCertificateFileSelect = (event) => {
+  const file = event.target.files[0]
+  if (file && (file.name.endsWith('.pfx') || file.name.endsWith('.p12'))) {
+    selectedCertificateFile.value = file
+  } else {
+    alert('Veuillez sélectionner un fichier certificat valide (.pfx ou .p12).')
+  }
+}
+
+const removeCertificateFile = () => {
+  selectedCertificateFile.value = null
+  if (certificateFileInput.value) {
+    certificateFileInput.value.value = ''
+  }
+}
+
+const toggleCertificatePasswordVisibility = () => {
+  showCertificatePassword.value = !showCertificatePassword.value
+}
+
+const handleDragEnter = (e) => {
+  e.preventDefault()
+  isDraggingCertificate.value = true
+}
+
+const handleDragOver = (e) => {
+  e.preventDefault()
+}
+
+const handleDragLeave = (e) => {
+  e.preventDefault()
+  isDraggingCertificate.value = false
+}
+
+const handleDrop = (e) => {
+  e.preventDefault()
+  isDraggingCertificate.value = false
+  
+  const files = e.dataTransfer.files
+  if (files.length > 0) {
+    const file = files[0]
+    if (file.name.endsWith('.pfx') || file.name.endsWith('.p12')) {
+      selectedCertificateFile.value = file
+    } else {
+      alert('Veuillez sélectionner un fichier certificat valide (.pfx ou .p12).')
+    }
+  }
+}
+
+const importCertificate = async () => {
+  try {
+    certificateError.value = null
+    
+    if (!selectedCertificateFile.value || !certificatePassword.value) {
+      throw new Error('Veuillez sélectionner un fichier et entrer le mot de passe')
+    }
+    
+    // Décoder le certificat avec le service
+    const info = await certificateService.decodeCertificate(
+      selectedCertificateFile.value, 
+      certificatePassword.value
+    )
+    
+    // Mettre à jour l'état
+    certificateInfo.value = info
+    
+    // Fermer la modale
+    closeCertificateModal()
+    
+    // Réinitialiser les champs
+    selectedCertificateFile.value = null
+    certificatePassword.value = ''
+    
+    console.log('Certificat importé avec succès:', info)
+    
+  } catch (error) {
+    console.error('Erreur lors de l\'import du certificat:', error)
+    certificateError.value = error.message
+  }
+}
+
 const setActiveProfileTab = (tab) => {
   activeProfileTab.value = tab
 }
@@ -475,6 +839,7 @@ const setActiveProfileTab = (tab) => {
 const getProfileTabTitle = () => {
   const titles = {
     profile: 'Informations du profil',
+    certificate: 'Certificat de signature',
     security: 'Sécurité du compte',
     preferences: 'Préférences utilisateur',
     billing: 'Facturation et abonnement'
@@ -485,6 +850,7 @@ const getProfileTabTitle = () => {
 const getProfileTabIcon = () => {
   const icons = {
     profile: 'bi bi-person',
+    certificate: 'bi bi-shield-fill-check',
     security: 'bi bi-shield-lock',
     preferences: 'bi bi-gear',
     billing: 'bi bi-credit-card'
@@ -514,7 +880,51 @@ onMounted(async () => {
   if (authStore) {
     await authStore.initAuth()
   }
+  
+  // Initialiser le service de certificat
+  certificateService.initialize()
+  certificateInfo.value = certificateService.getCertificateInfo()
 })
+
+// Fonction pour copier l'empreinte du certificat
+const copyFingerprint = async () => {
+  if (certificateInfo.value?.fingerprint) {
+    try {
+      await navigator.clipboard.writeText(certificateInfo.value.fingerprint)
+      // Optionnel: afficher un message de succès
+      console.log('Empreinte copiée dans le presse-papiers')
+    } catch (error) {
+      console.error('Erreur lors de la copie:', error)
+    }
+  }
+}
+
+// Fonction pour supprimer le certificat
+const removeCertificate = () => {
+  if (confirm('Êtes-vous sûr de vouloir supprimer ce certificat ?\n\nCette action va :\n• Supprimer toutes les informations du certificat\n• Effacer les clés privée et publique\n• Nettoyer la sessionStorage\n\nCette action ne peut pas être annulée.')) {
+    try {
+      // Supprimer les données du service
+      certificateService.clearCertificate()
+      
+      // Réinitialiser l'état local
+      certificateInfo.value = null
+      certificateError.value = null
+      
+      // Réinitialiser les champs de la modale si elle est ouverte
+      selectedCertificateFile.value = null
+      certificatePassword.value = ''
+      
+      console.log('Certificat supprimé avec succès')
+      
+      // Optionnel: afficher un message de succès
+      // Vous pouvez ajouter ici une notification toast ou un message
+      
+    } catch (error) {
+      console.error('Erreur lors de la suppression du certificat:', error)
+      alert('Erreur lors de la suppression du certificat. Veuillez réessayer.')
+    }
+  }
+}
 
 // Meta tags pour le dashboard
 useHead({
@@ -2047,6 +2457,741 @@ body {
 .user-info:hover {
   background: rgba(52, 144, 220, 0.05);
   transform: translateY(-1px);
+}
+
+/* Certificat - Style glassmorphisme */
+.certificate-upload-section h6 {
+  margin-bottom: 1rem;
+  color: var(--text-dark);
+  font-weight: 600;
+  font-family: 'Raleway', sans-serif;
+  font-size: 1.1rem;
+}
+
+.certificate-action-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  gap: 20px;
+}
+
+.certificate-action-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.action-info h6 {
+  margin: 0 0 0.5rem 0;
+  color: var(--text-dark);
+  font-weight: 600;
+  font-family: 'Raleway', sans-serif;
+  font-size: 1.1rem;
+}
+
+.action-info p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #6c757d;
+  font-family: 'Raleway', sans-serif;
+  max-width: 100%;
+  word-wrap: break-word;
+}
+
+.action-button {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+/* Section informations du certificat */
+.certificate-info-section {
+  margin-top: 2rem;
+}
+
+.certificate-info-section h6 {
+  margin-bottom: 1rem;
+  color: var(--text-dark);
+  font-weight: 600;
+  font-family: 'Raleway', sans-serif;
+  font-size: 1.1rem;
+}
+
+.certificate-status-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.certificate-status-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Styles pour le certificat importé */
+.certificate-imported {
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(15px) saturate(120%);
+  -webkit-backdrop-filter: blur(15px) saturate(120%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 10px 30px rgba(0, 0, 0, 0.1),
+    inset 1px 0 0 rgba(255, 255, 255, 0.1);
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.certificate-imported:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 15px 40px rgba(0, 0, 0, 0.15),
+    inset 1px 0 0 rgba(255, 255, 255, 0.2);
+}
+
+/* Styles pour le certificat expiré */
+.certificate-expired {
+  background: rgba(220, 53, 69, 0.1);
+  border: 1px solid rgba(220, 53, 69, 0.3);
+  box-shadow: 
+    0 10px 30px rgba(220, 53, 69, 0.1),
+    inset 1px 0 0 rgba(220, 53, 69, 0.1);
+}
+
+.certificate-expired:hover {
+  box-shadow: 
+    0 15px 40px rgba(220, 53, 69, 0.15),
+    inset 1px 0 0 rgba(220, 53, 69, 0.2);
+}
+
+.certificate-expired .certificate-status-icon {
+  background: rgba(220, 53, 69, 0.2);
+  border: 1px solid rgba(220, 53, 69, 0.3);
+  color: #dc3545;
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.2);
+}
+
+.certificate-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  margin-bottom: 1.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.certificate-status-icon {
+  width: 48px;
+  height: 48px;
+  background: rgba(220, 53, 69, 0.1);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: #dc3545;
+  flex-shrink: 0;
+}
+
+.certificate-imported .certificate-status-icon {
+  background: rgba(0, 102, 204, 0.2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 102, 204, 0.3);
+  color: var(--primary-blue);
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.2);
+}
+
+.certificate-title {
+  flex: 1;
+}
+
+.certificate-title h6 {
+  color: var(--text-dark);
+  font-weight: 600;
+  margin: 0;
+}
+
+.certificate-subtitle {
+  color: #6c757d;
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+.certificate-status-badge {
+  flex-shrink: 0;
+}
+
+.certificate-content {
+  width: 100%;
+}
+
+.certificate-section {
+  margin-bottom: 1.5rem;
+}
+
+.certificate-section:last-child {
+  margin-bottom: 0;
+}
+
+.section-title {
+  color: var(--text-dark);
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.section-title i {
+  color: var(--primary-blue);
+  margin-right: 0.5rem;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 0.75rem;
+  transition: all 0.3s ease;
+}
+
+.info-item:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.info-label {
+  font-size: 0.8rem;
+  color: var(--primary-blue);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.info-value {
+  font-size: 0.9rem;
+  color: var(--text-dark);
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.serial-number {
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.validity-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.validity-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.validity-item:last-child {
+  margin-bottom: 0;
+}
+
+.validity-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(2px);
+}
+
+.validity-label {
+  font-size: 0.85rem;
+  color: var(--primary-blue);
+  font-weight: 600;
+}
+
+.validity-date {
+  font-size: 0.9rem;
+  color: var(--text-dark);
+  font-weight: 600;
+}
+
+.security-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.security-item {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: var(--text-dark);
+  transition: all 0.3s ease;
+}
+
+.security-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(2px);
+}
+
+.security-warning {
+  background: rgba(255, 193, 7, 0.1) !important;
+  border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.security-warning:hover {
+  background: rgba(255, 193, 7, 0.15) !important;
+}
+
+.fingerprint-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.fingerprint-code {
+  flex: 1;
+  font-size: 0.8rem;
+  color: var(--text-dark);
+  background: transparent;
+  border: none;
+  font-family: 'Courier New', monospace;
+  word-break: break-all;
+  line-height: 1.4;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+}
+
+.copy-btn {
+  flex-shrink: 0;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--primary-blue);
+}
+
+.copy-btn:hover {
+  background: var(--primary-blue);
+  color: white;
+  border-color: var(--primary-blue);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+}
+
+/* Styles pour les actions du certificat */
+.certificate-actions {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+}
+
+.remove-certificate-btn {
+  background: rgba(220, 53, 69, 0.1);
+  border: 1px solid rgba(220, 53, 69, 0.3);
+  color: #dc3545;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.remove-certificate-btn:hover {
+  background: #dc3545;
+  color: white;
+  border-color: #dc3545;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.certificate-status-content h6 {
+  margin: 0 0 0.5rem 0;
+  color: var(--text-dark);
+  font-weight: 600;
+  font-family: 'Raleway', sans-serif;
+  font-size: 1.1rem;
+}
+
+.certificate-status-content p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #6c757d;
+  font-family: 'Raleway', sans-serif;
+  line-height: 1.5;
+}
+
+.btn-outline-secondary {
+  background: transparent;
+  border: 2px solid #6c757d;
+  color: #6c757d;
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.1);
+}
+
+.btn-outline-secondary:hover {
+  background: #6c757d;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(108, 117, 125, 0.3);
+}
+
+/* Tooltip personnalisé pour la description du certificat */
+.certificate-description {
+  position: relative;
+  cursor: help;
+  border-bottom: 1px dotted #6c757d;
+  transition: all 0.3s ease;
+  flex: 1;
+  margin-right: 16px;
+}
+
+.certificate-description:hover {
+  color: var(--primary-blue) !important;
+  border-bottom-color: var(--primary-blue);
+}
+
+.certificate-description:hover::after {
+  content: "Importez votre certificat PFX ou P12 pour signer vos documents. Ce certificat restera effectif tant que vous êtes connecté. Une fois déconnecté, vous devrez le réimporter à nouveau.";
+  position: absolute;
+  top: 100%;
+  left: -40px;
+  right: -40px;
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  z-index: 9999;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  margin-top: 8px;
+  white-space: normal;
+  text-align: left;
+  width: calc(100% + 80px);
+  min-width: 500px;
+  font-family: 'Raleway', sans-serif;
+  font-weight: 400;
+  animation: tooltipFadeIn 0.2s ease-out;
+}
+
+.certificate-description:hover::before {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 20px;
+  border: 6px solid transparent;
+  border-bottom-color: rgba(0, 0, 0, 0.9);
+  margin-top: 2px;
+  z-index: 9999;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes contextMenuFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Modale de certificat - Style identique à la modale de profil */
+.certificate-modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: transparent;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.certificate-modal {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(15px) saturate(120%);
+  -webkit-backdrop-filter: blur(15px) saturate(120%);
+  width: 400px;
+  max-height: 500px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.1),
+    inset 1px 0 0 rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  transform: translateY(20px) scale(0.9);
+  animation: modalSlideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.certificate-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.certificate-modal-header h6 {
+  margin: 0;
+  color: var(--text-dark);
+  font-weight: 600;
+  font-family: 'Raleway', sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.certificate-modal-header h6 i {
+  color: var(--primary-blue);
+  font-size: 1.2rem;
+}
+
+.certificate-modal-body {
+  padding: 1.5rem;
+  max-height: 350px;
+  overflow-y: auto;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.certificate-upload-zone h6,
+.certificate-password-section h6 {
+  margin-bottom: 1rem;
+  color: var(--text-dark);
+  font-weight: 600;
+  font-family: 'Raleway', sans-serif;
+  font-size: 1rem;
+}
+
+.drop-zone {
+  border: 2px dashed #e2e8f0;
+  border-radius: 8px;
+  padding: 1.5rem;
+  text-align: center;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  position: relative;
+}
+
+.drop-zone:hover,
+.drop-zone.dragging {
+  border-color: var(--primary-blue);
+  background: rgba(0, 102, 204, 0.05);
+}
+
+.drop-zone-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.drop-zone-content i {
+  font-size: 2rem;
+  color: var(--primary-blue);
+}
+
+.drop-zone-content p {
+  margin: 0;
+  color: var(--text-dark);
+  font-weight: 500;
+}
+
+.drop-zone-content .text-muted {
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.file-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.selected-file {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(40, 167, 69, 0.1);
+  border: 1px solid rgba(40, 167, 69, 0.2);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+.selected-file i {
+  color: #28a745;
+  font-size: 1.25rem;
+}
+
+.selected-file span {
+  flex: 1;
+  color: var(--text-dark);
+  font-weight: 500;
+}
+
+.remove-file-btn {
+  background: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+  border: none;
+  padding: 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.remove-file-btn:hover {
+  background: rgba(220, 53, 69, 0.2);
+}
+
+.certificate-password-section {
+  margin-top: 2rem;
+}
+
+.password-input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  background: white;
+  font-family: 'Raleway', sans-serif;
+}
+
+.password-input:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+}
+
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.password-toggle:hover {
+  color: var(--text-dark);
+  background: #f8f9fa;
+}
+
+.certificate-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 /* Responsive */

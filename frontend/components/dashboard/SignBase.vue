@@ -207,12 +207,6 @@
 
           <!-- Pages avec positions individuelles -->
           <div v-if="pageApplication === 'individual'" class="individual-selection">
-            <p class="individual-hint">
-              <i class="bi bi-info-circle-fill"></i>
-              Naviguez entre les pages et positionnez les éléments individuellement sur chaque page.
-              <br>
-              <small>Glissez-déposez le QR code et la signature pour les ajouter à une page.</small>
-            </p>
             <div class="individual-pages-list">
               <div 
                 v-for="page in totalPages" 
@@ -2484,9 +2478,9 @@ watch(() => props.preloadedPositions, (newVal) => {
 .size-option {
   flex: 1;
   padding: 10px 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(0, 102, 204, 0.3);
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.1);
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
   display: flex;
@@ -2497,6 +2491,8 @@ watch(() => props.preloadedPositions, (newVal) => {
   overflow: hidden;
   backdrop-filter: blur(2px);
   -webkit-backdrop-filter: blur(2px);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 102, 204, 0.15);
 }
 
 .size-option::before {
@@ -2511,10 +2507,10 @@ watch(() => props.preloadedPositions, (newVal) => {
 }
 
 .size-option:hover {
-  border-color: rgba(0, 102, 204, 0.3);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 102, 204, 0.15);
-  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(0, 102, 204, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.25);
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .size-option:hover::before {
@@ -2556,7 +2552,7 @@ watch(() => props.preloadedPositions, (newVal) => {
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: var(--text-dark);
+  color: var(--primary-blue);
   transition: color 0.3s ease;
 }
 
@@ -2573,8 +2569,8 @@ watch(() => props.preloadedPositions, (newVal) => {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-top: 16px;
-  padding-top: 16px;
+  margin-top: 4px;
+  padding-top: 8px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -2710,8 +2706,8 @@ watch(() => props.preloadedPositions, (newVal) => {
   -webkit-backdrop-filter: blur(15px) saturate(120%) !important;
   width: 90%;
   max-width: 1200px;
-  height: 120vh;
-  max-height: 1200px;
+  height: 112vh;
+  max-height: 1400px;
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
   box-shadow: 
@@ -2833,6 +2829,17 @@ watch(() => props.preloadedPositions, (newVal) => {
 @keyframes spinnerRotate {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalSlideUp {
+  to {
+    transform: translateY(0) scale(1);
+  }
 }
 
 .loading-text h5 {
