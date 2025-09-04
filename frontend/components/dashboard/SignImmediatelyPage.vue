@@ -17,11 +17,11 @@
               <h1 class="page-title">
                 <span class="title-main">Signature</span>
                 <span class="title-accent"> Immédiate</span>
-              </h1>
+            </h1>
               <p class="page-subtitle">
                 Signez vos documents rapidement et en toute sécurité avec votre certificat personnel
               </p>
-            </div>
+          </div>
           </div>
           <div class="header-bottom-row">
             <button @click="goBack" class="mobile-back-btn">
@@ -410,42 +410,41 @@
             </div>
           </div>
 
-                         <div class="summary-content">
+                                                  <div class="summary-content">
                <div class="summary-section">
-                                  <div class="info-grid">
-                   <div class="info-item">
-                     <span class="info-label">Nom du fichier</span>
-                     <span class="info-value">{{ currentSignBaseFile?.name || 'Document PDF' }}</span>
-            </div>
-                   <div class="info-item">
-                     <span class="info-label">Taille totale</span>
-                     <span class="info-value">{{ formatFileSize(uploadedFiles.reduce((total, file) => total + (file.size || 0), 0)) }}</span>
-          </div>
-                   <div class="info-item">
-                     <span class="info-label">Pages totales</span>
-                     <span class="info-value">{{ uploadedFiles.reduce((total, file) => total + (file.pages || 1), 0) }} page(s)</span>
-            </div>
-                   <div class="info-item">
-                     <span class="info-label">Format</span>
-                     <span class="info-value">PDF</span>
-            </div>
-          </div>
-        </div>
-        </div>
-      </div>
+                 <div class="documents-grid">
+                   <div v-for="(config, index) in Object.values(documentsConfiguration)" :key="index" class="document-item">
+                     <div class="document-header">
+                       <i class="bi bi-file-earmark-pdf-fill text-primary"></i>
+                       <span class="document-name" :title="config.file.name">{{ truncateFileName(config.file.name, 25) }}</span>
+                       <span class="document-pages">{{ config.file.pages || 1 }} page(s)</span>
+                     </div>
+                     <div class="document-details">
+                       <span class="detail-item">
+                         <strong>Taille:</strong> {{ formatFileSize(config.file.size) }}
+                       </span>
+                       <span class="detail-item">
+                         <strong>Mode:</strong> {{ getPositionModeLabel(config.positionMode) }}
+                       </span>
+                     </div>
+                   </div>
+                 </div>
+               </div>
+             </div>
+           </div>
 
           <!-- Résumé du positionnement -->
           <div class="summary-status-card">
             <div class="summary-header">
               <div class="summary-status-icon">
                 <i class="bi bi-geo-alt-fill"></i>
-              </div>
+        </div>
               <div class="summary-title">
                 <h6 class="mb-0">Positionnement des éléments</h6>
                 <span class="summary-subtitle" :class="isPositionConfigured ? 'text-success' : 'text-warning'">
                   {{ isPositionConfigured ? 'Éléments positionnés avec succès' : 'Aucun élément positionné' }}
                 </span>
-              </div>
+      </div>
               <div class="summary-status-badge">
                 <span class="badge" :class="isPositionConfigured ? 'bg-success' : 'bg-warning'">
                   {{ isPositionConfigured ? 'Prêt' : 'En attente' }}
@@ -453,34 +452,58 @@
               </div>
         </div>
 
-                         <div class="summary-content">
+                                                  <div class="summary-content">
           <div class="summary-section">
-                                 <div class="positioning-info">
-                  <div v-if="signatureData" class="positioning-item">
-                    <i class="bi bi-check-circle-fill text-success me-2"></i>
-                    <div class="positioning-details">
-                      <span class="positioning-title">Signature manuscrite</span>
-                      <span class="positioning-subtitle">Position: {{ positionData?.signature?.x || 'N/A' }}, {{ positionData?.signature?.y || 'N/A' }}</span>
+            <div class="positioning-grid">
+              <!-- Résumé par document -->
+              <div v-for="(config, index) in Object.values(documentsConfiguration)" :key="index" class="document-positioning">
+                <h6 class="document-title">
+                  <i class="bi bi-file-earmark-pdf-fill text-primary me-2"></i>
+                  <span :title="config.file.name">{{ truncateFileName(config.file.name, 25) }}</span>
+                </h6>
+                
+                <!-- QR Code -->
+                <div v-if="config.qrCode" class="positioning-item qr-item">
+                  <div class="positioning-icon">
+                    <i class="bi bi-qr-code text-success"></i>
+                  </div>
+                  <div class="positioning-details">
+                    <span class="positioning-title">QR Code de vérification</span>
+                    <div class="positioning-info-grid">
+                      <span class="info-label">Taille:</span>
+                      <span class="info-value">{{ config.qrCode.size }}</span>
+                      <span class="info-label">Mode:</span>
+                      <span class="info-value">{{ getPositionModeLabel(config.qrCode.mode) }}</span>
+                      <span class="info-label">Pages:</span>
+                      <span class="info-value">{{ formatPages(config.qrCode.pages) }}</span>
                     </div>
                   </div>
-                  <div v-if="positionData?.qrCode" class="positioning-item">
-                    <i class="bi bi-check-circle-fill text-success me-2"></i>
-                    <div class="positioning-details">
-                      <span class="positioning-title">QR code de vérification</span>
-                      <span class="positioning-subtitle">Taille: {{ positionData?.qrCode?.size || 'Moyenne' }} | Position: {{ positionData?.qrCode?.x || 'N/A' }}, {{ positionData?.qrCode?.y || 'N/A' }}</span>
-                    </div>
+                </div>
+                
+                <!-- Signature manuscrite -->
+                <div v-if="config.signature" class="positioning-item signature-item">
+                  <div class="positioning-icon">
+                    <i class="bi bi-pen-fill text-primary"></i>
                   </div>
-                  <div v-if="!signatureData && !positionData?.qrCode" class="positioning-item">
-                    <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
-                    <div class="positioning-details">
-                      <span class="positioning-title">Aucun élément positionné</span>
-                      <span class="positioning-subtitle">Veuillez configurer au moins une signature ou un QR code</span>
+                  <div class="positioning-details">
+                    <span class="positioning-title">Signature manuscrite</span>
+                    <div class="positioning-info-grid">
+                      <span class="info-label">Taille:</span>
+                      <span class="info-value">{{ config.signature.size }}%</span>
+                      <span class="info-label">Pages:</span>
+                      <span class="info-value">{{ formatPages(config.signature.pages) }}</span>
+                    </div>
+                    <!-- Aperçu de la signature -->
+                    <div class="signature-preview">
+                      <img :src="config.signature.imageUrl" alt="Signature" class="signature-thumbnail">
                     </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
+        </div>
+      </div>
 
           <!-- Résumé du certificat -->
           <div class="summary-status-card">
@@ -490,41 +513,49 @@
                 </div>
               <div class="summary-title">
                 <h6 class="mb-0">Certificat de signature</h6>
-                <span class="summary-subtitle text-success">
-                  Certificat valide et prêt
+                <span class="summary-subtitle" :class="certificateInfo ? 'text-success' : 'text-warning'">
+                  {{ certificateInfo ? 'Certificat valide et prêt' : 'Aucun certificat importé' }}
                 </span>
               </div>
               <div class="summary-status-badge">
-                <span class="badge bg-success">Valide</span>
+                <span class="badge" :class="certificateInfo ? 'bg-success' : 'bg-warning'">
+                  {{ certificateInfo ? 'Valide' : 'Manquant' }}
+                </span>
             </div>
           </div>
 
             <div class="summary-content">
           <div class="summary-section">
-                <h6 class="section-title">
-                  <i class="bi bi-person me-2"></i>
-                  Informations essentielles
-                </h6>
-                <div class="info-grid">
-                  <div class="info-item">
-                    <span class="info-label">Titulaire</span>
-                    <span class="info-value">{{ certificateInfo?.subject?.commonName || 'Emmanuel Dupont' }}</span>
+            <div v-if="certificateInfo" class="info-grid">
+              <div class="info-item">
+                <span class="info-label">Titulaire</span>
+                <span class="info-value">{{ certificateInfo.subject?.commonName || 'N/A' }}</span>
                 </div>
-                  <div class="info-item">
-                    <span class="info-label">Organisation</span>
-                    <span class="info-value">{{ certificateInfo?.subject?.organization || 'GVB Solutions' }}</span>
+              <div class="info-item">
+                <span class="info-label">Organisation</span>
+                <span class="info-value">{{ certificateInfo.subject?.organization || 'N/A' }}</span>
                 </div>
-                  <div class="info-item">
-                    <span class="info-label">Numéro de série</span>
-                    <span class="info-value serial-number">{{ certificateInfo?.serialNumber || '12:34:56:78:9A:BC:DE:F0' }}</span>
+              <div class="info-item">
+                <span class="info-label">Numéro de série</span>
+                <span class="info-value serial-number">{{ certificateInfo.serialNumber || 'N/A' }}</span>
               </div>
-                  <div class="info-item">
-                    <span class="info-label">Validité</span>
-                    <span class="info-value text-success">{{ certificateInfo?.validity?.isValid ? 'Valide' : 'Jusqu\'au 15/01/2025' }}</span>
+              <div class="info-item">
+                <span class="info-label">Validité</span>
+                <span class="info-value" :class="certificateInfo.validity?.isValid ? 'text-success' : 'text-danger'">
+                  {{ certificateInfo.validity?.isValid ? 'Valide' : 'Expiré' }}
+                </span>
             </div>
           </div>
-        </div>
+                        <div v-else class="no-certificate-message">
+              <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+              <span>Aucun certificat n'est disponible. Veuillez importer un certificat valide pour procéder à la signature.</span>
+              <button @click="refreshCertificate" class="refresh-btn">
+                <i class="bi bi-arrow-clockwise"></i>
+                Actualiser
+              </button>
             </div>
+            </div>
+        </div>
             </div>
           </div>
 
@@ -569,6 +600,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, defineEmits } from 'vue'
 import SignBase from './SignBase.vue'
+import { CertificateService } from '../../services/CertificateService.js'
 
 // Émissions
 const emit = defineEmits(['go-back'])
@@ -616,6 +648,10 @@ const allDocumentsProcessed = computed(() => {
   return processedDocuments.value.size === uploadedFiles.value.length
 })
 
+// Structure pour stocker la configuration complète de tous les documents
+const documentsConfiguration = ref({}) // Stockage des configurations par document
+const currentDocumentConfig = ref(null) // Configuration du document en cours
+
 // Propriétés pour la jauge circulaire
 const circumference = computed(() => 2 * Math.PI * 52) // 2πr avec r=52
 const strokeDashoffset = computed(() => {
@@ -630,17 +666,11 @@ const stepperStrokeDashoffset = computed(() => {
   return stepperCircumference.value * (1 - progress)
 })
 
-// Données de test pour le certificat dans l'étape 4
-const certificateInfo = ref({
-  subject: {
-    commonName: 'Emmanuel Dupont',
-    organization: 'GVB Solutions'
-  },
-  serialNumber: '12:34:56:78:9A:BC:DE:F0',
-  validity: {
-    isValid: true
-  }
-})
+// Service de gestion des certificats
+const certificateService = new CertificateService()
+
+// Données du certificat depuis la session storage
+const certificateInfo = ref(null)
 
 // Références DOM
 const fileInput = ref(null)
@@ -687,6 +717,13 @@ function nextStep() {
       isPositionConfigured.value = false
       positionData.value = null
       signatureData.value = null
+      documentsConfiguration.value = {}
+      currentDocumentConfig.value = null
+    }
+    
+    // Préparer les données finales quand on passe à l'étape 4
+    if (currentStep.value === 4) {
+      prepareFinalConfiguration()
     }
   }
 }
@@ -885,6 +922,34 @@ function handlePositionConfirmed(data) {
   positionData.value = data
   isPositionConfigured.value = true
   
+  // Collecter toutes les informations de configuration du document actuel
+  const currentFile = uploadedFiles.value[activeSignBaseTabIndex.value]
+  const documentConfig = {
+    file: currentFile,
+    qrCode: {
+      size: data.qr?.size || 'Moyenne',
+      pages: data.qr?.pages || [],
+      positions: data.qr?.positions || {},
+      mode: data.qr?.mode || 'all',
+      x: data.qr?.x || null,
+      y: data.qr?.y || null
+    },
+    signature: data.signature ? {
+      imageUrl: data.signature.imageUrl,
+      size: data.signature.size,
+      pages: data.signature.pages,
+      positions: data.signature.positions,
+      x: data.signature.x || null,
+      y: data.signature.y || null
+    } : null,
+    positionMode: data.mode || 'all',
+    timestamp: new Date().toISOString()
+  }
+  
+  // Stocker la configuration du document actuel
+  documentsConfiguration.value[activeSignBaseTabIndex.value] = documentConfig
+  currentDocumentConfig.value = documentConfig
+  
   // Marquer le document actuel comme traité
   processedDocuments.value.add(activeSignBaseTabIndex.value)
   
@@ -907,6 +972,61 @@ function moveToNextDocument() {
     // Tous les documents ont été traités
     console.log('Tous les documents ont été traités')
   }
+}
+
+// Fonction pour préparer la configuration finale de tous les documents
+function prepareFinalConfiguration() {
+  console.log('Préparation de la configuration finale...')
+  console.log('Configuration des documents:', documentsConfiguration.value)
+  
+  // Vérifier que tous les documents ont été configurés
+  const allConfigured = uploadedFiles.value.every((_, index) => 
+    documentsConfiguration.value[index] && processedDocuments.value.has(index)
+  )
+  
+  if (!allConfigured) {
+    console.warn('Certains documents ne sont pas encore configurés')
+  }
+}
+
+// Fonction pour formater le label du mode de positionnement
+function getPositionModeLabel(mode) {
+  const labels = {
+    'all': 'Toutes les pages',
+    'current': 'Page actuelle',
+    'custom': 'Pages sélectionnées',
+    'individual': 'Pages individuelles'
+  }
+  return labels[mode] || mode
+}
+
+// Fonction pour formater l'affichage des pages
+function formatPages(pages) {
+  if (pages === 'all') return 'Toutes les pages'
+  if (Array.isArray(pages)) {
+    if (pages.length === 1) return `Page ${pages[0]}`
+    return `Pages ${pages.join(', ')}`
+  }
+  return 'Page spécifique'
+}
+
+// Fonction pour rafraîchir les informations du certificat
+function refreshCertificate() {
+  console.log('Rafraîchissement des informations du certificat...')
+  certificateInfo.value = certificateService.getCertificateInfo()
+  console.log('Certificat rafraîchi:', certificateInfo.value)
+}
+
+// Fonction pour tronquer les noms de fichiers trop longs
+function truncateFileName(fileName, maxLength) {
+  if (!fileName) return 'Document'
+  if (fileName.length <= maxLength) return fileName
+  
+  const extension = fileName.split('.').pop()
+  const nameWithoutExt = fileName.substring(0, fileName.lastIndexOf('.'))
+  const truncatedName = nameWithoutExt.substring(0, maxLength - 3) + '...'
+  
+  return extension ? `${truncatedName}.${extension}` : truncatedName
 }
 
 // Debug: Log du fichier actuel pour SignBase
@@ -969,6 +1089,28 @@ function proceedToSignature() {
 // Cycle de vie
 onMounted(() => {
   console.log('SignImmediatelyPage monté')
+  
+  // Charger les informations du certificat via le service
+  certificateService.initialize()
+  certificateInfo.value = certificateService.getCertificateInfo()
+  console.log('Certificat chargé via le service:', certificateInfo.value)
+  
+  // Surveiller les changements de certificat (si l'utilisateur en importe un nouveau)
+  if (process.client) {
+    // Vérifier périodiquement les changements
+    const checkCertificateInterval = setInterval(() => {
+      const currentCert = certificateService.getCertificateInfo()
+      if (currentCert !== certificateInfo.value) {
+        console.log('Changement de certificat détecté, mise à jour...')
+        certificateInfo.value = currentCert
+      }
+    }, 2000) // Vérifier toutes les 2 secondes
+    
+    // Nettoyer l'intervalle lors du démontage
+    onUnmounted(() => {
+      clearInterval(checkCertificateInterval)
+    })
+  }
 })
 
 onUnmounted(() => {
@@ -2762,6 +2904,202 @@ onUnmounted(() => {
     flex-direction: column;
     text-align: center;
     gap: 16px;
+  }
+}
+
+/* Styles pour les nouveaux éléments de l'étape 4 */
+.documents-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  max-width: 100%;
+}
+
+.positioning-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  max-width: 100%;
+}
+
+.document-item {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 1rem;
+  backdrop-filter: blur(10px);
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.document-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.document-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+.document-pages {
+  background: var(--primary-color);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.document-details {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.detail-item {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.detail-item strong {
+  color: var(--text-primary);
+}
+
+.positioning-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.document-positioning {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 1rem;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+}
+
+.document-title {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.positioning-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.positioning-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.positioning-details {
+  flex: 1;
+}
+
+.positioning-title {
+  display: block;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.positioning-info-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem 1rem;
+  align-items: center;
+}
+
+.info-label {
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.info-value {
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.signature-preview {
+  margin-top: 0.75rem;
+}
+
+.signature-thumbnail {
+  width: 80px;
+  height: 40px;
+  object-fit: contain;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  background: white;
+}
+
+.no-certificate-message {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(255, 193, 7, 0.1);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  border-radius: 8px;
+  color: var(--warning-color);
+  font-size: 0.9rem;
+}
+
+.refresh-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--warning-color);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: auto;
+}
+
+.refresh-btn:hover {
+  background: #e0a800;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+  .documents-grid,
+  .positioning-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
   }
 }
 
