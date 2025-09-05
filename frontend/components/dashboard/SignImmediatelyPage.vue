@@ -570,115 +570,114 @@
             <i v-if="!isSigning" class="bi bi-lightning-charge-fill"></i>
             <i v-else class="bi bi-arrow-clockwise spin"></i>
           </button>
-          </div>
         </div>
       </div>
 
-    <!-- Étape 5: Téléchargement des documents signés -->
+      <!-- Étape 5: Téléchargement des documents signés -->
       <div v-if="currentStep === 5" class="step-content" :key="currentStep">
         <div class="step-header">
           <h2>
-          <i class="bi bi-download"></i>
-          Télécharger vos documents signés
-          </h2>
-        <p>Vos documents ont été signés avec succès. Téléchargez-les individuellement ou en lot.</p>
-        </div>
-
-      <div class="download-section">
-        <!-- Cartes de progression pour chaque document -->
-        <div class="documents-grid">
-          <div 
-            v-for="(result, index) in signatureResults" 
-            :key="index"
-            class="document-card"
-          >
-            <!-- En-tête de la carte -->
-            <div class="document-card-header">
-            <div class="document-info">
-                <div class="document-icon">
-                <i class="bi bi-file-earmark-pdf-fill"></i>
-                </div>
-                <div class="document-details">
-                  <h6 class="document-name">{{ result.fileName }}</h6>
-                  <span class="document-size">{{ formatFileSize(result.fileSize || 0) }}</span>
-              </div>
-            </div>
-              <div class="document-status">
-                <span v-if="result.signed" class="status-badge signed">
-                  <i class="bi bi-check-circle-fill"></i>
-                  Signé
-                </span>
-                <span v-else class="status-badge processing">
-                  <i class="bi bi-arrow-clockwise spin"></i>
-                  En cours
-                </span>
-              </div>
-          </div>
-
-            <!-- Contenu de la carte -->
-            <div class="document-card-content">
-              <!-- Barre de progression -->
-              <div class="progress-section">
-                <div class="progress-info">
-                  <span class="progress-label">Progression de signature</span>
-                  <span class="progress-percentage">{{ documentProgress[index] || 0 }}%</span>
-                </div>
-                <div class="progress-bar">
-                  <div 
-                    class="progress-fill" 
-                    :style="{ width: `${documentProgress[index] || 0}%` }"
-                  ></div>
-            </div>
-          </div>
-
-              <!-- Informations de signature -->
-              <div v-if="result.signed" class="signature-info">
-                <div class="info-item">
-                  <i class="bi bi-fingerprint"></i>
-                  <span>ID: {{ result.documentId?.slice(0, 8) }}...</span>
-                </div>
-                <div class="info-item">
-                  <i class="bi bi-clock"></i>
-                  <span>{{ result.executionTime }}s</span>
-            </div>
-          </div>
-        </div>
-
-            <!-- Actions de la carte -->
-            <div class="document-card-actions">
-              <button 
-                @click="downloadSingleDocument(result)"
-                :class="['download-btn', { 'disabled': !result.signed }]"
-                :disabled="!result.signed"
-              >
-                <i :class="result.signed ? 'bi bi-download' : 'bi bi-hourglass-split'"></i>
-                <span>{{ result.signed ? 'Télécharger' : 'En cours...' }}</span>
-              </button>
-            </div>
-            </div>
-          </div>
-
-        <!-- Actions globales -->
-        <div class="global-actions">
-          <button 
-            v-if="allDocumentsSigned"
-            @click="downloadAllDocuments"
-            class="download-all-btn"
-          >
             <i class="bi bi-download"></i>
-            <span>Télécharger tout (ZIP)</span>
-          </button>
-          <button 
-            @click="goBackToDocuments"
-            class="action-btn secondary"
-          >
+            Télécharger vos documents signés
+          </h2>
+          <p>Vos documents ont été signés avec succès. Téléchargez-les individuellement ou en lot.</p>
+        </div>
+
+        <div class="download-section">
+          <!-- Cartes de progression pour chaque document -->
+          <div class="documents-grid">
+            <div 
+              v-for="(result, index) in signatureResults" 
+              :key="index"
+              class="document-card"
+            >
+              <!-- En-tête de la carte -->
+              <div class="document-card-header">
+                <div class="document-info">
+                  <div class="document-icon">
+                    <i class="bi bi-file-earmark-pdf-fill"></i>
+                  </div>
+                  <div class="document-details">
+                    <h6 class="document-name">{{ result.fileName }}</h6>
+                    <span class="document-size">{{ formatFileSize(result.fileSize || 0) }}</span>
+                  </div>
+                </div>
+                <div class="document-status">
+                  <span v-if="result.signed" class="status-badge signed">
+                    <i class="bi bi-check-circle-fill"></i>
+                    Signé
+                  </span>
+                  <span v-else class="status-badge processing">
+                    <i class="bi bi-arrow-clockwise spin"></i>
+                    En cours
+                  </span>
+                </div>
+              </div>
+
+              <!-- Contenu de la carte -->
+              <div class="document-card-content">
+                <!-- Barre de progression -->
+                <div class="progress-section">
+                  <div class="progress-info">
+                    <span class="progress-label">Progression de signature</span>
+                    <span class="progress-percentage">{{ documentProgress[index] || 0 }}%</span>
+                  </div>
+                  <div class="progress-bar">
+                    <div 
+                      class="progress-fill" 
+                      :style="{ width: `${documentProgress[index] || 0}%` }"
+                    ></div>
+                  </div>
+                </div>
+
+                <!-- Informations de signature -->
+                <div v-if="result.signed" class="signature-info">
+                  <div class="info-item">
+                    <i class="bi bi-fingerprint"></i>
+                    <span>ID: {{ result.documentId?.slice(0, 8) }}...</span>
+                  </div>
+                  <div class="info-item">
+                    <i class="bi bi-clock"></i>
+                    <span>{{ result.executionTime }}s</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Actions de la carte -->
+              <div class="document-card-actions">
+                <button 
+                  @click="downloadSingleDocument(result)"
+                  :class="['download-btn', { 'disabled': !result.signed }]"
+                  :disabled="!result.signed"
+                >
+                  <i :class="result.signed ? 'bi bi-download' : 'bi bi-hourglass-split'"></i>
+                  <span>{{ result.signed ? 'Télécharger' : 'En cours...' }}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions globales -->
+          <div class="global-actions">
+            <button 
+              v-if="allDocumentsSigned"
+              @click="downloadAllDocuments"
+              class="download-all-btn"
+            >
+              <i class="bi bi-download"></i>
+              <span>Télécharger tout (ZIP)</span>
+            </button>
+            <button 
+              @click="goBackToDocuments"
+              class="action-btn secondary"
+            >
               <i class="bi bi-arrow-left"></i>
-            <span>Retour aux documents</span>
+              <span>Retour aux documents</span>
             </button>
           </div>
+        </div>
       </div>
     </div>
-  </div>
 
   <!-- Aperçu de l'onglet survolé -->
   <div v-if="hoveredTabIndex >= 0" class="tab-preview" :style="previewStyle">
@@ -702,6 +701,7 @@
       </div>
     </div>
   </div>
+</div>
 </template>
 
 <script setup>
@@ -1643,17 +1643,6 @@ function downloadAllDocuments() {
       
       // Ajouter le PDF signé au ZIP
       zip.file(signedFileName, documentData)
-      
-      // Ajouter un fichier de métadonnées pour chaque document
-      const metadata = result.zipData?.metadata || {
-        documentId: result.documentId,
-        originalFileName: result.fileName,
-        signedFileName: signedFileName,
-        executionTime: result.executionTime,
-        timestamp: new Date().toISOString()
-      }
-      
-      zip.file(`${fileName}_métadonnées.json`, JSON.stringify(metadata, null, 2))
     })
     
     // Générer et télécharger le ZIP
@@ -3785,9 +3774,11 @@ onUnmounted(() => {
 
 .documents-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 1.5rem;
   margin-bottom: 2rem;
+  width: 100%;
+  justify-items: center;
 }
 
 .document-card {
@@ -3799,6 +3790,9 @@ onUnmounted(() => {
   padding: 1.5rem;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   position: relative;
+  width: 100%;
+  max-width: 500px;
+  text-align: center;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
@@ -3838,6 +3832,7 @@ onUnmounted(() => {
   gap: 0.75rem;
   flex: 1;
   min-width: 0;
+  justify-content: center;
 }
 
 .document-icon {
@@ -3905,6 +3900,7 @@ onUnmounted(() => {
 
 .document-card-content {
   margin-bottom: 1.5rem;
+  text-align: center;
 }
 
 .progress-section {
@@ -3943,7 +3939,7 @@ onUnmounted(() => {
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--primary-blue), #4ade80);
+  background: linear-gradient(90deg, #3490dc, #1e40af);
   border-radius: 4px;
   transition: width 0.3s ease;
   position: relative;
@@ -3973,6 +3969,7 @@ onUnmounted(() => {
   display: flex;
   gap: 1rem;
   flex-wrap: wrap;
+  justify-content: center;
 }
 
 .info-item {
@@ -3980,22 +3977,39 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.5rem;
   font-size: 0.8rem;
-  color: #6c757d;
+  color: var(--text-dark);
   font-family: 'Raleway', sans-serif;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.info-item:hover {
+  background: rgba(255, 255, 255, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .info-item i {
   color: var(--primary-blue);
+  font-size: 0.9rem;
 }
 
 .document-card-actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
 }
 
 .download-btn {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   padding: 0.6rem 1.2rem;
   background: var(--primary-blue);
@@ -4038,7 +4052,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.75rem;
   padding: 0.8rem 2rem;
-  background: linear-gradient(135deg, var(--primary-blue), #4ade80);
+  background: var(--primary-blue);
   color: white;
   border: none;
   border-radius: 12px;
@@ -4113,8 +4127,11 @@ onUnmounted(() => {
 /* Responsive pour les cartes de téléchargement */
 @media (max-width: 1024px) {
   .documents-grid {
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
     gap: 1rem;
+  }
+  
+  .document-card {
+    max-width: 450px;
   }
 }
 
