@@ -418,7 +418,7 @@
                        <i class="bi bi-file-earmark-pdf-fill text-primary"></i>
                        <span class="document-name" :title="config.file.name">{{ truncateFileName(config.file.name, 25) }}</span>
                        <span class="document-pages">{{ config.file.pages || 1 }} page(s)</span>
-                     </div>
+            </div>
                      <div class="document-details">
                        <span class="detail-item">
                          <strong>Taille:</strong> {{ formatFileSize(config.file.size) }}
@@ -426,12 +426,12 @@
                        <span class="detail-item">
                          <strong>Mode:</strong> {{ getPositionModeLabel(config.positionMode) }}
                        </span>
-                     </div>
-                   </div>
+          </div>
+            </div>
                  </div>
-               </div>
-             </div>
-           </div>
+            </div>
+          </div>
+        </div>
 
           <!-- Résumé du positionnement -->
           <div class="summary-status-card">
@@ -466,7 +466,7 @@
                 <div v-if="config.qrCode" class="positioning-item qr-item">
                   <div class="positioning-icon">
                     <i class="bi bi-qr-code text-success"></i>
-                  </div>
+                </div>
                   <div class="positioning-details">
                     <span class="positioning-title">QR Code de vérification</span>
                     <div class="positioning-info-grid">
@@ -476,10 +476,10 @@
                       <span class="info-value">{{ getPositionModeLabel(config.qrCode.mode) }}</span>
                       <span class="info-label">Pages:</span>
                       <span class="info-value">{{ formatPages(config.qrCode.pages) }}</span>
-                    </div>
-                  </div>
-                </div>
-                
+              </div>
+            </div>
+          </div>
+
                 <!-- Signature manuscrite -->
                 <div v-if="config.signature" class="positioning-item signature-item">
                   <div class="positioning-icon">
@@ -553,7 +553,7 @@
                 <i class="bi bi-arrow-clockwise"></i>
                 Actualiser
               </button>
-            </div>
+        </div>
             </div>
         </div>
             </div>
@@ -564,9 +564,11 @@
               <i class="bi bi-arrow-left"></i>
               <span>Retour</span>
             </button>
-          <button @click="proceedToSignature" class="action-btn primary">
-              <span>Signer le document</span>
-            <i class="bi bi-lightning-charge-fill"></i>
+          <button @click="proceedToSignature" class="action-btn primary" :disabled="isSigning">
+            <span v-if="!isSigning">Signer le document</span>
+            <span v-else>{{ signatureProgress }}</span>
+            <i v-if="!isSigning" class="bi bi-lightning-charge-fill"></i>
+            <i v-else class="bi bi-arrow-clockwise spin"></i>
             </button>
           </div>
       </div>
@@ -601,6 +603,9 @@
 import { ref, computed, onMounted, onUnmounted, defineEmits } from 'vue'
 import SignBase from './SignBase.vue'
 import { CertificateService } from '../../services/CertificateService.js'
+import { SignatureService } from '../../services/SignatureService.js'
+import JSZip from 'jszip'
+import forge from 'node-forge'
 
 // Émissions
 const emit = defineEmits(['go-back'])
@@ -668,6 +673,13 @@ const stepperStrokeDashoffset = computed(() => {
 
 // Service de gestion des certificats
 const certificateService = new CertificateService()
+
+// Service de signature numérique
+const signatureService = new SignatureService()
+
+// État de la signature
+const isSigning = ref(false)
+const signatureProgress = ref('')
 
 // Données du certificat depuis la session storage
 const certificateInfo = ref(null)
@@ -924,23 +936,32 @@ function handlePositionConfirmed(data) {
   
   // Collecter toutes les informations de configuration du document actuel
   const currentFile = uploadedFiles.value[activeSignBaseTabIndex.value]
+  
+  // Récupérer les positions par défaut ou spécifiques selon le mode
+  let defaultX = 85, defaultY = 10
+  if (data.qr?.positions?.default) {
+    defaultX = data.qr.positions.default.x
+    defaultY = data.qr.positions.default.y
+  }
+  
   const documentConfig = {
     file: currentFile,
     qrCode: {
-      size: data.qr?.size || 'Moyenne',
-      pages: data.qr?.pages || [],
+      size: data.qr?.size || 'medium',
+      pages: data.qr?.pages || 'all',
       positions: data.qr?.positions || {},
       mode: data.qr?.mode || 'all',
-      x: data.qr?.x || null,
-      y: data.qr?.y || null
+      x: defaultX,  // Position par défaut
+      y: defaultY   // Position par défaut
     },
     signature: data.signature ? {
       imageUrl: data.signature.imageUrl,
       size: data.signature.size,
       pages: data.signature.pages,
       positions: data.signature.positions,
-      x: data.signature.x || null,
-      y: data.signature.y || null
+      // Récupérer les positions depuis la structure correcte
+      x: data.signature.positions?.default?.x || data.signature.positions?.[currentPage.value]?.x || 50,
+      y: data.signature.positions?.default?.y || data.signature.positions?.[currentPage.value]?.y || 50
     } : null,
     positionMode: data.mode || 'all',
     timestamp: new Date().toISOString()
@@ -949,6 +970,30 @@ function handlePositionConfirmed(data) {
   // Stocker la configuration du document actuel
   documentsConfiguration.value[activeSignBaseTabIndex.value] = documentConfig
   currentDocumentConfig.value = documentConfig
+  
+  // Log pour déboguer les positions
+  console.log('Configuration QR Code stockée:', {
+    size: documentConfig.qrCode.size,
+    pages: documentConfig.qrCode.pages,
+    positions: documentConfig.qrCode.positions,
+    mode: documentConfig.qrCode.mode,
+    x: documentConfig.qrCode.x,
+    y: documentConfig.qrCode.y
+  })
+  
+  // Log pour déboguer la signature
+  if (documentConfig.signature) {
+    console.log('Configuration Signature stockée:', {
+      imageUrl: documentConfig.signature.imageUrl,
+      size: documentConfig.signature.size,
+      pages: documentConfig.signature.pages,
+      positions: documentConfig.signature.positions,
+      x: documentConfig.signature.x,
+      y: documentConfig.signature.y
+    })
+  } else {
+    console.log('Aucune signature configurée')
+  }
   
   // Marquer le document actuel comme traité
   processedDocuments.value.add(activeSignBaseTabIndex.value)
@@ -1074,16 +1119,301 @@ const canProceedToNext = computed(() => {
   }
 })
 
+// Fonction utilitaire pour convertir un File en data URL base64
+async function convertFileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onloadend = () => resolve(reader.result)
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
+// Fonction utilitaire pour convertir un Blob URL en data URL base64
+async function convertBlobUrlToDataUrl(blobUrl) {
+  return new Promise((resolve, reject) => {
+    fetch(blobUrl)
+      .then(response => response.blob())
+      .then(blob => {
+        const reader = new FileReader()
+        reader.onloadend = () => resolve(reader.result)
+        reader.onerror = reject
+        reader.readAsDataURL(blob)
+      })
+      .catch(reject)
+  })
+}
+
 // Fonction pour procéder à la signature
-function proceedToSignature() {
-  // TODO: Implémenter la logique de signature finale
-  console.log('Procéder à la signature finale...')
-  console.log('Fichier PDF:', currentSignBaseFile.value)
-  console.log('Position:', positionData.value)
-  console.log('Signature:', signatureData.value)
-  
-  // Pour l'instant, afficher un message
-  alert('Fonctionnalité de signature finale en cours d\'implémentation.')
+async function proceedToSignature() {
+  try {
+    // Activer l'indicateur de chargement
+    isSigning.value = true
+    signatureProgress.value = 'Vérification des prérequis...'
+    
+    console.log('=== DÉBUT DE LA SIGNATURE FINALE ===')
+    
+    // Vérifier que le certificat est disponible et valide
+    if (!certificateInfo.value) {
+      throw new Error('Aucun certificat disponible. Veuillez importer un certificat valide.')
+    }
+    
+    if (!certificateService.canUseCertificate()) {
+      throw new Error('Le certificat n\'est pas valide ou a expiré. Veuillez importer un nouveau certificat.')
+    }
+    
+    // Vérifier que des documents ont été configurés
+    if (Object.keys(documentsConfiguration.value).length === 0) {
+      throw new Error('Aucun document configuré pour la signature.')
+    }
+    
+    signatureProgress.value = 'Préparation des documents...'
+    console.log('Vérifications préliminaires passées')
+    console.log('Documents configurés:', documentsConfiguration.value)
+    
+    // Récupérer les clés du certificat
+    const privateKeyPem = certificateService.getPrivateKeyPem()
+    const publicKeyPem = certificateService.getPublicKeyPem()
+    
+    console.log('Clé privée PEM récupérée:', privateKeyPem ? 'OUI' : 'NON')
+    console.log('Clé publique PEM récupérée:', publicKeyPem ? 'OUI' : 'NON')
+    
+    if (!privateKeyPem || !publicKeyPem) {
+      throw new Error('Impossible de récupérer les clés du certificat.')
+    }
+    
+    console.log('Clés du certificat récupérées')
+    console.log('Longueur clé privée PEM:', privateKeyPem.length)
+    console.log('Longueur clé publique PEM:', publicKeyPem.length)
+    
+    // Convertir les clés PEM en objets node-forge
+    console.log('Conversion de la clé privée...')
+    const privateKey = forge.pki.privateKeyFromPem(privateKeyPem)
+    console.log('Clé privée convertie:', privateKey ? 'OUI' : 'NON')
+    
+    console.log('Conversion de la clé publique...')
+    const publicKey = forge.pki.publicKeyFromPem(publicKeyPem)
+    console.log('Clé publique convertie:', publicKey ? 'OUI' : 'NON')
+    
+    console.log('Clés converties en objets node-forge')
+    
+    // Traiter chaque document configuré
+    const signatureResults = []
+    const totalDocuments = Object.keys(documentsConfiguration.value).length
+    
+    for (const [index, config] of Object.entries(documentsConfiguration.value)) {
+      const documentNumber = parseInt(index) + 1
+      signatureProgress.value = `Signature du document ${documentNumber}/${totalDocuments}...`
+      
+      console.log(`\n--- Traitement du document ${documentNumber} ---`)
+      console.log('Configuration:', config)
+      
+      // Récupérer le fichier PDF original
+      const file = config.file
+      if (!file) {
+        console.warn(`Document ${index} sans fichier, passage au suivant`)
+        continue
+      }
+      
+      // Utiliser directement les données du fichier si disponibles
+      let documentData
+      if (file.dataUrl) {
+        // Convertir data URL en ArrayBuffer
+        const base64Data = file.dataUrl.split(',')[1]
+        const binaryString = atob(base64Data)
+        const bytes = new Uint8Array(binaryString.length)
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i)
+        }
+        documentData = bytes.buffer
+      } else if (file.blob) {
+        // Convertir Blob en ArrayBuffer
+        documentData = await file.blob.arrayBuffer()
+      } else if (file.url) {
+        // Fallback: convertir l'URL en ArrayBuffer
+        const response = await fetch(file.url)
+        documentData = await response.arrayBuffer()
+      } else {
+        console.warn(`Document ${index} sans données, passage au suivant`)
+        continue
+      }
+      
+      console.log(`Document ${index} chargé, taille: ${documentData.byteLength} octets`)
+      console.log('Type de documentData:', typeof documentData)
+      console.log('Instance de ArrayBuffer:', documentData instanceof ArrayBuffer)
+      console.log('Instance de Uint8Array:', documentData instanceof Uint8Array)
+      
+              // Préparer les métadonnées pour la signature
+        let processedSignatureImage = null
+        
+        // Traiter l'image de signature si elle existe
+        if (config.signature && (config.signature.imageUrl || signatureData.value)) {
+          let signatureImage = null
+          
+          // Priorité au File original stocké dans signatureData.value
+          if (signatureData.value) {
+            console.log('Utilisation du File original pour l\'image de signature')
+            try {
+              signatureImage = await convertFileToDataUrl(signatureData.value)
+              console.log('File converti en data URL avec succès:', signatureImage.substring(0, 100) + '...')
+            } catch (error) {
+              console.error('Erreur lors de la conversion du File:', error)
+              processedSignatureImage = null
+              return // Arrêter le traitement si la conversion échoue
+            }
+          }
+          // Fallback sur l'URL si pas de File original
+          else if (config.signature.imageUrl) {
+            signatureImage = config.signature.imageUrl
+            
+            console.log('DEBUG SIGNATURE IMAGE - État initial:', {
+              'image_exists': !!signatureImage,
+              'image_type': typeof signatureImage,
+              'image_length': signatureImage?.length || 0,
+              'image_starts_with_data': signatureImage?.startsWith('data:image'),
+              'is_blob_url': signatureImage?.startsWith('blob:'),
+              'image_preview': signatureImage?.substring(0, 100) + '...'
+            })
+            
+            // Si c'est un Blob URL, le convertir en data URL base64
+            if (signatureImage && signatureImage.startsWith('blob:')) {
+              console.log('Conversion du Blob URL en data URL base64...')
+              try {
+                signatureImage = await convertBlobUrlToDataUrl(signatureImage)
+                console.log('Blob URL converti avec succès:', signatureImage.substring(0, 100) + '...')
+              } catch (error) {
+                console.error('Erreur lors de la conversion du Blob URL:', error)
+                processedSignatureImage = null
+                return // Arrêter le traitement si la conversion échoue
+              }
+            }
+            // S'assurer que l'image est au bon format (comme dans SignWithTemplateMultiple.vue)
+            else if (signatureImage && !signatureImage.startsWith('data:image')) {
+              console.warn('Format d\'image incorrect, tentative de correction')
+              let imageType = 'png'
+              if (signatureImage.startsWith('/9j/')) {
+                imageType = 'jpeg'
+              }
+              signatureImage = `data:image/${imageType};base64,${signatureImage}`
+              console.log('Image corrigée:', signatureImage.substring(0, 100) + '...')
+            }
+          }
+          
+          processedSignatureImage = signatureImage
+        }
+        
+        const metadata = {
+          qr_position: {
+            x: config.qrCode?.x || 85,
+            y: config.qrCode?.y || 10,
+            size: config.qrCode?.size || 'medium',
+            pages: config.qrCode?.pages || 'all',
+            mode: config.qrCode?.mode || 'all',
+            positions: config.qrCode?.positions || {}
+          },
+          signature_position: config.signature && processedSignatureImage ? {
+            signature_image: processedSignatureImage,
+            positions: config.signature.positions || {},
+            pages: config.signature.pages || 'all',
+          signature_size: config.signature.size || 50
+        } : null
+      }
+      
+      console.log('Métadonnées préparées:', metadata)
+      console.log('QR Code - Taille configurée:', config.qrCode?.size)
+      console.log('QR Code - Positions:', config.qrCode?.positions)
+      if (config.signature) {
+        console.log('Signature - Taille configurée:', config.signature?.size)
+        console.log('Signature - Pages configurées:', config.signature?.pages)
+        console.log('Signature - Positions:', config.signature?.positions)
+      }
+      
+      // Signer le document
+      console.log(`Signature du document ${index}...`)
+      const result = await signatureService.signDocumentComplete(
+        documentData,
+        privateKey,
+        publicKey,
+        metadata
+      )
+      
+      if (result.success) {
+        console.log(`Document ${index} signé avec succès!`)
+        console.log(`ID: ${result.documentId}`)
+        console.log(`Hash: ${result.originalHash}`)
+        console.log(`Temps: ${result.executionTime}s`)
+        
+        // Ajouter le résultat à la liste
+        signatureResults.push({
+          documentIndex: parseInt(index),
+          fileName: file.name,
+          documentId: result.documentId,
+          originalHash: result.originalHash,
+          signature: result.signature,
+          publicKeyPem: result.publicKeyPem,
+          signedDocument: result.signedDocument,
+          timestamp: result.timestamp
+        })
+      } else {
+        throw new Error(`Échec de la signature du document ${index}`)
+      }
+    }
+    
+    // Tous les documents ont été signés avec succès
+    console.log('\n=== SIGNATURE TERMINÉE AVEC SUCCÈS ===')
+    console.log(`${signatureResults.length} document(s) signé(s)`)
+    
+    signatureProgress.value = 'Création du fichier ZIP...'
+    
+    // Créer un fichier ZIP avec tous les documents signés
+    const zip = new JSZip()
+    
+    signatureResults.forEach((result, index) => {
+      const fileName = result.fileName.replace('.pdf', '') || `document_${index + 1}`
+      const signedFileName = `${fileName}_signé_${result.documentId}.pdf`
+      
+      zip.file(signedFileName, result.signedDocument)
+      
+      // Ajouter un fichier de métadonnées
+      const metadata = {
+        documentId: result.documentId,
+        originalHash: result.originalHash,
+        signature: result.signature,
+        publicKeyPem: result.publicKeyPem,
+        timestamp: result.timestamp,
+        originalFileName: result.fileName
+      }
+      
+      zip.file(`${fileName}_metadata.json`, JSON.stringify(metadata, null, 2))
+    })
+    
+    // Générer le ZIP
+    const zipBlob = await zip.generateAsync({ type: 'blob' })
+    
+    // Télécharger le ZIP
+    const zipUrl = URL.createObjectURL(zipBlob)
+    const a = document.createElement('a')
+    a.href = zipUrl
+    a.download = `documents_signés_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.zip`
+    a.click()
+    
+    // Nettoyer
+    URL.revokeObjectURL(zipUrl)
+    
+    // Afficher un message de succès
+    alert(`Signature terminée avec succès !\n${signatureResults.length} document(s) signé(s) et téléchargé(s).`)
+    
+    // Rediriger vers la page des documents ou autre action
+    // emit('go-back')
+    
+  } catch (error) {
+    console.error('Erreur lors de la signature:', error)
+    alert(`Erreur lors de la signature: ${error.message}`)
+  } finally {
+    // Désactiver l'indicateur de chargement
+    isSigning.value = false
+    signatureProgress.value = ''
+  }
 }
 
 // Cycle de vie
@@ -1094,6 +1424,9 @@ onMounted(() => {
   certificateService.initialize()
   certificateInfo.value = certificateService.getCertificateInfo()
   console.log('Certificat chargé via le service:', certificateInfo.value)
+  
+  // Initialiser le service de signature
+  signatureService.initialize()
   
   // Surveiller les changements de certificat (si l'utilisateur en importe un nouveau)
   if (process.client) {
@@ -1131,7 +1464,7 @@ onUnmounted(() => {
 .sign-immediately-container {
   background: transparent;
   min-height: 100vh;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-family: 'Raleway', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
   padding: 0;
   display: flex;
   flex-direction: column;
@@ -3073,6 +3406,20 @@ onUnmounted(() => {
   border-radius: 8px;
   color: var(--warning-color);
   font-size: 0.9rem;
+}
+
+/* Animation de rotation pour l'icône de chargement */
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .refresh-btn {

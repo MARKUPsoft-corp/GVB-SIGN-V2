@@ -22,7 +22,10 @@ export default defineNuxtConfig({
         { rel: 'icon', type: 'image/png', href: '/gvb-favicon-1755744029.png' },
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
         { rel: 'shortcut icon', type: 'image/x-icon', href: '/favicon.ico' },
-        { rel: 'apple-touch-icon', href: '/gvb_icon.png' }
+        { rel: 'apple-touch-icon', href: '/gvb_icon.png' },
+        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
+        { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700;800&display=swap' }
       ]
     }
   },
