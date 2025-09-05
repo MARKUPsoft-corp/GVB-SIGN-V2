@@ -572,105 +572,6 @@
             </button>
           </div>
       </div>
-
-      <!-- Étape 5: Téléchargement des documents signés -->
-      <div v-if="currentStep === 5" class="step-content" :key="currentStep">
-        <div class="step-header">
-          <h2>
-            <i class="bi bi-download"></i>
-            Télécharger vos documents signés
-          </h2>
-          <p>Vos documents ont été signés avec succès. Téléchargez-les individuellement ou en lot.</p>
-        </div>
-
-        <div class="download-section">
-          <!-- Cartes de progression pour chaque document -->
-          <div class="documents-grid">
-            <div 
-              v-for="(result, index) in signatureResults" 
-              :key="index"
-              class="document-card"
-            >
-              <!-- En-tête de la carte -->
-              <div class="document-card-header">
-                <div class="document-info">
-                  <div class="document-icon">
-                    <i class="bi bi-file-earmark-pdf-fill"></i>
-                  </div>
-                  <div class="document-details">
-                    <h6 class="document-name">{{ result.fileName }}</h6>
-                    <span class="document-size">{{ formatFileSize(result.fileSize || 0) }}</span>
-                  </div>
-                </div>
-                <div class="document-status">
-                  <span class="status-badge signed">
-                    <i class="bi bi-check-circle-fill"></i>
-                    Signé
-                  </span>
-                </div>
-              </div>
-
-              <!-- Contenu de la carte -->
-              <div class="document-card-content">
-                <!-- Barre de progression -->
-                <div class="progress-section">
-                  <div class="progress-info">
-                    <span class="progress-label">Progression de signature</span>
-                    <span class="progress-percentage">{{ documentProgress[index] || 100 }}%</span>
-                  </div>
-                  <div class="progress-bar">
-                    <div 
-                      class="progress-fill" 
-                      :style="{ width: `${documentProgress[index] || 100}%` }"
-                    ></div>
-                  </div>
-                </div>
-
-                <!-- Informations de signature -->
-                <div class="signature-info">
-                  <div class="info-item">
-                    <i class="bi bi-fingerprint"></i>
-                    <span>ID: {{ result.documentId?.slice(0, 8) }}...</span>
-                  </div>
-                  <div class="info-item">
-                    <i class="bi bi-clock"></i>
-                    <span>{{ result.executionTime }}s</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Actions de la carte -->
-              <div class="document-card-actions">
-                <button 
-                  @click="downloadSingleDocument(result)"
-                  class="download-btn"
-                >
-                  <i class="bi bi-download"></i>
-                  <span>Télécharger</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Actions globales -->
-          <div class="global-actions">
-            <button 
-              @click="downloadAllDocuments"
-              class="download-all-btn"
-            >
-              <i class="bi bi-download"></i>
-              <span>Télécharger tout (ZIP)</span>
-            </button>
-            <button 
-              @click="goBack"
-              class="action-btn secondary"
-            >
-              <i class="bi bi-arrow-left"></i>
-              <span>Retour aux documents</span>
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -727,10 +628,6 @@ const steps = [
   {
     title: 'Signer',
     description: 'Finalisez la signature'
-  },
-  {
-    title: 'Télécharger',
-    description: 'Récupérez vos documents signés'
   }
 ]
 
@@ -783,11 +680,6 @@ const signatureService = new SignatureService()
 // État de la signature
 const isSigning = ref(false)
 const signatureProgress = ref('')
-
-// État de la progression de signature (nouvelle étape 5)
-const signatureResults = ref([]) // Résultats de signature par document
-const documentProgress = ref({}) // Progression de chaque document (0-100)
-const isSignatureComplete = ref(false) // Signature terminée pour tous les documents
 
 // Données du certificat depuis la session storage
 const certificateInfo = ref(null)
@@ -844,8 +736,6 @@ function nextStep() {
     // Préparer les données finales quand on passe à l'étape 4
     if (currentStep.value === 4) {
       prepareFinalConfiguration()
-      // La signature se lance automatiquement
-      proceedToSignature()
     }
   }
 }
@@ -906,69 +796,6 @@ function previousStep() {
 
 function goBack() {
   emit('go-back')
-}
-
-// Fonctions pour l'étape 5 (téléchargement)
-function downloadSingleDocument(result) {
-  try {
-    // Créer un blob à partir des données signées
-    const blob = new Blob([result.signedDocument], { type: 'application/pdf' })
-    const url = URL.createObjectURL(blob)
-    
-    // Créer un lien de téléchargement
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `signed_${result.fileName}`
-    a.click()
-    
-    // Nettoyer l'URL
-    URL.revokeObjectURL(url)
-    
-    console.log(`Document ${result.fileName} téléchargé avec succès`)
-  } catch (error) {
-    console.error('Erreur lors du téléchargement:', error)
-    alert('Erreur lors du téléchargement du document')
-  }
-}
-
-function downloadAllDocuments() {
-  try {
-    // Créer un nouveau ZIP
-    const zip = new JSZip()
-    
-    // Ajouter chaque document signé
-    signatureResults.value.forEach((result, index) => {
-      const fileName = result.fileName.replace('.pdf', '_signed.pdf')
-      zip.file(fileName, result.signedDocument)
-      
-      // Ajouter les métadonnées
-      const metadata = {
-        documentId: result.documentId,
-        originalHash: result.originalHash,
-        signature: result.signature,
-        publicKeyPem: result.publicKeyPem,
-        timestamp: result.timestamp,
-        originalFileName: result.fileName
-      }
-      
-      zip.file(`${fileName}_metadata.json`, JSON.stringify(metadata, null, 2))
-    })
-    
-    // Générer et télécharger le ZIP
-    zip.generateAsync({ type: 'blob' }).then(zipBlob => {
-      const zipUrl = URL.createObjectURL(zipBlob)
-      const a = document.createElement('a')
-      a.href = zipUrl
-      a.download = `documents_signés_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.zip`
-      a.click()
-      
-      URL.revokeObjectURL(zipUrl)
-      console.log('ZIP téléchargé avec succès')
-    })
-  } catch (error) {
-    console.error('Erreur lors du téléchargement du ZIP:', error)
-    alert('Erreur lors du téléchargement des documents')
-  }
 }
 
 // Gestion de l'upload de fichiers
@@ -1292,9 +1119,7 @@ const canProceedToNext = computed(() => {
     case 3:
       return allDocumentsProcessed.value
     case 4:
-      return true // Configuration terminée
-    case 5:
-      return false // Dernière étape
+      return true // Dernière étape
     default:
       return false
   }
@@ -1379,7 +1204,7 @@ async function proceedToSignature() {
     console.log('Clés converties en objets node-forge')
     
     // Traiter chaque document configuré
-    signatureResults.value = [] // Réinitialiser les résultats
+    const signatureResults = []
     const totalDocuments = Object.keys(documentsConfiguration.value).length
     
     for (const [index, config] of Object.entries(documentsConfiguration.value)) {
@@ -1428,59 +1253,39 @@ async function proceedToSignature() {
         let processedSignatureImage = null
         
         // Traiter l'image de signature si elle existe
-        if (config.signature && (config.signature.imageUrl || signatureData.value)) {
-          let signatureImage = null
+        if (config.signature && config.signature.imageUrl) {
+          let signatureImage = config.signature.imageUrl
           
-          // Priorité au File original stocké dans signatureData.value
-          if (signatureData.value) {
-            console.log('Utilisation du File original pour l\'image de signature')
+          console.log('DEBUG SIGNATURE IMAGE - État initial:', {
+            'image_exists': !!signatureImage,
+            'image_type': typeof signatureImage,
+            'image_length': signatureImage?.length || 0,
+            'image_starts_with_data': signatureImage?.startsWith('data:'),
+            'is_blob_url': signatureImage?.startsWith('blob:'),
+            'image_preview': signatureImage?.substring(0, 100) + '...'
+          })
+          
+          // Si c'est un Blob URL, essayer de le convertir en data URL base64
+          if (signatureImage && signatureImage.startsWith('blob:')) {
+            console.log('Conversion du Blob URL en data URL base64...')
             try {
-              signatureImage = await convertFileToDataUrl(signatureData.value)
-              console.log('File converti en data URL avec succès:', signatureImage.substring(0, 100) + '...')
+              signatureImage = await convertBlobUrlToDataUrl(signatureImage)
+              console.log('Blob URL converti avec succès:', signatureImage.substring(0, 100) + '...')
             } catch (error) {
-              console.error('Erreur lors de la conversion du File:', error)
+              console.error('Erreur lors de la conversion du Blob URL:', error)
+              // En cas d'erreur CORS, ignorer l'image de signature pour ce document
+              console.warn('Impossible de convertir l\'image de signature, signature sans image pour ce document')
               processedSignatureImage = null
-              return // Arrêter le traitement si la conversion échoue
             }
           }
-          // Fallback sur l'URL si pas de File original
-          else if (config.signature.imageUrl) {
-            signatureImage = config.signature.imageUrl
-            
-            console.log('DEBUG SIGNATURE IMAGE - État initial:', {
-              'image_exists': !!signatureImage,
-              'image_type': typeof signatureImage,
-              'image_length': signatureImage?.length || 0,
-              'image_starts_with_data': signatureImage?.startsWith('data:image'),
-              'is_blob_url': signatureImage?.startsWith('blob:'),
-              'image_preview': signatureImage?.substring(0, 100) + '...'
-            })
-            
-            // Si c'est un Blob URL, le convertir en data URL base64
-            if (signatureImage && signatureImage.startsWith('blob:')) {
-              console.log('Conversion du Blob URL en data URL base64...')
-              try {
-                signatureImage = await convertBlobUrlToDataUrl(signatureImage)
-                console.log('Blob URL converti avec succès:', signatureImage.substring(0, 100) + '...')
-              } catch (error) {
-                console.error('Erreur lors de la conversion du Blob URL:', error)
-                processedSignatureImage = null
-                return // Arrêter le traitement si la conversion échoue
-              }
-            }
-            // S'assurer que l'image est au bon format (comme dans SignWithTemplateMultiple.vue)
-            else if (signatureImage && !signatureImage.startsWith('data:image')) {
-              console.warn('Format d\'image incorrect, tentative de correction')
-              let imageType = 'png'
-              if (signatureImage.startsWith('/9j/')) {
-                imageType = 'jpeg'
-              }
-              signatureImage = `data:image/${imageType};base64,${signatureImage}`
-              console.log('Image corrigée:', signatureImage.substring(0, 100) + '...')
-            }
+          // Vérifier que l'image est maintenant au bon format
+          if (signatureImage && signatureImage.startsWith('data:image')) {
+            processedSignatureImage = signatureImage
+            console.log('Image de signature traitée avec succès')
+          } else {
+            console.warn('Image de signature non valide après traitement')
+            processedSignatureImage = null
           }
-          
-          processedSignatureImage = signatureImage
         }
         
         const metadata = {
@@ -1525,21 +1330,16 @@ async function proceedToSignature() {
         console.log(`Temps: ${result.executionTime}s`)
         
         // Ajouter le résultat à la liste
-        signatureResults.value.push({
+        signatureResults.push({
           documentIndex: parseInt(index),
           fileName: file.name,
-          fileSize: file.size,
           documentId: result.documentId,
           originalHash: result.originalHash,
           signature: result.signature,
           publicKeyPem: result.publicKeyPem,
           signedDocument: result.signedDocument,
-          timestamp: result.timestamp,
-          executionTime: result.executionTime
+          timestamp: result.timestamp
         })
-        
-        // Mettre à jour la progression
-        documentProgress.value[index] = 100
       } else {
         throw new Error(`Échec de la signature du document ${index}`)
       }
@@ -1547,13 +1347,50 @@ async function proceedToSignature() {
     
     // Tous les documents ont été signés avec succès
     console.log('\n=== SIGNATURE TERMINÉE AVEC SUCCÈS ===')
-    console.log(`${signatureResults.value.length} document(s) signé(s)`)
+    console.log(`${signatureResults.length} document(s) signé(s)`)
     
-    // Marquer la signature comme terminée
-    isSignatureComplete.value = true
+    signatureProgress.value = 'Création du fichier ZIP...'
     
-    // Passer à l'étape 5 (téléchargement)
-    currentStep.value = 5
+    // Créer un fichier ZIP avec tous les documents signés
+    const zip = new JSZip()
+    
+    signatureResults.forEach((result, index) => {
+      const fileName = result.fileName.replace('.pdf', '') || `document_${index + 1}`
+      const signedFileName = `${fileName}_signé_${result.documentId}.pdf`
+      
+      zip.file(signedFileName, result.signedDocument)
+      
+      // Ajouter un fichier de métadonnées
+      const metadata = {
+        documentId: result.documentId,
+        originalHash: result.originalHash,
+        signature: result.signature,
+        publicKeyPem: result.publicKeyPem,
+        timestamp: result.timestamp,
+        originalFileName: result.fileName
+      }
+      
+      zip.file(`${fileName}_metadata.json`, JSON.stringify(metadata, null, 2))
+    })
+    
+    // Générer le ZIP
+    const zipBlob = await zip.generateAsync({ type: 'blob' })
+    
+    // Télécharger le ZIP
+    const zipUrl = URL.createObjectURL(zipBlob)
+    const a = document.createElement('a')
+    a.href = zipUrl
+    a.download = `documents_signés_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.zip`
+    a.click()
+    
+    // Nettoyer
+    URL.revokeObjectURL(zipUrl)
+    
+    // Afficher un message de succès
+    alert(`Signature terminée avec succès !\n${signatureResults.length} document(s) signé(s) et téléchargé(s).`)
+    
+    // Rediriger vers la page des documents ou autre action
+    // emit('go-back')
     
   } catch (error) {
     console.error('Erreur lors de la signature:', error)
@@ -3599,232 +3436,6 @@ onUnmounted(() => {
   }
 }
 
-/* Styles pour l'étape 5 - Téléchargement */
-.download-section {
-  padding: 2rem 0;
-}
-
-.documents-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.document-card {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 16px;
-  padding: 1.5rem;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.document-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 32px rgba(0, 102, 204, 0.2);
-  border-color: rgba(0, 102, 204, 0.3);
-}
-
-.document-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 1.5rem;
-}
-
-.document-info {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex: 1;
-}
-
-.document-icon {
-  width: 48px;
-  height: 48px;
-  background: linear-gradient(135deg, #0066cc, #007bff);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 1.5rem;
-}
-
-.document-details {
-  flex: 1;
-}
-
-.document-name {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #ffffff;
-  margin: 0 0 0.25rem 0;
-  line-height: 1.3;
-}
-
-.document-size {
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.document-status {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-}
-
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 500;
-}
-
-.status-badge.signed {
-  background: rgba(40, 167, 69, 0.2);
-  color: #28a745;
-  border: 1px solid rgba(40, 167, 69, 0.3);
-}
-
-.document-card-content {
-  margin-bottom: 1.5rem;
-}
-
-.progress-section {
-  margin-bottom: 1rem;
-}
-
-.progress-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-.progress-label {
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.progress-percentage {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #0066cc;
-}
-
-.progress-bar {
-  width: 100%;
-  height: 8px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #0066cc, #007bff);
-  border-radius: 4px;
-  transition: width 0.3s ease;
-}
-
-.signature-info {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.info-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.info-item i {
-  color: #0066cc;
-}
-
-.document-card-actions {
-  display: flex;
-  gap: 1rem;
-}
-
-.download-btn {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, #0066cc, #007bff);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.download-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 102, 204, 0.3);
-}
-
-.global-actions {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  align-items: center;
-  padding: 2rem 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.download-all-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 1rem 2rem;
-  background: linear-gradient(135deg, #28a745, #20c997);
-  color: white;
-  border: none;
-  border-radius: 16px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.download-all-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(40, 167, 69, 0.3);
-}
-
-@media (max-width: 768px) {
-  .documents-grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-  
-  .global-actions {
-    flex-direction: column;
-    gap: 1rem;
-  }
-  
-  .download-all-btn {
-    width: 100%;
-    justify-content: center;
-  }
-}
-
 @media (max-width: 480px) {
   .documents-header {
     padding: 0.5rem 0;
@@ -3832,26 +3443,6 @@ onUnmounted(() => {
   
   .header-top-row {
     gap: 12px;
-  }
-  
-  .document-card {
-    padding: 1rem;
-  }
-  
-  .document-card-header {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: flex-start;
-  }
-  
-  .document-status {
-    position: static;
-    align-self: flex-end;
-  }
-  
-  .signature-info {
-    flex-direction: column;
-    gap: 0.5rem;
   }
   
   

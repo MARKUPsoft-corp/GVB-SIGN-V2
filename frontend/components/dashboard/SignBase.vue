@@ -449,7 +449,7 @@ const selectedQrSize = ref('medium');
 const previewContainer = ref(null);
 
 // Méthodes pour gérer l'upload de signature
-function handleSignatureUpload(event) {
+async function handleSignatureUpload(event) {
   const file = event.target.files[0];
   if (file && file.type.startsWith('image/')) {
     // Vérifier que c'est un format d'image supporté
@@ -457,13 +457,27 @@ function handleSignatureUpload(event) {
     
     if (supportedFormats.some(format => file.type.includes(format.split('/')[1]))) {
       signatureImage.value = file;
-      signatureImageUrl.value = URL.createObjectURL(file);
       
-      console.log('Image de signature chargée:', {
-        name: file.name,
-        type: file.type,
-        size: file.size
-      });
+      // Convertir directement en data URL pour éviter les problèmes CORS
+      try {
+        const reader = new FileReader();
+        signatureImageUrl.value = await new Promise((resolve, reject) => {
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        
+        console.log('Image de signature chargée et convertie en data URL:', {
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          dataUrlLength: signatureImageUrl.value.length
+        });
+      } catch (error) {
+        console.error('Erreur lors de la conversion de l\'image:', error);
+        // Fallback sur Blob URL si la conversion échoue
+        signatureImageUrl.value = URL.createObjectURL(file);
+      }
     
       // Émettre un événement pour informer le composant parent de l'image de signature
       emit('signature-uploaded', file);
