@@ -252,6 +252,9 @@ export class SignatureService {
         
         if (shouldApplyQR) {
           console.log(`Application du QR code sur la page ${pageNumber}`)
+          console.log(`Position reçue:`, position)
+          console.log(`Mode: ${position.mode}, Pages: ${position.pages}`)
+          console.log(`Positions disponibles:`, position.positions)
           
           const { width: pageWidth, height: pageHeight } = page.getSize()
           
@@ -259,15 +262,23 @@ export class SignatureService {
           let xPercent = position.x
           let yPercent = position.y
           
-          // Si mode individual et position spécifique pour cette page
-          if (position.mode === 'individual' && position.positions) {
+          // Gérer les différents modes de positionnement
+          if (position.positions && Object.keys(position.positions).length > 0) {
+            // Chercher la position pour cette page spécifique
             const pagePosition = position.positions[pageNumber.toString()]
             if (pagePosition) {
               xPercent = pagePosition.x
               yPercent = pagePosition.y
-              console.log(`Position individuelle pour page ${pageNumber}: x=${xPercent}%, y=${yPercent}%`)
-            } else {
-              // En mode individuel, si pas de position définie, ne pas afficher
+              console.log(`Position trouvée pour page ${pageNumber}: x=${xPercent}%, y=${yPercent}%`)
+            }
+            // Fallback : position par défaut
+            else if (position.positions.default) {
+              xPercent = position.positions.default.x
+              yPercent = position.positions.default.y
+              console.log(`Position par défaut pour page ${pageNumber}: x=${xPercent}%, y=${yPercent}%`)
+            }
+            // Mode individual : si pas de position définie, ne pas afficher
+            else if (position.mode === 'individual') {
               console.log(`En mode individual, aucune position définie pour la page ${pageNumber}, QR non affiché`)
               continue
             }

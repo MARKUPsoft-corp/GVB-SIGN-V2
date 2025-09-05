@@ -951,8 +951,8 @@ function handlePositionConfirmed(data) {
       pages: data.qr?.pages || 'all',
       positions: data.qr?.positions || {},
       mode: data.qr?.mode || 'all',
-      x: defaultX,  // Position par défaut
-      y: defaultY   // Position par défaut
+      x: data.qr?.positions?.default?.x || defaultX,  // Utiliser la position configurée
+      y: data.qr?.positions?.default?.y || defaultY   // Utiliser la position configurée
     },
     signature: data.signature ? {
       imageUrl: data.signature.imageUrl,
