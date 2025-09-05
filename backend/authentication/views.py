@@ -112,3 +112,18 @@ def check_email(request):
         'success': True,
         'exists': exists
     }, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_csrf_token(request):
+    """
+    Endpoint pour récupérer le token CSRF
+    """
+    from django.middleware.csrf import get_token
+    csrf_token = get_token(request)
+    
+    return Response({
+        'success': True,
+        'csrfToken': csrf_token
+    }, status=status.HTTP_200_OK)

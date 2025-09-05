@@ -611,7 +611,7 @@
                     <i class="bi bi-arrow-clockwise spin"></i>
                     En cours
                   </span>
-                </div>
+            </div>
           </div>
 
               <!-- Contenu de la carte -->

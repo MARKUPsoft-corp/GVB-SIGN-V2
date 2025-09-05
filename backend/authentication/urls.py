@@ -9,4 +9,5 @@ urlpatterns = [
     path('logout/', views.logout_user, name='logout'),
     path('profile/', views.user_profile, name='profile'),
     path('check-email/', views.check_email, name='check_email'),
+    path('csrf/', views.get_csrf_token, name='csrf_token'),
 ]
