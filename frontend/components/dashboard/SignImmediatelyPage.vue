@@ -960,8 +960,8 @@ function handlePositionConfirmed(data) {
       pages: data.signature.pages,
       positions: data.signature.positions,
       // Récupérer les positions depuis la structure correcte
-      x: data.signature.positions?.default?.x || data.signature.positions?.[currentPage.value]?.x || 50,
-      y: data.signature.positions?.default?.y || data.signature.positions?.[currentPage.value]?.y || 50
+      x: data.signature.positions?.default?.x || 50,
+      y: data.signature.positions?.default?.y || 50
     } : null,
     positionMode: data.mode || 'all',
     timestamp: new Date().toISOString()
@@ -1078,8 +1078,14 @@ function truncateFileName(fileName, maxLength) {
 console.log('SignImmediatelyPage - currentSignBaseFile:', currentSignBaseFile.value)
 
 function handlePositionChanged(data) {
-  console.log('Position changée:', data)
-  positionData.value = data
+  // Éviter les logs répétitifs en comparant avec la dernière position
+  const dataString = JSON.stringify(data)
+  const lastDataString = JSON.stringify(positionData.value)
+  
+  if (dataString !== lastDataString) {
+    console.log('Position changée:', data)
+    positionData.value = data
+  }
 }
 
 function handleSignatureUploaded(file) {
