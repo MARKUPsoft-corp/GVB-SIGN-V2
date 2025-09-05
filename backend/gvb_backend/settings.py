@@ -187,7 +187,9 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 # Session settings
-SESSION_COOKIE_SAMESITE = 'Lax'
-CSRF_COOKIE_SAMESITE = 'Lax'
-SESSION_COOKIE_HTTPONLY = False  # Permet l'accès JavaScript
+SESSION_COOKIE_SAMESITE = 'Lax'   # Lax pour HTTP en développement
+CSRF_COOKIE_SAMESITE = 'Lax'      # Lax pour HTTP en développement
+SESSION_COOKIE_HTTPONLY = False   # Permet l'accès JavaScript
 CSRF_COOKIE_HTTPONLY = False
+SESSION_COOKIE_SECURE = False     # False pour HTTP en développement
+CSRF_COOKIE_SECURE = False        # False pour HTTP en développement

@@ -64,6 +64,14 @@ class DocumentSignatureBulkCreateView(generics.CreateAPIView):
     parser_classes = [JSONParser]
     
     def create(self, request, *args, **kwargs):
+        # Logs pour diagnostiquer l'authentification
+        print(f"=== DIAGNOSTIC BACKEND ===")
+        print(f"User authentifié: {request.user}")
+        print(f"User ID: {request.user.id if request.user.is_authenticated else 'Non authentifié'}")
+        print(f"User email: {request.user.email if request.user.is_authenticated else 'Non authentifié'}")
+        print(f"Session key: {request.session.session_key}")
+        print(f"Cookies: {request.COOKIES}")
+        
         signatures_data = request.data.get('signatures', [])
         
         if not signatures_data:

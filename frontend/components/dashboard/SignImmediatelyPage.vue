@@ -593,15 +593,15 @@
             >
               <!-- En-tête de la carte -->
               <div class="document-card-header">
-                <div class="document-info">
+            <div class="document-info">
                   <div class="document-icon">
-                    <i class="bi bi-file-earmark-pdf-fill"></i>
-                  </div>
+                <i class="bi bi-file-earmark-pdf-fill"></i>
+                </div>
                   <div class="document-details">
                     <h6 class="document-name">{{ result.fileName }}</h6>
                     <span class="document-size">{{ formatFileSize(result.fileSize || 0) }}</span>
-                  </div>
-                </div>
+              </div>
+            </div>
                 <div class="document-status">
                   <span v-if="result.signed" class="status-badge signed">
                     <i class="bi bi-check-circle-fill"></i>
@@ -612,7 +612,7 @@
                     En cours
                   </span>
                 </div>
-              </div>
+          </div>
 
               <!-- Contenu de la carte -->
               <div class="document-card-content">
@@ -621,27 +621,27 @@
                   <div class="progress-info">
                     <span class="progress-label">Progression de signature</span>
                     <span class="progress-percentage">{{ documentProgress[index] || 0 }}%</span>
-                  </div>
+                </div>
                   <div class="progress-bar">
                     <div 
                       class="progress-fill" 
                       :style="{ width: `${documentProgress[index] || 0}%` }"
                     ></div>
-                  </div>
-                </div>
+            </div>
+          </div>
 
                 <!-- Informations de signature -->
                 <div v-if="result.signed" class="signature-info">
                   <div class="info-item">
                     <i class="bi bi-fingerprint"></i>
                     <span>ID: {{ result.documentId?.slice(0, 8) }}...</span>
-                  </div>
+                </div>
                   <div class="info-item">
                     <i class="bi bi-clock"></i>
                     <span>{{ result.executionTime }}s</span>
-                  </div>
-                </div>
-              </div>
+            </div>
+          </div>
+        </div>
 
               <!-- Actions de la carte -->
               <div class="document-card-actions">
@@ -653,7 +653,7 @@
                   <i :class="result.signed ? 'bi bi-download' : 'bi bi-hourglass-split'"></i>
                   <span>{{ result.signed ? 'Télécharger' : 'En cours...' }}</span>
                 </button>
-              </div>
+            </div>
             </div>
           </div>
 
@@ -697,11 +697,11 @@
         <div class="preview-info">
           <span>{{ uploadedFiles[hoveredTabIndex]?.pages || 1 }} pages</span>
           <span>{{ formatFileSize(uploadedFiles[hoveredTabIndex]?.size || 0) }}</span>
+          </div>
         </div>
       </div>
     </div>
   </div>
-</div>
 </template>
 
 <script setup>
@@ -710,6 +710,7 @@ import SignBase from './SignBase.vue'
 import { CertificateService } from '../../services/CertificateService.js'
 import { SignatureService } from '../../services/SignatureService.js'
 import { SignatureApiService } from '../../services/SignatureApiService.js'
+import { useAuthStore } from '../../stores/auth.js'
 import JSZip from 'jszip'
 import forge from 'node-forge'
 
@@ -1526,6 +1527,25 @@ async function proceedToSignature() {
 async function saveSignaturesToBackend() {
   try {
     console.log('=== DÉBUT ENREGISTREMENT BACKEND ===')
+    
+    // Tester l'authentification d'abord
+    console.log('Test de l\'authentification...')
+    
+    // Vérifier l'état local d'abord
+    const authStore = useAuthStore()
+    console.log('État local auth:', {
+      isAuthenticated: authStore.isAuthenticated,
+      user: authStore.user,
+      hasUser: !!authStore.user
+    })
+    
+    const isAuthenticated = await signatureApiService.testAuthentication()
+    if (!isAuthenticated) {
+      console.error('Utilisateur non authentifié - impossible d\'enregistrer les signatures')
+      console.log('Veuillez vous reconnecter pour enregistrer les signatures')
+      return
+    }
+    console.log('Authentification confirmée ✅')
     
     const signaturesData = []
     

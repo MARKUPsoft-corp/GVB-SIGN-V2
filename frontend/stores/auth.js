@@ -21,12 +21,29 @@ export const useAuthStore = defineStore('auth', {
         
         if (savedUser && savedToken) {
           try {
-            this.user = JSON.parse(savedUser)
-            this.token = savedToken
-            this.isAuthenticated = true
-            return true
+            // Vérifier si la session Django est toujours valide
+            const response = await fetch('http://127.0.0.1:8000/api/auth/profile/', {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              credentials: 'include'
+            })
+
+            if (response.ok) {
+              // Session Django valide, restaurer l'état local
+              this.user = JSON.parse(savedUser)
+              this.token = savedToken
+              this.isAuthenticated = true
+              return true
+            } else {
+              // Session Django invalide, nettoyer le localStorage
+              console.log('Session Django expirée, nettoyage du localStorage')
+              this.clearAuth()
+              return false
+            }
           } catch (error) {
-            console.error('Erreur lors de la récupération des données:', error)
+            console.error('Erreur lors de la vérification de la session:', error)
             this.clearAuth()
             return false
           }
