@@ -709,6 +709,7 @@ import { ref, computed, onMounted, onUnmounted, defineEmits } from 'vue'
 import SignBase from './SignBase.vue'
 import { CertificateService } from '../../services/CertificateService.js'
 import { SignatureService } from '../../services/SignatureService.js'
+import { SignatureApiService } from '../../services/SignatureApiService.js'
 import JSZip from 'jszip'
 import forge from 'node-forge'
 
@@ -792,6 +793,9 @@ const certificateService = new CertificateService()
 
 // Service de signature numérique
 const signatureService = new SignatureService()
+
+// Service API pour l'enregistrement des signatures
+const signatureApiService = new SignatureApiService()
 
 // État de la signature
 const isSigning = ref(false)
@@ -1501,6 +1505,10 @@ async function proceedToSignature() {
       fileSize: result.signedDocument?.byteLength || 0
     }))
     
+    // Enregistrer les signatures dans le backend
+    signatureProgress.value = 'Enregistrement des signatures...'
+    await saveSignaturesToBackend()
+    
     // Rediriger vers l'étape de téléchargement
     startDownloadStep()
     
@@ -1511,6 +1519,96 @@ async function proceedToSignature() {
     // Désactiver l'indicateur de chargement
     isSigning.value = false
     signatureProgress.value = ''
+  }
+}
+
+// Enregistrer les signatures dans le backend
+async function saveSignaturesToBackend() {
+  try {
+    console.log('=== DÉBUT ENREGISTREMENT BACKEND ===')
+    
+    const signaturesData = []
+    
+    // Préparer les données pour chaque signature
+    for (let i = 0; i < signatureResults.value.length; i++) {
+      const result = signatureResults.value[i]
+      const config = Object.values(documentsConfiguration.value)[i]
+      
+      if (!result.signedDocument || !config) {
+        console.warn(`Données manquantes pour le document ${i}`)
+        continue
+      }
+      
+      // Récupérer les données originales du document
+      const originalFile = uploadedFiles.value[result.documentIndex]
+      console.log('Original file structure:', {
+        fileName: result.fileName,
+        originalFileType: typeof originalFile,
+        originalFileKeys: originalFile ? Object.keys(originalFile) : 'null',
+        hasArrayBuffer: originalFile && typeof originalFile.arrayBuffer === 'function',
+        hasData: originalFile && originalFile.data
+      })
+      
+      let originalFileData
+      
+      if (originalFile && typeof originalFile.arrayBuffer === 'function') {
+        // Si c'est un objet File standard
+        originalFileData = await originalFile.arrayBuffer()
+        console.log('Données récupérées via arrayBuffer()')
+      } else if (originalFile && originalFile.data) {
+        // Si c'est un objet avec une propriété data (Uint8Array)
+        originalFileData = originalFile.data
+        console.log('Données récupérées via .data')
+      } else if (originalFile && originalFile.file && typeof originalFile.file.arrayBuffer === 'function') {
+        // Si c'est un objet avec une propriété file qui contient le vrai fichier
+        originalFileData = await originalFile.file.arrayBuffer()
+        console.log('Données récupérées via .file.arrayBuffer()')
+      } else {
+        console.error('Impossible de récupérer les données originales pour:', result.fileName)
+        continue
+      }
+      
+      // Préparer les données pour l'API
+      const signatureData = await signatureApiService.prepareSignatureData(
+        result,
+        new Uint8Array(originalFileData),
+        certificateInfo.value
+      )
+      
+      signaturesData.push(signatureData)
+      console.log(`Données préparées pour ${result.fileName}:`, {
+        documentId: signatureData.document_id,
+        signerName: signatureData.signer_full_name,
+        originalSize: signatureData.file_size_original,
+        signedSize: signatureData.file_size_signed
+      })
+    }
+    
+    if (signaturesData.length === 0) {
+      throw new Error('Aucune signature à enregistrer')
+    }
+    
+    // Enregistrer toutes les signatures
+    console.log(`Enregistrement de ${signaturesData.length} signature(s)...`)
+    const response = await signatureApiService.saveMultipleSignatures(signaturesData)
+    
+    console.log('Réponse du backend:', response)
+    
+    if (response.success) {
+      console.log(`✅ ${response.total_created} signature(s) enregistrée(s) avec succès`)
+      if (response.total_errors > 0) {
+        console.warn(`⚠️ ${response.total_errors} erreur(s) lors de l'enregistrement:`, response.errors)
+      }
+    } else {
+      throw new Error(response.message || 'Erreur lors de l\'enregistrement')
+    }
+    
+    console.log('=== FIN ENREGISTREMENT BACKEND ===')
+    
+  } catch (error) {
+    console.error('Erreur lors de l\'enregistrement dans le backend:', error)
+    // Ne pas bloquer le processus, juste logger l'erreur
+    alert(`Attention: Les signatures n'ont pas pu être enregistrées sur le serveur: ${error.message}`)
   }
 }
 
