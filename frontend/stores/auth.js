@@ -130,18 +130,57 @@ export const useAuthStore = defineStore('auth', {
     // Inscription
     async register(userData) {
       try {
+        console.log('🔄 Tentative d\'inscription avec:', userData)
+        
+        // Récupérer le token CSRF
+        const csrfResponse = await fetch('http://127.0.0.1:8000/api/auth/csrf/', {
+          method: 'GET',
+          credentials: 'include'
+        })
+        
+        let csrfToken = null
+        if (csrfResponse.ok) {
+          const csrfData = await csrfResponse.json()
+          csrfToken = csrfData.csrfToken
+          console.log('🔑 Token CSRF récupéré:', csrfToken)
+        } else {
+          console.warn('⚠️ Impossible de récupérer le token CSRF')
+        }
+        
+        const headers = {
+          'Content-Type': 'application/json',
+        }
+        
+        if (csrfToken) {
+          headers['X-CSRFToken'] = csrfToken
+        }
+        
         const response = await fetch('http://127.0.0.1:8000/api/auth/register/', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers,
           credentials: 'include',
           body: JSON.stringify(userData)
         })
 
-        const result = await response.json()
+        console.log('📡 Réponse HTTP:', response.status, response.statusText)
+        console.log('📋 Headers de réponse:', Object.fromEntries(response.headers.entries()))
 
-        if (response.ok && result.success) {
+        // Vérifier si la réponse est OK avant de parser JSON
+        if (!response.ok) {
+          console.error('❌ Réponse HTTP non-OK:', response.status)
+          const errorText = await response.text()
+          console.error('❌ Contenu de l\'erreur:', errorText)
+          return { 
+            success: false, 
+            message: `Erreur HTTP ${response.status}: ${response.statusText}`,
+            status: response.status
+          }
+        }
+
+        const result = await response.json()
+        console.log('📦 Résultat JSON:', result)
+
+        if (result.success) {
           const user = {
             id: result.user.id,
             email: result.user.email,
@@ -151,12 +190,14 @@ export const useAuthStore = defineStore('auth', {
           }
           
           this.setUser(user, result.token || 'authenticated')
+          console.log('✅ Inscription réussie!')
           return { success: true, user }
         } else {
+          console.log('❌ Échec d\'inscription dans la réponse:', result)
           return { success: false, errors: result.errors, message: result.message }
         }
       } catch (error) {
-        console.error('Erreur d\'inscription:', error)
+        console.error('💥 Erreur d\'inscription:', error)
         return { success: false, message: 'Erreur de connexion au serveur' }
       }
     },

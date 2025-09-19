@@ -16,6 +16,8 @@ def register_user(request):
     """
     Endpoint pour l'inscription des utilisateurs
     """
+    # Désactiver explicitement la vérification CSRF
+    request.csrf_processing_done = True
     serializer = UserRegistrationSerializer(data=request.data)
     
     if serializer.is_valid():
