@@ -113,17 +113,17 @@
                 </div>
               </div>
 
-              <!-- Action 2 - Scanner QR Code -->
+              <!-- Action 2 - Créer ou intégrer une organisation -->
               <div class="action-item mb-4">
-                <div class="card border-0 shadow-sm action-card-inner">
+                <div class="card border-0 shadow-sm action-card-inner" @click="toggleOrganizationModal" style="cursor: pointer;" ref="organizationBtn">
                   <div class="card-body p-4">
                     <div class="d-flex align-items-start">
                       <div class="action-icon me-4">
-                        <i class="bi bi-qr-code-scan text-primary-blue fs-1"></i>
+                        <i class="bi bi-building-add text-primary-blue fs-1"></i>
                       </div>
                       <div class="action-content">
-                        <h4 class="fw-bold text-dark mb-2">Scanner QR Code</h4>
-                        <p class="text-muted mb-0">Authentifiez-vous rapidement avec votre QR Code personnel</p>
+                        <h4 class="fw-bold text-dark mb-2">Créer ou intégrer une organisation</h4>
+                        <p class="text-muted mb-0">Créez une nouvelle organisation ou rejoignez une organisation existante</p>
                       </div>
                     </div>
                   </div>
@@ -168,11 +168,47 @@
         </div>
       </div>
     </div>
+    
+    <!-- Modale contextuelle des organisations -->
+    <div v-if="isOrganizationModalOpen" class="organization-modal-overlay" @click="closeOrganizationModal">
+      <div class="organization-modal" @click.stop ref="organizationModal">
+        <div class="organization-modal-header">
+          <h5>
+            <i class="bi bi-building"></i>
+            Options d'Organisation
+          </h5>
+          <button class="close-btn" @click="closeOrganizationModal">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <div class="organization-modal-content">
+          <div class="organization-option" @click="selectOrganizationOption('create')">
+            <div class="option-icon">
+              <i class="bi bi-building-add"></i>
+            </div>
+            <div class="option-content">
+              <span class="option-title">Créer une organisation</span>
+              <span class="option-desc">Créez une nouvelle organisation et devenez son administrateur</span>
+            </div>
+          </div>
+          
+          <div class="organization-option" @click="selectOrganizationOption('join')">
+            <div class="option-icon">
+              <i class="bi bi-person-plus"></i>
+            </div>
+            <div class="option-content">
+              <span class="option-title">Rejoindre une organisation</span>
+              <span class="option-desc">Rejoignez une organisation existante avec un code d'invitation</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useAuthStore } from '../../stores/auth'
 
 // Définir le middleware et le layout
@@ -189,6 +225,11 @@ const route = useRoute()
 const userName = computed(() => authStore?.user?.full_name || 'Utilisateur')
 const userEmail = computed(() => authStore?.user?.email || '')
 const isFromRegistration = ref(false)
+
+// État pour la modale des organisations
+const isOrganizationModalOpen = ref(false)
+const organizationModal = ref(null)
+const organizationBtn = ref(null)
 
 // Initialiser les données utilisateur
 onMounted(async () => {
@@ -220,6 +261,126 @@ useHead({
     { name: 'robots', content: 'noindex, nofollow' }
   ]
 })
+
+// Fonctions pour la modale des organisations
+const toggleOrganizationModal = () => {
+  isOrganizationModalOpen.value = !isOrganizationModalOpen.value
+  
+  if (isOrganizationModalOpen.value) {
+    nextTick(() => {
+      if (organizationBtn.value && organizationModal.value && window.innerWidth > 768) {
+        const buttonRect = organizationBtn.value.getBoundingClientRect()
+        const modal = organizationModal.value
+        
+        // Dimensions de la modale
+        const modalWidth = 320
+        const modalHeight = 200
+        
+        // Marge de sécurité
+        const margin = 20
+        
+        // Calculer l'espace disponible dans chaque direction
+        const spaceRight = window.innerWidth - buttonRect.right
+        const spaceLeft = buttonRect.left
+        const spaceBelow = window.innerHeight - buttonRect.bottom
+        const spaceAbove = buttonRect.top
+        
+        let leftPosition, topPosition
+        
+        // Positionner horizontalement selon l'espace disponible
+        if (spaceRight >= modalWidth + margin) {
+          // Plus d'espace à droite
+          leftPosition = buttonRect.right + 10
+        } else if (spaceLeft >= modalWidth + margin) {
+          // Plus d'espace à gauche
+          leftPosition = buttonRect.left - modalWidth - 10
+        } else {
+          // Pas assez d'espace, centrer horizontalement
+          leftPosition = (window.innerWidth - modalWidth) / 2
+        }
+        
+        // Positionner verticalement selon l'espace disponible
+        if (spaceBelow >= modalHeight + margin) {
+          // Plus d'espace en bas
+          topPosition = buttonRect.bottom + 10
+        } else if (spaceAbove >= modalHeight + margin) {
+          // Plus d'espace en haut
+          topPosition = buttonRect.top - modalHeight - 10
+        } else {
+          // Pas assez d'espace, centrer verticalement
+          topPosition = (window.innerHeight - modalHeight) / 2
+        }
+        
+        // GARANTIR que la modale reste entièrement dans les limites de l'écran
+        // Vérification horizontale
+        if (leftPosition < margin) {
+          leftPosition = margin
+        } else if (leftPosition + modalWidth > window.innerWidth - margin) {
+          leftPosition = window.innerWidth - modalWidth - margin
+        }
+        
+        // Vérification verticale
+        if (topPosition < margin) {
+          topPosition = margin
+        } else if (topPosition + modalHeight > window.innerHeight - margin) {
+          topPosition = window.innerHeight - modalHeight - margin
+        }
+        
+        // Vérification finale - si la modale est encore trop grande pour l'écran
+        if (modalWidth > window.innerWidth - 2 * margin) {
+          // Modale trop large, centrer et réduire la largeur
+          leftPosition = margin
+          modal.style.width = (window.innerWidth - 2 * margin) + 'px'
+        } else {
+          modal.style.width = modalWidth + 'px'
+        }
+        
+        if (modalHeight > window.innerHeight - 2 * margin) {
+          // Modale trop haute, centrer et réduire la hauteur
+          topPosition = margin
+          modal.style.height = (window.innerHeight - 2 * margin) + 'px'
+          modal.style.overflowY = 'auto'
+        } else {
+          modal.style.height = 'auto'
+          modal.style.overflowY = 'visible'
+        }
+        
+        modal.style.left = leftPosition + 'px'
+        modal.style.top = topPosition + 'px'
+      }
+    })
+    
+    // Bloquer le scroll en arrière-plan
+    document.body.style.overflow = 'hidden'
+  } else {
+    // Restaurer le scroll
+    document.body.style.overflow = 'auto'
+  }
+}
+
+const closeOrganizationModal = () => {
+  isOrganizationModalOpen.value = false
+  // Restaurer le scroll
+  document.body.style.overflow = 'auto'
+}
+
+const selectOrganizationOption = (option) => {
+  console.log('Option d\'organisation sélectionnée:', option)
+  closeOrganizationModal()
+  
+  switch (option) {
+    case 'create':
+      // Rediriger vers la page des organisations pour créer
+      console.log('Redirection vers la création d\'organisation')
+      // Ici on pourrait naviguer vers la page des organisations
+      break
+    case 'join':
+      // Rediriger vers la page des organisations pour rejoindre
+      console.log('Redirection vers la jointure d\'organisation')
+      // Ici on pourrait naviguer vers la page des organisations
+      break
+  }
+}
 </script>
 
 <style scoped>
@@ -614,6 +775,179 @@ useHead({
   }
 }
 
+/* MODALE DES ORGANISATIONS */
+.organization-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(1px);
+  animation: fadeInOverlay 0.3s ease-out;
+}
+
+.organization-modal {
+  position: fixed;
+  width: 320px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(0, 102, 204, 0.1);
+  z-index: 10000;
+  animation: modalSlideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-origin: center bottom;
+}
+
+.organization-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(0, 102, 204, 0.1);
+  background: rgba(0, 102, 204, 0.02);
+  border-radius: 16px 16px 0 0;
+}
+
+.organization-modal-header h5 {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.organization-modal-header h5 i {
+  color: var(--primary-blue);
+  font-size: 1rem;
+}
+
+.close-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #6c757d;
+}
+
+.close-btn:hover {
+  background: rgba(0, 102, 204, 0.1);
+  color: var(--primary-blue);
+}
+
+.organization-modal-content {
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.organization-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.organization-option:hover {
+  background: rgba(0, 102, 204, 0.05);
+  border-color: rgba(0, 102, 204, 0.1);
+  transform: translateX(2px);
+}
+
+.option-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(0, 102, 204, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary-blue);
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.option-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.option-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin: 0;
+}
+
+.option-desc {
+  font-size: 0.75rem;
+  color: #6c757d;
+  margin: 0;
+  line-height: 1.3;
+}
+
+/* Animations pour la modale */
+@keyframes fadeInOverlay {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(1px);
+  }
+}
+
+@keyframes modalSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.8) rotateX(-10deg);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translateY(-5px) scale(1.05) rotateX(2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotateX(0deg);
+  }
+}
+
+@keyframes modalSlideUpMobile {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.7) rotateY(-15deg);
+  }
+  50% {
+    opacity: 0.9;
+    transform: translate(-50%, -50%) scale(1.1) rotateY(3deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1) rotateY(0deg);
+  }
+}
+
 /* RESPONSIVE */
 @media (max-width: 768px) {
   .dashboard-header {
@@ -685,5 +1019,39 @@ useHead({
   .action-card {
     text-align: center;
   }
+  
+  /* Modale des organisations sur mobile */
+  .organization-modal {
+    width: 90%;
+    max-width: 350px;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    animation: modalSlideUpMobile 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform-origin: center center;
+  }
+  
+  .organization-modal-content {
+    padding: 1rem;
+  }
+  
+  .organization-option {
+    padding: 1rem;
+  }
+  
+  .option-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+  }
+  
+  .option-title {
+    font-size: 0.9rem;
+  }
+  
+  .option-desc {
+    font-size: 0.8rem;
+  }
 }
+
 </style>
