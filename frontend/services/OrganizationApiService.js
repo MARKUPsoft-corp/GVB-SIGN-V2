@@ -86,14 +86,38 @@ class OrganizationApiService {
    */
   static async updateOrganization(organizationId, organizationData) {
     try {
+      // Récupérer le token CSRF
+      const csrfResponse = await fetch(`${API_BASE_URL}/auth/csrf/`, {
+        method: 'GET',
+        credentials: 'include'
+      })
+      
+      let csrfToken = null
+      if (csrfResponse.ok) {
+        const csrfData = await csrfResponse.json()
+        csrfToken = csrfData.csrfToken
+      }
+
+      const headers = {
+        'Content-Type': 'application/json',
+      }
+      
+      if (csrfToken) {
+        headers['X-CSRFToken'] = csrfToken
+      }
+
+      console.log('📤 Envoi des données de mise à jour:', organizationData)
+      console.log('📤 Headers:', headers)
+      console.log('📤 URL:', `${API_BASE_URL}/organizations/${organizationId}/`)
+
       const response = await fetch(`${API_BASE_URL}/organizations/${organizationId}/`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         credentials: 'include',
         body: JSON.stringify(organizationData)
       })
+
+      console.log('📥 Réponse du serveur:', response.status, response.statusText)
 
       const data = await response.json()
       
@@ -111,14 +135,41 @@ class OrganizationApiService {
   /**
    * Supprimer une organisation
    */
-  static async deleteOrganization(organizationId) {
+  static async deleteOrganization(organizationId, password) {
     try {
+      // Récupérer le token CSRF
+      const csrfResponse = await fetch(`${API_BASE_URL}/auth/csrf/`, {
+        method: 'GET',
+        credentials: 'include'
+      })
+      
+      let csrfToken = null
+      if (csrfResponse.ok) {
+        const csrfData = await csrfResponse.json()
+        csrfToken = csrfData.csrfToken
+      }
+
+      const headers = {
+        'Content-Type': 'application/json',
+      }
+      
+      if (csrfToken) {
+        headers['X-CSRFToken'] = csrfToken
+      }
+
+      // Inclure le mot de passe dans le body
+      const requestData = {
+        password: password
+      }
+
+      console.log('📤 Suppression organisation - ID:', organizationId)
+      console.log('📤 Mot de passe fourni:', password ? 'Oui' : 'Non')
+
       const response = await fetch(`${API_BASE_URL}/organizations/${organizationId}/delete/`, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include'
+        headers,
+        credentials: 'include',
+        body: JSON.stringify(requestData)
       })
 
       const data = await response.json()

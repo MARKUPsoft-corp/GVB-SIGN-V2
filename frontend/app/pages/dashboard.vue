@@ -621,21 +621,18 @@ const createOrganization = async () => {
     
     console.log('Organisation créée avec succès!', response)
     
-    // Marquer que l'utilisateur a maintenant une organisation
-    localStorage.setItem('user_has_organization', 'true')
-    
-    // Fermer la modale
-    closeCreateOrganizationModal()
-    
-    // Afficher un message de succès
-    alert('Organisation créée avec succès ! Vous êtes maintenant administrateur de cette organisation.')
-    
-    // Recharger la page pour mettre à jour le menu
-    window.location.reload()
+          // Marquer que l'utilisateur a maintenant une organisation
+          localStorage.setItem('user_has_organization', 'true')
+          
+          // Fermer la modale
+          closeCreateOrganizationModal()
+          
+          // Rafraîchir la page et ouvrir directement la page d'organisation
+          window.location.href = '/dashboard?page=organization'
     
   } catch (error) {
     console.error('Erreur lors de la création de l\'organisation:', error)
-    alert('Erreur lors de la création de l\'organisation: ' + error.message)
+    // Pas d'alert, juste un log pour le debug
   } finally {
     isCreatingOrganization.value = false
   }

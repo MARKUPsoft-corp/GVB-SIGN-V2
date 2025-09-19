@@ -630,6 +630,9 @@
             @open-profile-modal="handleOpenProfileModal" 
           />
         </div>
+        <div v-else-if="activePage === 'organization'">
+          <OrganizationsPage />
+        </div>
         <div v-else>
           <div class="page-placeholder">
             <div class="text-center py-5">
@@ -648,6 +651,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../../stores/auth'
 import DocumentsPage from '../../components/dashboard/DocumentsPage.vue'
+import OrganizationsPage from '../../components/dashboard/OrganizationsPage.vue'
 import SignImmediatelyPage from '../../components/dashboard/SignImmediatelyPage.vue'
 import { CertificateService } from '../../services/CertificateService'
 
@@ -692,6 +696,17 @@ const activePage = ref('dashboard')
 
 // Fonctions de navigation
 const setActivePage = (page) => {
+  // Vérification spéciale pour la page d'organisation
+  if (page === 'organization') {
+    if (!hasOrganization.value) {
+      console.log('❌ Utilisateur essaie d\'accéder à la page d\'organisation sans en avoir une')
+      // Rediriger vers le dashboard
+      activePage.value = 'dashboard'
+      closeSidebar()
+      return
+    }
+  }
+  
   activePage.value = page
   closeSidebar()
 }
@@ -747,15 +762,47 @@ const toggleSidebarCollapse = () => {
 // Fonction pour vérifier si l'utilisateur a une organisation
 const checkUserOrganizations = async () => {
   try {
-    // Pour l'instant, on simule la vérification
-    // Plus tard, on fera un appel API pour vérifier les organisations de l'utilisateur
-    const userHasOrganization = localStorage.getItem('user_has_organization') === 'true'
-    hasOrganization.value = userHasOrganization
+    console.log('🔍 Vérification des organisations de l\'utilisateur...')
     
-    console.log('Vérification des organisations:', hasOrganization.value)
+    // Appel API pour vérifier si l'utilisateur a une organisation
+    const response = await fetch('http://127.0.0.1:8000/api/organizations/my-organization/', {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+    
+    if (response.ok) {
+      const data = await response.json()
+      console.log('📥 Réponse API organisations:', data)
+      
+      if (data.success && data.organization) {
+        hasOrganization.value = true
+        localStorage.setItem('user_has_organization', 'true')
+        console.log('✅ Utilisateur a une organisation:', data.organization.name)
+      } else {
+        hasOrganization.value = false
+        localStorage.removeItem('user_has_organization')
+        console.log('❌ Utilisateur n\'a pas d\'organisation')
+      }
+    } else if (response.status === 404) {
+      // 404 signifie que l'utilisateur n'a pas d'organisation
+      hasOrganization.value = false
+      localStorage.removeItem('user_has_organization')
+      console.log('❌ Utilisateur n\'a pas d\'organisation (404)')
+    } else {
+      // Autre erreur
+      hasOrganization.value = false
+      localStorage.removeItem('user_has_organization')
+      console.log('❌ Erreur lors de la vérification des organisations:', response.status)
+    }
+    
+    console.log('🔍 État final hasOrganization:', hasOrganization.value)
   } catch (error) {
-    console.error('Erreur lors de la vérification des organisations:', error)
+    console.error('❌ Erreur lors de la vérification des organisations:', error)
     hasOrganization.value = false
+    localStorage.removeItem('user_has_organization')
   }
 }
 
@@ -980,6 +1027,19 @@ const removeCertificate = () => {
 onMounted(async () => {
   // Vérifier si l'utilisateur a des organisations
   await checkUserOrganizations()
+  
+  // Vérifier si l'utilisateur essaie d'accéder à la page d'organisation sans en avoir une
+  const urlParams = new URLSearchParams(window.location.search)
+  const pageParam = urlParams.get('page')
+  
+  if (pageParam === 'organization' && !hasOrganization.value) {
+    console.log('❌ Redirection automatique : utilisateur sans organisation essaie d\'accéder à la page d\'organisation')
+    // Rediriger vers le dashboard
+    activePage.value = 'dashboard'
+    // Mettre à jour l'URL sans recharger la page
+    const newUrl = window.location.pathname
+    window.history.replaceState({}, '', newUrl)
+  }
 })
 
 // Meta tags pour le dashboard
