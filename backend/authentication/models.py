@@ -48,6 +48,14 @@ class User(AbstractUser):
     is_verified = models.BooleanField(default=False, verbose_name="Email vérifié")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Date de création")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Date de modification")
+    
+    # Champs pour les organisations
+    organization = models.ForeignKey('organizations.Organization', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Organisation")
+    role = models.CharField(max_length=50, choices=[
+        ('admin', 'Administrateur'),
+        ('member', 'Membre'),
+        ('viewer', 'Observateur'),
+    ], default='member', verbose_name="Rôle")
 
     # Utiliser l'email comme nom d'utilisateur
     USERNAME_FIELD = 'email'

@@ -117,7 +117,7 @@
               Signatures
             </button>
           </li>
-          <li class="sidebar-nav-item">
+          <li class="sidebar-nav-item" v-if="hasOrganization">
             <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: activePage === 'organization' }" @click="setActivePage('organization')">
               <i class="bi bi-building me-3"></i>
               Organisation
@@ -177,7 +177,7 @@
               <span v-show="!isSidebarCollapsed">Signatures</span>
             </button>
           </li>
-          <li class="nav-item">
+          <li class="nav-item" v-if="hasOrganization">
             <button class="nav-link" :class="{ active: activePage === 'organization' }" @click="setActivePage('organization')">
               <i class="bi bi-building"></i>
               <span v-show="!isSidebarCollapsed">Organisation</span>
@@ -665,6 +665,9 @@ const isSidebarOpen = ref(false)
 const isScrolled = ref(false)
 const isSidebarCollapsed = ref(false)
 
+// État des organisations de l'utilisateur
+const hasOrganization = ref(false)
+
 // État de la modale de profil
 const isProfileModalOpen = ref(false)
 const activeProfileTab = ref('profile')
@@ -739,6 +742,21 @@ const closeSidebar = () => {
 // Fonction pour replier/déplier la sidebar desktop
 const toggleSidebarCollapse = () => {
   isSidebarCollapsed.value = !isSidebarCollapsed.value
+}
+
+// Fonction pour vérifier si l'utilisateur a une organisation
+const checkUserOrganizations = async () => {
+  try {
+    // Pour l'instant, on simule la vérification
+    // Plus tard, on fera un appel API pour vérifier les organisations de l'utilisateur
+    const userHasOrganization = localStorage.getItem('user_has_organization') === 'true'
+    hasOrganization.value = userHasOrganization
+    
+    console.log('Vérification des organisations:', hasOrganization.value)
+  } catch (error) {
+    console.error('Erreur lors de la vérification des organisations:', error)
+    hasOrganization.value = false
+  }
 }
 
 // Fonctions pour la modale de profil
@@ -957,6 +975,12 @@ const removeCertificate = () => {
     }
   }
 }
+
+// Initialisation au montage du composant
+onMounted(async () => {
+  // Vérifier si l'utilisateur a des organisations
+  await checkUserOrganizations()
+})
 
 // Meta tags pour le dashboard
 useHead({

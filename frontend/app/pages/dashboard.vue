@@ -204,12 +204,151 @@
         </div>
       </div>
     </div>
+
+    <!-- Modale de création d'organisation -->
+    <div v-if="isCreateOrganizationModalOpen" class="organization-modal-overlay" @click="closeCreateOrganizationModal">
+      <div class="organization-form-modal" @click.stop ref="createOrganizationModal">
+        <div class="organization-modal-header">
+          <h5>
+            <i class="bi bi-building-add"></i>
+            Créer une Organisation
+          </h5>
+          <button class="close-btn" @click="closeCreateOrganizationModal">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <div class="organization-form-content">
+          <form @submit.prevent="createOrganization" class="organization-form">
+            <div class="form-group">
+              <label for="orgName">
+                <i class="bi bi-building"></i>
+                Nom de l'organisation
+              </label>
+              <input 
+                type="text" 
+                id="orgName" 
+                v-model="newOrganization.name" 
+                placeholder="Entrez le nom de votre organisation"
+                required
+              >
+            </div>
+
+            <div class="form-group">
+              <label for="orgDescription">
+                <i class="bi bi-file-text"></i>
+                Description
+              </label>
+              <textarea 
+                id="orgDescription" 
+                v-model="newOrganization.description" 
+                placeholder="Décrivez votre organisation..."
+                rows="3"
+              ></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="orgEmail">
+                <i class="bi bi-envelope"></i>
+                Email de contact
+              </label>
+              <input 
+                type="email" 
+                id="orgEmail" 
+                v-model="newOrganization.email" 
+                placeholder="contact@organisation.com"
+                required
+              >
+            </div>
+
+            <div class="form-group">
+              <label for="orgPhone">
+                <i class="bi bi-telephone"></i>
+                Téléphone
+              </label>
+              <input 
+                type="tel" 
+                id="orgPhone" 
+                v-model="newOrganization.phone" 
+                placeholder="+237 xx xx xx xx"
+              >
+            </div>
+
+            <div class="form-group">
+              <label for="orgAddress">
+                <i class="bi bi-geo-alt"></i>
+                Adresse
+              </label>
+              <textarea 
+                id="orgAddress" 
+                v-model="newOrganization.address" 
+                placeholder="Adresse complète de l'organisation..."
+                rows="2"
+              ></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="orgWebsite">
+                <i class="bi bi-globe"></i>
+                Site web
+              </label>
+              <input 
+                type="url" 
+                id="orgWebsite" 
+                v-model="newOrganization.website" 
+                placeholder="https://www.organisation.com"
+              >
+            </div>
+
+            <div class="form-group">
+              <label for="orgType">
+                <i class="bi bi-tags"></i>
+                Type d'organisation
+              </label>
+              <select id="orgType" v-model="newOrganization.organization_type" required>
+                <option value="">Sélectionnez un type</option>
+                <option value="entreprise">Entreprise</option>
+                <option value="association">Association</option>
+                <option value="administration">Administration</option>
+                <option value="collectivite">Collectivité</option>
+                <option value="autre">Autre</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="orgSector">
+                <i class="bi bi-briefcase"></i>
+                Secteur d'activité
+              </label>
+              <input 
+                type="text" 
+                id="orgSector" 
+                v-model="newOrganization.sector" 
+                placeholder="Ex: Technologies, Santé, Éducation..."
+              >
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="btn-cancel" @click="closeCreateOrganizationModal">
+                <i class="bi bi-x-circle"></i>
+                Annuler
+              </button>
+              <button type="submit" class="btn-create" :disabled="isCreatingOrganization">
+                <i class="bi bi-check-circle" v-if="!isCreatingOrganization"></i>
+                <i class="bi bi-hourglass-split" v-else></i>
+                {{ isCreatingOrganization ? 'Création...' : 'Créer l\'organisation' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { useAuthStore } from '../../stores/auth'
+import OrganizationApiService from '../../services/OrganizationApiService'
 
 // Définir le middleware et le layout
 definePageMeta({
@@ -230,6 +369,21 @@ const isFromRegistration = ref(false)
 const isOrganizationModalOpen = ref(false)
 const organizationModal = ref(null)
 const organizationBtn = ref(null)
+
+// Variables pour la modale de création d'organisation
+const isCreateOrganizationModalOpen = ref(false)
+const createOrganizationModal = ref(null)
+const isCreatingOrganization = ref(false)
+const newOrganization = ref({
+  name: '',
+  description: '',
+  email: '',
+  phone: '',
+  address: '',
+  website: '',
+  organization_type: '',
+  sector: ''
+})
 
 // Initialiser les données utilisateur
 onMounted(async () => {
@@ -370,15 +524,120 @@ const selectOrganizationOption = (option) => {
   
   switch (option) {
     case 'create':
-      // Rediriger vers la page des organisations pour créer
-      console.log('Redirection vers la création d\'organisation')
-      // Ici on pourrait naviguer vers la page des organisations
+      // Ouvrir la modale de création d'organisation
+      console.log('Ouverture de la modale de création d\'organisation')
+      openCreateOrganizationModal()
       break
     case 'join':
       // Rediriger vers la page des organisations pour rejoindre
       console.log('Redirection vers la jointure d\'organisation')
       // Ici on pourrait naviguer vers la page des organisations
       break
+  }
+}
+
+// Fonctions pour la modale de création d'organisation
+const openCreateOrganizationModal = () => {
+  console.log('Ouverture de la modale de création d\'organisation')
+  isCreateOrganizationModalOpen.value = true
+  
+  // Désactiver le scroll du body
+  document.body.style.overflow = 'hidden'
+  
+  // Positionner la modale contextuellement
+  nextTick(() => {
+    positionCreateOrganizationModal()
+  })
+}
+
+const closeCreateOrganizationModal = () => {
+  console.log('Fermeture de la modale de création d\'organisation')
+  isCreateOrganizationModalOpen.value = false
+  
+  // Réactiver le scroll du body
+  document.body.style.overflow = 'auto'
+  
+  // Réinitialiser le formulaire
+  resetOrganizationForm()
+}
+
+const positionCreateOrganizationModal = () => {
+  if (!createOrganizationModal.value) return
+  
+  const modal = createOrganizationModal.value
+  const rect = modal.getBoundingClientRect()
+  const viewportWidth = window.innerWidth
+  const viewportHeight = window.innerHeight
+  
+  // Calculer la position optimale (centré horizontalement, plus haut verticalement)
+  const left = Math.max(20, (viewportWidth - rect.width) / 2)
+  const top = Math.max(20, (viewportHeight - rect.height) / 2 - 50) // Décalage de 100px vers le haut
+  
+  modal.style.left = `${left}px`
+  modal.style.top = `${top}px`
+  modal.style.transform = 'none'
+}
+
+const resetOrganizationForm = () => {
+  newOrganization.value = {
+    name: '',
+    description: '',
+    email: '',
+    phone: '',
+    address: '',
+    website: '',
+    organization_type: '',
+    sector: ''
+  }
+  isCreatingOrganization.value = false
+}
+
+const createOrganization = async () => {
+  try {
+    isCreatingOrganization.value = true
+    console.log('Création de l\'organisation:', newOrganization.value)
+    
+    // Récupérer l'utilisateur connecté depuis le store
+    const authStore = useAuthStore()
+    const currentUser = authStore.user
+    
+    console.log('Utilisateur connecté:', currentUser)
+    console.log('ID utilisateur connecté:', currentUser?.id)
+    
+    if (!currentUser || !currentUser.id) {
+      throw new Error('Aucun utilisateur connecté trouvé')
+    }
+    
+    // Ajouter l'ID de l'utilisateur connecté aux données
+    const organizationData = {
+      ...newOrganization.value,
+      user_id: currentUser.id
+    }
+    
+    console.log('Données d\'organisation avec user_id:', organizationData)
+    
+    // Appel à l'API pour créer l'organisation
+    const response = await OrganizationApiService.createOrganization(organizationData)
+    
+    console.log('Organisation créée avec succès!', response)
+    
+    // Marquer que l'utilisateur a maintenant une organisation
+    localStorage.setItem('user_has_organization', 'true')
+    
+    // Fermer la modale
+    closeCreateOrganizationModal()
+    
+    // Afficher un message de succès
+    alert('Organisation créée avec succès ! Vous êtes maintenant administrateur de cette organisation.')
+    
+    // Recharger la page pour mettre à jour le menu
+    window.location.reload()
+    
+  } catch (error) {
+    console.error('Erreur lors de la création de l\'organisation:', error)
+    alert('Erreur lors de la création de l\'organisation: ' + error.message)
+  } finally {
+    isCreatingOrganization.value = false
   }
 }
 </script>
@@ -791,6 +1050,25 @@ const selectOrganizationOption = (option) => {
   animation: fadeInOverlay 0.3s ease-out;
 }
 
+/* MODALE DE FORMULAIRE D'ORGANISATION */
+.organization-form-modal {
+  position: fixed;
+  width: 600px;
+  max-width: 90vw;
+  max-height: 90vh;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(0, 102, 204, 0.1);
+  z-index: 10000;
+  animation: modalSlideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-origin: center bottom;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
 .organization-modal {
   position: fixed;
   width: 320px;
@@ -824,9 +1102,20 @@ const selectOrganizationOption = (option) => {
   gap: 0.5rem;
 }
 
+/* Titre plus grand pour la modale de formulaire */
+.organization-form-modal .organization-modal-header h5 {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
 .organization-modal-header h5 i {
   color: var(--primary-blue);
   font-size: 1rem;
+}
+
+/* Icône plus grande pour la modale de formulaire */
+.organization-form-modal .organization-modal-header h5 i {
+  font-size: 1.3rem;
 }
 
 .close-btn {
@@ -853,6 +1142,146 @@ const selectOrganizationOption = (option) => {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+
+/* CONTENU DU FORMULAIRE D'ORGANISATION */
+.organization-form-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+.organization-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 0.25rem;
+}
+
+.form-group label i {
+  color: var(--primary-blue);
+  font-size: 0.9rem;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  padding: 0.75rem 1rem;
+  border: 2px solid rgba(0, 102, 204, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  font-size: 0.9rem;
+  color: var(--text-dark);
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+  transform: translateY(-1px);
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: rgba(108, 117, 125, 0.7);
+  font-style: italic;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+}
+
+.form-group select {
+  cursor: pointer;
+}
+
+.form-group select option {
+  padding: 0.5rem;
+  background: white;
+  color: var(--text-dark);
+}
+
+/* ACTIONS DU FORMULAIRE */
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(0, 102, 204, 0.1);
+}
+
+.btn-cancel,
+.btn-create {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+  font-family: inherit;
+}
+
+.btn-cancel {
+  background: rgba(108, 117, 125, 0.1);
+  color: #6c757d;
+  border: 2px solid rgba(108, 117, 125, 0.2);
+}
+
+.btn-cancel:hover {
+  background: rgba(108, 117, 125, 0.15);
+  border-color: rgba(108, 117, 125, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-create {
+  background: linear-gradient(135deg, var(--primary-blue), #0056b3);
+  color: white;
+  border: 2px solid var(--primary-blue);
+}
+
+.btn-create:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0056b3, var(--primary-blue));
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px rgba(0, 102, 204, 0.3);
+}
+
+.btn-create:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-create:disabled:hover {
+  transform: none;
+  box-shadow: none;
 }
 
 .organization-option {
@@ -936,15 +1365,15 @@ const selectOrganizationOption = (option) => {
 @keyframes modalSlideUpMobile {
   0% {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.7) rotateY(-15deg);
+    transform: translate(-50%, -50%) translateY(30px) scale(0.8) rotateX(-10deg);
   }
   50% {
-    opacity: 0.9;
-    transform: translate(-50%, -50%) scale(1.1) rotateY(3deg);
+    opacity: 0.8;
+    transform: translate(-50%, -50%) translateY(-5px) scale(1.05) rotateX(2deg);
   }
   100% {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1) rotateY(0deg);
+    transform: translate(-50%, -50%) translateY(0) scale(1) rotateX(0deg);
   }
 }
 
@@ -1027,12 +1456,66 @@ const selectOrganizationOption = (option) => {
     left: 50% !important;
     top: 50% !important;
     transform: translate(-50%, -50%) !important;
-    animation: modalSlideUpMobile 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: modalSlideUpMobile 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
     transform-origin: center center;
+  }
+  
+  /* Modale de formulaire d'organisation sur mobile */
+  .organization-form-modal {
+    width: 98%;
+    max-width: none;
+    max-height: 95vh;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    animation: modalSlideUpMobile 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform-origin: center center;
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: none;
+  }
+  
+  .organization-form-content {
+    padding: 1rem;
+  }
+  
+  .organization-form {
+    gap: 1rem;
+  }
+  
+  .form-group {
+    gap: 0.4rem;
+  }
+  
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.85rem;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: none;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+  }
+  
+  .btn-cancel,
+  .btn-create {
+    width: 100%;
+    justify-content: center;
+    padding: 0.8rem 1rem;
   }
   
   .organization-modal-content {
     padding: 1rem;
+  }
+  
+  /* Overlay moins flou sur mobile */
+  .organization-modal-overlay {
+    backdrop-filter: none;
   }
   
   .organization-option {
