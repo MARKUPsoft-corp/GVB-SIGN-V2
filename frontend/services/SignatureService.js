@@ -92,7 +92,9 @@ export class SignatureService {
    */
   signDocument(documentData, privateKey) {
     try {
-      console.log('Début de la signature du document')
+      console.log('🔐 DÉBUT DE LA SIGNATURE DU DOCUMENT')
+      console.log('📊 Type de documentData:', typeof documentData)
+      console.log('📊 Taille du document:', documentData.byteLength || documentData.length)
       
       if (!privateKey) {
         throw new Error('Clé privée manquante')
@@ -100,6 +102,7 @@ export class SignatureService {
 
       // Convertir en Uint8Array si nécessaire
       const data = documentData instanceof ArrayBuffer ? new Uint8Array(documentData) : documentData
+      console.log('📊 Données converties en Uint8Array, taille:', data.length)
       
       // Calculer le hash SHA-256 du document directement avec node-forge
       const md = forge.md.sha256.create()
@@ -114,25 +117,31 @@ export class SignatureService {
       
       // Obtenir le digest
       const digest = md.digest()
-      console.log('Hash calculé et digest créé pour signature')
+      const hashHex = digest.toHex()
+      console.log('🔐 Hash calculé pour signature:', hashHex.substring(0, 20) + '...')
+      console.log('🔐 Hash complet:', hashHex)
       
       // Créer la signature avec PKCS#1 v1.5 en utilisant les primitives RSA
       // Approche alternative : utiliser directement les fonctions RSA de node-forge
       try {
         // Méthode 1: Essayer avec l'objet digest
         const signature = privateKey.sign(digest)
-        console.log('Signature créée avec l\'objet digest')
-        return forge.util.encode64(signature)
+        const signatureBase64 = forge.util.encode64(signature)
+        console.log('✅ Signature créée avec l\'objet digest')
+        console.log('🔐 Signature (premiers 50 chars):', signatureBase64.substring(0, 50) + '...')
+        return signatureBase64
       } catch (digestError) {
-        console.log('Échec avec l\'objet digest, essai avec les bytes:', digestError.message)
+        console.log('❌ Échec avec l\'objet digest, essai avec les bytes:', digestError.message)
         
         try {
           // Méthode 2: Essayer avec les bytes du digest
           const signature = privateKey.sign(digest.getBytes())
-          console.log('Signature créée avec les bytes du digest')
-          return forge.util.encode64(signature)
+          const signatureBase64 = forge.util.encode64(signature)
+          console.log('✅ Signature créée avec les bytes du digest')
+          console.log('🔐 Signature (premiers 50 chars):', signatureBase64.substring(0, 50) + '...')
+          return signatureBase64
         } catch (bytesError) {
-          console.log('Échec avec les bytes, essai avec signature manuelle:', bytesError.message)
+          console.log('❌ Échec avec les bytes, essai avec signature manuelle:', bytesError.message)
           
           // Méthode 3: Signature RSA manuelle avec PKCS#1 v1.5
           const hashBytes = digest.getBytes()
@@ -150,8 +159,10 @@ export class SignatureService {
           
           // Utiliser les primitives RSA de forge
           const signature = forge.pki.rsa.encrypt(algorithmIdentifierBytes, privateKey, 0x01)
-          console.log('Signature créée avec RSA manuel')
-          return forge.util.encode64(signature)
+          const signatureBase64 = forge.util.encode64(signature)
+          console.log('✅ Signature créée avec RSA manuel')
+          console.log('🔐 Signature (premiers 50 chars):', signatureBase64.substring(0, 50) + '...')
+          return signatureBase64
         }
       }
     } catch (error) {
@@ -481,9 +492,12 @@ export class SignatureService {
       
       // Calculer le hash SHA-256 du document original
       const originalHash = this.calculateDocumentHash(documentData)
+      console.log('🔐 Hash calculé dans signDocumentComplete:', originalHash.substring(0, 20) + '...')
       
       // Signer le document avec la clé privée
+      console.log('🔐 Appel de signDocument avec les données du document...')
       const signature = this.signDocument(documentData, privateKey)
+      console.log('🔐 Signature retournée par signDocument:', signature.substring(0, 50) + '...')
       console.log('Document signé avec succès')
       
       // Extraire les métadonnées

@@ -1280,6 +1280,10 @@ async function proceedToSignature() {
     
     console.log('=== DÉBUT DE LA SIGNATURE FINALE ===')
     
+    // RÉINITIALISER LES RÉSULTATS PRÉCÉDENTS
+    console.log('🔐 RÉINITIALISATION DES RÉSULTATS PRÉCÉDENTS')
+    signatureResults.value = []
+    
     // Vérifier que le certificat est disponible et valide
     if (!certificateInfo.value) {
       throw new Error('Aucun certificat disponible. Veuillez importer un certificat valide.')
@@ -1328,12 +1332,24 @@ async function proceedToSignature() {
     const localSignatureResults = []
     const totalDocuments = Object.keys(documentsConfiguration.value).length
     
+    console.log(`🔐 AVANT LA BOUCLE - NOMBRE TOTAL DE DOCUMENTS À TRAITER: ${totalDocuments}`)
+    console.log(`🔐 AVANT LA BOUCLE - DOCUMENTS CONFIGURÉS:`, Object.keys(documentsConfiguration.value))
+    console.log(`🔐 AVANT LA BOUCLE - CONTENU DE documentsConfiguration.value:`, documentsConfiguration.value)
+    
+    console.log(`🔐 AVANT LA BOUCLE - NOMBRE TOTAL DE DOCUMENTS À TRAITER: ${totalDocuments}`)
+    console.log(`🔐 AVANT LA BOUCLE - DOCUMENTS CONFIGURÉS:`, Object.keys(documentsConfiguration.value))
+    console.log(`🔐 AVANT LA BOUCLE - CONTENU DE documentsConfiguration.value:`, documentsConfiguration.value)
+    
+    console.log(`🔐 NOMBRE TOTAL DE DOCUMENTS À TRAITER: ${totalDocuments}`)
+    console.log(`🔐 DOCUMENTS CONFIGURÉS:`, Object.keys(documentsConfiguration.value))
+    
     for (const [index, config] of Object.entries(documentsConfiguration.value)) {
       const documentNumber = parseInt(index) + 1
       signatureProgress.value = `Signature du document ${documentNumber}/${totalDocuments}...`
       
       console.log(`\n--- Traitement du document ${documentNumber} ---`)
       console.log('Configuration:', config)
+      console.log(`🔐 DÉBUT DE LA BOUCLE POUR DOCUMENT ${index}`)
       
       // Récupérer le fichier PDF original
       const file = config.file
@@ -1436,13 +1452,25 @@ async function proceedToSignature() {
       }
       
       // Signer le document
-      console.log(`Signature du document ${index}...`)
+      console.log(`🔐 SIGNATURE DU DOCUMENT ${index}...`)
+      console.log(`🔐 Données du document (premiers 50 bytes):`, Array.from(documentData.slice(0, 50)))
+      console.log(`🔐 Taille du document:`, documentData.byteLength)
+      console.log(`🔐 Clé privée disponible:`, !!privateKey)
+      console.log(`🔐 Clé publique disponible:`, !!publicKey)
+      
       const result = await signatureService.signDocumentComplete(
         documentData,
         privateKey,
         publicKey,
         metadata
       )
+      
+      console.log(`🔐 Résultat de la signature pour document ${index}:`, {
+        success: result.success,
+        documentId: result.documentId,
+        originalHash: result.originalHash?.substring(0, 20) + '...',
+        signature: result.signature?.substring(0, 50) + '...'
+      })
       
       if (result.success) {
         console.log(`Document ${index} signé avec succès!`)
