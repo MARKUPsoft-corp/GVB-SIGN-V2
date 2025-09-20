@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
 from datetime import timedelta
+import json
 
 User = get_user_model()
 
@@ -50,7 +51,10 @@ class Organization(models.Model):
     @property
     def admin_count(self):
         """Retourne le nombre d'administrateurs de l'organisation"""
-        return self.members.filter(role='admin').count()
+        count = self.members.filter(role='admin').count()
+        print(f"🔍 Admin count pour {self.name}: {count}")
+        print(f"🔍 Tous les membres: {list(self.members.values('user__email', 'role'))}")
+        return count
 
     @property
     def member_count(self):
@@ -190,3 +194,90 @@ def reactivate_invitation_codes(sender, instance, **kwargs):
             
     except Exception as e:
         print(f"❌ Erreur lors de la réactivation automatique des codes: {str(e)}")
+
+
+class OrganizationCertificate(models.Model):
+    """
+    Modèle pour stocker les certificats d'organisation
+    """
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='certificates')
+    name = models.CharField(max_length=255, help_text="Nom du certificat")
+    subject_common_name = models.CharField(max_length=255, blank=True, null=True)
+    subject_organization = models.CharField(max_length=255, blank=True, null=True)
+    subject_organizational_unit = models.CharField(max_length=255, blank=True, null=True)
+    subject_country = models.CharField(max_length=10, blank=True, null=True)
+    subject_email = models.EmailField(blank=True, null=True)
+    
+    issuer_common_name = models.CharField(max_length=255, blank=True, null=True)
+    issuer_organization = models.CharField(max_length=255, blank=True, null=True)
+    issuer_country = models.CharField(max_length=10, blank=True, null=True)
+    
+    serial_number = models.CharField(max_length=255, blank=True, null=True)
+    fingerprint = models.CharField(max_length=255, blank=True, null=True)
+    signature_algorithm = models.CharField(max_length=100, blank=True, null=True)
+    
+    not_before = models.DateTimeField(blank=True, null=True)
+    not_after = models.DateTimeField(blank=True, null=True)
+    is_valid = models.BooleanField(default=True)
+    
+    # Clés cryptographiques (stockées de manière sécurisée)
+    private_key_pem = models.TextField(blank=True, null=True, help_text="Clé privée au format PEM")
+    public_key_pem = models.TextField(blank=True, null=True, help_text="Clé publique au format PEM")
+    certificate_pem = models.TextField(blank=True, null=True, help_text="Certificat au format PEM")
+    
+    # Métadonnées
+    key_usage = models.JSONField(default=list, blank=True, help_text="Usages de clé autorisés")
+    imported_at = models.DateTimeField(auto_now_add=True)
+    imported_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='imported_certificates')
+    is_active = models.BooleanField(default=True)
+    
+    class Meta:
+        verbose_name = "Certificat d'organisation"
+        verbose_name_plural = "Certificats d'organisation"
+        ordering = ['-imported_at']
+    
+    def __str__(self):
+        return f"{self.name} - {self.organization.name}"
+    
+    @property
+    def is_expired(self):
+        """Vérifie si le certificat est expiré"""
+        if not self.not_after:
+            return False
+        return timezone.now() > self.not_after
+    
+    @property
+    def days_until_expiry(self):
+        """Retourne le nombre de jours avant expiration"""
+        if not self.not_after:
+            return None
+        delta = self.not_after - timezone.now()
+        return delta.days if delta.days > 0 else 0
+    
+    def get_subject_info(self):
+        """Retourne les informations du sujet sous forme de dictionnaire"""
+        return {
+            'commonName': self.subject_common_name,
+            'organization': self.subject_organization,
+            'organizationalUnit': self.subject_organizational_unit,
+            'country': self.subject_country,
+            'email': self.subject_email
+        }
+    
+    def get_issuer_info(self):
+        """Retourne les informations de l'émetteur sous forme de dictionnaire"""
+        return {
+            'commonName': self.issuer_common_name,
+            'organization': self.issuer_organization,
+            'country': self.issuer_country
+        }
+    
+    def get_validity_info(self):
+        """Retourne les informations de validité"""
+        return {
+            'notBefore': self.not_before.isoformat() if self.not_before else None,
+            'notAfter': self.not_after.isoformat() if self.not_after else None,
+            'isValid': self.is_valid and not self.is_expired,
+            'isExpired': self.is_expired,
+            'daysUntilExpiry': self.days_until_expiry
+        }

@@ -10,7 +10,7 @@
       <div class="header-container">
         <div class="header-content">
           <h1 class="section-title">
-            <span class="text-dark">Espace de gestion de l'</span>
+            <span class="text-dark">Espace d'administration de l'</span>
             <span class="text-primary-blue">organisation </span>
             <span class="text-primary-blue" v-if="userOrganization && userOrganization.organization"> {{ userOrganization.organization.name }}</span>
           </h1>
@@ -108,170 +108,6 @@
             <p class="lead mb-0 text-dark sections-subtitle">
               Gérez vos organisations et collaborez avec votre équipe.
             </p>
-          </div>
-        </div>
-      </div>
-
-      <div class="row align-items-center">
-        <!-- Colonne gauche - Mes Organisations Récentes -->
-        <div class="col-lg-6 mb-4">
-          <div class="organizations-section-card">
-            <div class="section-card-header">
-              <div class="section-icon">
-                <i class="bi bi-building text-primary-blue"></i>
-              </div>
-              <div class="section-header-content">
-                <h3 class="section-card-title">Organisations Récentes</h3>
-                <p class="section-card-subtitle">Vos dernières organisations créées</p>
-              </div>
-            </div>
-            
-            <div class="organizations-list">
-              <!-- Organisation 1 -->
-              <div class="organization-item">
-                <div class="organization-icon">
-                  <i class="bi bi-building text-primary-blue"></i>
-                </div>
-                <div class="organization-info">
-                  <h5 class="organization-name">TechCorp Solutions</h5>
-                  <p class="organization-details">
-                    <span class="organization-date">15 Jan 2024</span>
-                    <span class="organization-status active">Active</span>
-                  </p>
-                </div>
-                <div class="organization-actions">
-                  <button class="btn btn-sm btn-outline-primary" @click="viewOrganization(1)" title="Voir">
-                    <i class="bi bi-eye"></i>
-                  </button>
-                </div>
-              </div>
-
-              <!-- Organisation 2 -->
-              <div class="organization-item">
-                <div class="organization-icon">
-                  <i class="bi bi-building text-warning"></i>
-                </div>
-                <div class="organization-info">
-                  <h5 class="organization-name">Startup Innovante</h5>
-                  <p class="organization-details">
-                    <span class="organization-date">12 Jan 2024</span>
-                    <span class="organization-status pending">En attente</span>
-                  </p>
-                </div>
-                <div class="organization-actions">
-                  <button class="btn btn-sm btn-outline-primary" @click="viewOrganization(2)" title="Voir">
-                    <i class="bi bi-eye"></i>
-                  </button>
-                </div>
-              </div>
-
-              <!-- Organisation 3 -->
-              <div class="organization-item">
-                <div class="organization-icon">
-                  <i class="bi bi-building text-success"></i>
-                </div>
-                <div class="organization-info">
-                  <h5 class="organization-name">Digital Agency</h5>
-                  <p class="organization-details">
-                    <span class="organization-date">10 Jan 2024</span>
-                    <span class="organization-status active">Active</span>
-                  </p>
-                </div>
-                <div class="organization-actions">
-                  <button class="btn btn-sm btn-outline-primary" @click="viewOrganization(3)" title="Voir">
-                    <i class="bi bi-eye"></i>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div class="section-footer">
-              <button class="btn btn-primary-blue btn-sm" @click="toggleAllOrganizations">
-                Voir toutes les organisations
-                <i class="bi bi-arrow-right ms-2"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Colonne droite - Actions sur les Organisations -->
-        <div class="col-lg-6 mb-4">
-          <div class="organizations-section-card">
-            <div class="section-card-header">
-              <div class="section-icon">
-                <i class="bi bi-plus-circle text-primary-blue"></i>
-              </div>
-              <div class="section-header-content">
-                <h3 class="section-card-title">Actions Rapides</h3>
-                <p class="section-card-subtitle">Créez et gérez vos organisations</p>
-              </div>
-            </div>
-            
-            <div class="organizations-actions">
-              <!-- Action 1 - Nouvelle organisation -->
-              <div class="action-item-org">
-                <div class="action-card-org" @click="toggleCreateModal()">
-                  <div class="action-icon-org">
-                    <i class="bi bi-building-add text-primary-blue"></i>
-                  </div>
-                  <div class="action-content-org">
-                    <h5 class="action-title">Nouvelle Organisation</h5>
-                    <p class="action-description">Créer une nouvelle organisation</p>
-                  </div>
-                  <div class="action-arrow">
-                    <i class="bi bi-arrow-right"></i>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Action 2 - Rejoindre -->
-              <div class="action-item-org">
-                <div class="action-card-org" @click="toggleJoinModal()">
-                  <div class="action-icon-org">
-                    <i class="bi bi-person-plus text-primary-blue"></i>
-                  </div>
-                  <div class="action-content-org">
-                    <h5 class="action-title">Rejoindre</h5>
-                    <p class="action-description">Rejoindre une organisation existante</p>
-                  </div>
-                  <div class="action-arrow">
-                    <i class="bi bi-arrow-right"></i>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Action 3 - Invitations -->
-              <div class="action-item-org">
-                <div class="action-card-org">
-                  <div class="action-icon-org">
-                    <i class="bi bi-envelope text-primary-blue"></i>
-                  </div>
-                  <div class="action-content-org">
-                    <h5 class="action-title">Invitations</h5>
-                    <p class="action-description">Gérer vos invitations</p>
-                  </div>
-                  <div class="action-arrow">
-                    <i class="bi bi-arrow-right"></i>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Action 4 - Paramètres -->
-              <div class="action-item-org">
-                <div class="action-card-org">
-                  <div class="action-icon-org">
-                    <i class="bi bi-gear text-primary-blue"></i>
-                  </div>
-                  <div class="action-content-org">
-                    <h5 class="action-title">Paramètres</h5>
-                    <p class="action-description">Configurer vos organisations</p>
-                  </div>
-                  <div class="action-arrow">
-                    <i class="bi bi-arrow-right"></i>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -478,6 +314,14 @@
               <i class="bi bi-people"></i>
               <span>Membres</span>
             </li>
+            <li class="organization-settings-nav-item" :class="{ active: activeOrganizationTab === 'invitations' }" @click="setActiveOrganizationTab('invitations')">
+              <i class="bi bi-envelope"></i>
+              <span>Invitations</span>
+            </li>
+            <li class="organization-settings-nav-item" :class="{ active: activeOrganizationTab === 'certificates' }" @click="setActiveOrganizationTab('certificates')">
+              <i class="bi bi-shield-fill-check"></i>
+              <span>Certificats</span>
+            </li>
             <li class="organization-settings-nav-item" :class="{ active: activeOrganizationTab === 'permissions' }" @click="setActiveOrganizationTab('permissions')">
               <i class="bi bi-shield-check"></i>
               <span>Permissions</span>
@@ -564,19 +408,180 @@
                   Inviter un membre
                 </button>
               </div>
-              <div class="members-list">
-                <div class="member-item">
+              
+              <!-- Loading state -->
+              <div v-if="isLoadingMembers" class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Chargement...</span>
+                </div>
+                <p class="text-muted mt-2">Chargement des membres...</p>
+              </div>
+              
+              <!-- Liste des membres -->
+              <div v-else-if="organizationMembers.length > 0" class="members-list">
+                <div v-for="member in organizationMembers" :key="member.id" class="member-item">
                   <div class="member-info">
                     <div class="member-avatar">
                       <i class="bi bi-person-circle"></i>
                     </div>
                     <div class="member-details">
-                      <h6>{{ userOrganization?.organization?.created_by_name || 'Administrateur' }}</h6>
-                      <p class="text-muted">Administrateur</p>
+                      <h6>{{ member.user_name || member.user_email }}</h6>
+                      <p class="text-muted">{{ member.user_email }}</p>
+                      <small class="text-muted">
+                        Rejoint le {{ formatDate(member.joined_at) }}
+                      </small>
                     </div>
                   </div>
-                  <span class="badge bg-primary">Admin</span>
+                  <div class="member-actions">
+                    <span class="badge" :class="getRoleBadgeClass(member.role)">
+                      {{ getRoleDisplayName(member.role) }}
+                    </span>
+                  </div>
                 </div>
+              </div>
+              
+              <!-- Aucun membre -->
+              <div v-else class="text-center py-4">
+                <i class="bi bi-people text-muted" style="font-size: 3rem;"></i>
+                <p class="text-muted mt-2">Aucun membre trouvé</p>
+              </div>
+            </div>
+            
+            <!-- Contenu Invitations -->
+            <div v-if="activeOrganizationTab === 'invitations'" class="tab-content">
+              
+              <!-- Loading state -->
+              <div v-if="isLoadingInvitations" class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Chargement...</span>
+                </div>
+                <p class="text-muted mt-2">Chargement des codes d'invitation...</p>
+              </div>
+              
+              <!-- Liste des codes d'invitation -->
+              <div v-else-if="invitationCodes.length > 0" class="invitations-list">
+                <div v-for="code in invitationCodes" :key="code.id" class="member-item">
+                  <div class="member-info">
+                    <div class="member-avatar">
+                      <i class="bi bi-envelope"></i>
+                    </div>
+                    <div class="member-details">
+                      <h6>{{ code.code }}</h6>
+                      <p class="text-muted">Rôle: {{ getRoleDisplayName(code.role) }}</p>
+                      <small class="text-muted">
+                        Créé le {{ formatDate(code.created_at) }}
+                        <span v-if="code.used_at"> • Utilisé le {{ formatDate(code.used_at) }}</span>
+                        <span v-if="code.used_by_name"> par {{ code.used_by_name }}</span>
+                      </small>
+                    </div>
+                  </div>
+                  <div class="member-actions">
+                    <span class="badge" :class="getInvitationStatusClass(code)">
+                      {{ getInvitationStatusText(code) }}
+                    </span>
+                    <div class="invitation-buttons mt-2">
+                      <button 
+                        class="btn btn-outline-primary btn-sm me-1" 
+                        @click="copyInvitationCode(code.code)"
+                        title="Copier le code"
+                      >
+                        <i class="bi bi-copy"></i>
+                      </button>
+                      <button 
+                        v-if="!code.is_used && code.is_active !== false" 
+                        class="btn btn-outline-warning btn-sm me-1" 
+                        @click="deactivateInvitationCode(code.id)"
+                        title="Désactiver le code"
+                      >
+                        <i class="bi bi-pause-circle"></i>
+                      </button>
+                      <button 
+                        v-if="!code.is_used && code.is_active === false" 
+                        class="btn btn-outline-success btn-sm me-1" 
+                        @click="reactivateInvitationCode(code.id)"
+                        title="Réactiver le code"
+                      >
+                        <i class="bi bi-play-circle"></i>
+                      </button>
+                      <button 
+                        class="btn btn-outline-danger btn-sm" 
+                        @click="deleteInvitationCode(code.id)"
+                        title="Supprimer définitivement le code"
+                      >
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Aucun code d'invitation -->
+              <div v-else class="text-center py-4">
+                <i class="bi bi-envelope text-muted" style="font-size: 3rem;"></i>
+                <p class="text-muted mt-2">Aucun code d'invitation trouvé</p>
+                <small class="text-muted">Les codes d'invitation apparaîtront ici une fois créés</small>
+              </div>
+            </div>
+            
+            <!-- Contenu Certificats -->
+            <div v-if="activeOrganizationTab === 'certificates'" class="tab-content">
+              
+              <!-- Loading state -->
+              <div v-if="isLoadingCertificates" class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Chargement...</span>
+                </div>
+                <p class="text-muted mt-2">Chargement des certificats...</p>
+              </div>
+              
+              <!-- Liste des certificats -->
+              <div v-else-if="organizationCertificates.length > 0" class="certificates-list">
+                <div v-for="certificate in organizationCertificates" :key="certificate.id" class="member-item">
+                  <div class="member-info">
+                    <div class="member-avatar">
+                      <i class="bi bi-shield-fill-check"></i>
+                    </div>
+                    <div class="member-details">
+                      <h6>{{ certificate.name }}</h6>
+                      <p class="text-muted">{{ certificate.subject_common_name || 'Certificat de signature' }}</p>
+                      <small class="text-muted">
+                        Importé le {{ formatDate(certificate.imported_at) }}
+                        <span v-if="certificate.imported_by_name"> par {{ certificate.imported_by_name }}</span>
+                      </small>
+                    </div>
+                  </div>
+                  <div class="member-actions">
+                    <span class="badge" :class="getCertificateStatusClass(certificate)">
+                      {{ getCertificateStatusText(certificate) }}
+                    </span>
+                    <div class="certificate-buttons mt-2">
+                      <button 
+                        class="btn btn-outline-info btn-sm me-1" 
+                        @click="viewCertificateDetails(certificate)"
+                        title="Voir les détails"
+                      >
+                        <i class="bi bi-eye"></i>
+                      </button>
+                      <button 
+                        class="btn btn-outline-danger btn-sm" 
+                        @click="deleteCertificate(certificate.id)"
+                        title="Supprimer le certificat"
+                      >
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Aucun certificat -->
+              <div v-else class="text-center py-4">
+                <i class="bi bi-shield-fill-check text-muted" style="font-size: 3rem;"></i>
+                <p class="text-muted mt-2">Aucun certificat trouvé</p>
+                <button class="btn btn-primary btn-sm" @click="openCertificateImportModal">
+                  <i class="bi bi-upload me-1"></i>
+                  Importer un certificat
+                </button>
               </div>
             </div>
             
@@ -759,25 +764,138 @@
           </button>
         </div>
       </div>
+
+      <!-- Modale d'import de certificat (enfant de la modale des paramètres) -->
+      <div v-if="isCertificateImportModalOpen" class="certificate-modal-overlay" @click="closeCertificateImportModal">
+        <div class="certificate-modal" @click.stop>
+          <div class="certificate-modal-header">
+            <h6>
+              <i class="bi bi-shield-fill-check"></i>
+              Importer un certificat d'organisation
+            </h6>
+            <button class="close-btn" @click="closeCertificateImportModal">
+              <i class="bi bi-x"></i>
+            </button>
+          </div>
+          
+          <div class="certificate-modal-body">
+            <!-- Affichage des erreurs -->
+            <div v-if="certificateError" class="alert alert-danger mb-3">
+              <i class="bi bi-exclamation-triangle me-2"></i>
+              {{ certificateError }}
+            </div>
+            
+            <!-- Zone d'import - masquée si fichier déjà sélectionné -->
+            <div v-if="!selectedCertificateFile" class="certificate-upload-zone">
+              <div class="drop-zone" 
+                   :class="{ 'dragging': isDraggingCertificate }"
+                   @dragenter="handleDragEnter"
+                   @dragover="handleDragOver"
+                   @dragleave="handleDragLeave"
+                   @drop="handleDrop">
+                <input 
+                  type="file" 
+                  id="certificate-file" 
+                  accept=".pfx,.p12" 
+                  @change="handleCertificateFileSelect" 
+                  class="file-input"
+                  ref="certificateFileInput"
+                >
+                <div class="drop-zone-content">
+                  <i class="bi bi-cloud-upload"></i>
+                  <p>Glissez-déposez votre fichier .pfx/.p12</p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Fichier sélectionné avec possibilité de suppression -->
+            <div v-if="selectedCertificateFile" class="selected-file-container">
+              <div class="selected-file">
+                <div class="selected-file-info">
+                  <i class="bi bi-shield-check text-success"></i>
+                  <span class="selected-file-name">{{ selectedCertificateFile.name }}</span>
+                </div>
+                <button @click="removeCertificateFile" class="remove-file-btn" title="Supprimer le fichier">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Section mot de passe - affichée seulement si fichier sélectionné -->
+            <div v-if="selectedCertificateFile" class="certificate-password-section">
+              <div class="password-input-group">
+                <input 
+                  v-model="certificatePassword"
+                  :type="showCertificatePassword ? 'text' : 'password'"
+                  placeholder="Mot de passe du certificat"
+                  class="password-input"
+                >
+                <button @click="toggleCertificatePasswordVisibility" class="password-toggle">
+                  <i :class="showCertificatePassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="certificate-modal-footer">
+            <button @click="closeCertificateImportModal" class="btn btn-outline-secondary btn-sm">
+              Annuler
+            </button>
+            <button 
+              @click="importCertificate" 
+              :disabled="!selectedCertificateFile || !certificatePassword"
+              class="btn btn-primary btn-sm"
+            >
+              Importer
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick, defineEmits } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, defineEmits } from 'vue'
 import { useAuthStore } from '../../stores/auth'
 import OrganizationApiService from '../../services/OrganizationApiService'
+import { CertificateService } from '../../services/CertificateService'
 
 // Store d'authentification
 const authStore = useAuthStore()
+
+// Service de certificat
+const certificateService = new CertificateService()
 
 // Émissions
 const emit = defineEmits(['navigate-to-organization', 'open-profile-modal'])
 
 // État pour l'organisation de l'utilisateur
 const userOrganization = ref(null)
+const selectedOrganization = ref(null)
 const isLoadingOrganization = ref(false)
+
+// État pour les membres de l'organisation
+const organizationMembers = ref([])
+const isLoadingMembers = ref(false)
+
+// État pour les codes d'invitation
+const invitationCodes = ref([])
+const isLoadingInvitations = ref(false)
+
+// État pour les certificats d'organisation
+const organizationCertificates = ref([])
+const isLoadingCertificates = ref(false)
+
+// État de la modale d'import de certificat
+const isCertificateImportModalOpen = ref(false)
+const selectedCertificateFile = ref(null)
+const certificatePassword = ref('')
+const showCertificatePassword = ref(false)
+const isDraggingCertificate = ref(false)
+const certificateFileInput = ref(null)
+const certificateError = ref(null)
 
 // État pour la modale de paramètres d'organisation
 const isOrganizationSettingsModalOpen = ref(false)
@@ -1144,10 +1262,48 @@ const fetchUserOrganization = async () => {
     isLoadingOrganization.value = true
     console.log('Récupération de l\'organisation de l\'utilisateur...')
     
+    // Vérifier d'abord le localStorage pour une organisation sélectionnée
+    const savedOrganization = localStorage.getItem('selectedOrganization')
+    if (savedOrganization) {
+      const organization = JSON.parse(savedOrganization)
+      console.log('✅ Utilisation de l\'organisation sélectionnée depuis localStorage:', organization.name)
+      console.log('🔍 Détails de l\'organisation sélectionnée:', organization)
+      
+      // Récupérer les données complètes de l'organisation sélectionnée
+      try {
+        const fullOrganization = await OrganizationApiService.getOrganization(organization.id)
+        console.log('✅ Données complètes de l\'organisation récupérées:', fullOrganization)
+        userOrganization.value = {
+          organization: fullOrganization.organization,
+          role: organization.role || 'admin'
+        }
+      } catch (error) {
+        console.error('❌ Erreur lors de la récupération des données complètes:', error)
+        // Fallback sur les données du localStorage
+        userOrganization.value = {
+          organization: organization,
+          role: organization.role || 'admin'
+        }
+      }
+      console.log('✅ Organisation mise à jour avec les données complètes:', userOrganization.value)
+      return // Sortir de la fonction sans faire d'appel API
+    }
+    
+    // Si une organisation est déjà sélectionnée en mémoire, l'utiliser
+    if (selectedOrganization.value) {
+      console.log('✅ Utilisation de l\'organisation sélectionnée:', selectedOrganization.value.name)
+      userOrganization.value = {
+        organization: selectedOrganization.value,
+        role: selectedOrganization.value.role || 'admin'
+      }
+      console.log('✅ Organisation mise à jour avec les données sélectionnées:', userOrganization.value)
+      return // Sortir de la fonction sans faire d'appel API
+    }
+    
+    // Sinon, récupérer l'organisation par défaut
     const organization = await OrganizationApiService.getUserOrganization()
     userOrganization.value = organization
-    
-    console.log('Organisation de l\'utilisateur:', organization)
+    console.log('Organisation de l\'utilisateur (API):', organization)
   } catch (error) {
     console.error('Erreur lors de la récupération de l\'organisation:', error)
     userOrganization.value = null
@@ -1171,6 +1327,15 @@ const openSettings = () => {
       sector: userOrganization.value.organization.sector
     }
   }
+  
+  // Charger les membres de l'organisation
+  loadOrganizationMembers()
+  
+  // Charger les codes d'invitation
+  loadInvitationCodes()
+  
+  // Charger les certificats
+  loadOrganizationCertificates()
   
   isOrganizationSettingsModalOpen.value = true
   document.body.style.overflow = 'hidden'
@@ -1237,6 +1402,52 @@ const openSettings = () => {
   })
 }
 
+// Fonction pour charger les membres de l'organisation
+const loadOrganizationMembers = async () => {
+  if (!userOrganization.value?.organization?.id) {
+    console.log('❌ Aucune organisation disponible pour charger les membres')
+    return
+  }
+  
+  try {
+    isLoadingMembers.value = true
+    console.log('🔄 Chargement des membres de l\'organisation...')
+    
+    const members = await OrganizationApiService.getOrganizationMembers(userOrganization.value.organization.id)
+    organizationMembers.value = members.members || []
+    
+    console.log('✅ Membres chargés:', organizationMembers.value)
+  } catch (error) {
+    console.error('❌ Erreur lors du chargement des membres:', error)
+    organizationMembers.value = []
+  } finally {
+    isLoadingMembers.value = false
+  }
+}
+
+// Fonction pour charger les codes d'invitation
+const loadInvitationCodes = async () => {
+  if (!userOrganization.value?.organization?.id) {
+    console.log('❌ Aucune organisation disponible pour charger les codes d\'invitation')
+    return
+  }
+  
+  try {
+    isLoadingInvitations.value = true
+    console.log('🔄 Chargement des codes d\'invitation...')
+    
+    const codes = await OrganizationApiService.getInvitationCodes(userOrganization.value.organization.id)
+    invitationCodes.value = codes.invitation_codes || []
+    
+    console.log('✅ Codes d\'invitation chargés:', invitationCodes.value)
+  } catch (error) {
+    console.error('❌ Erreur lors du chargement des codes d\'invitation:', error)
+    invitationCodes.value = []
+  } finally {
+    isLoadingInvitations.value = false
+  }
+}
+
 const closeOrganizationSettingsModal = () => {
   isOrganizationSettingsModalOpen.value = false
   document.body.style.overflow = 'auto'
@@ -1261,6 +1472,8 @@ const getOrganizationTabTitle = () => {
   const titles = {
     edit: 'Éditer l\'organisation',
     members: 'Gestion des membres',
+    invitations: 'Codes d\'invitation',
+    certificates: 'Certificats d\'organisation',
     permissions: 'Permissions',
     billing: 'Facturation',
     delete: 'Supprimer l\'organisation'
@@ -1474,7 +1687,9 @@ const copyInviteCode = async () => {
 
 const getRoleDisplayName = (role) => {
   const roleNames = {
+    'admin': 'Administrateur',
     'secretaire': 'Secrétaire',
+    'member': 'Membre',
     'chef': 'Chef',
     'chef+1': 'Chef+1',
     'chef+2': 'Chef+2',
@@ -1483,10 +1698,361 @@ const getRoleDisplayName = (role) => {
   return roleNames[role] || role
 }
 
-onMounted(() => {
-  // Récupérer l'organisation de l'utilisateur
+// Fonction pour obtenir la classe CSS du badge selon le rôle
+const getRoleBadgeClass = (role) => {
+  const roleClasses = {
+    'admin': 'bg-danger',
+    'secretaire': 'bg-primary',
+    'member': 'bg-warning',
+    'chef': 'bg-success',
+    'chef+1': 'bg-success',
+    'chef+2': 'bg-success',
+    'chef+n': 'bg-success'
+  }
+  return roleClasses[role] || 'bg-secondary'
+}
+
+// Fonctions pour l'affichage du statut des codes d'invitation
+const getInvitationStatusClass = (code) => {
+  if (code.is_used) {
+    return 'bg-success'
+  } else if (code.is_active === false) {
+    return 'bg-secondary'
+  } else {
+    return 'bg-warning'
+  }
+}
+
+const getInvitationStatusText = (code) => {
+  if (code.is_used) {
+    return 'Utilisé'
+  } else if (code.is_active === false) {
+    return 'Inactif'
+  } else {
+    return 'Actif'
+  }
+}
+
+// Fonctions pour gérer les codes d'invitation
+const deactivateInvitationCode = async (codeId) => {
+  if (!confirm('Êtes-vous sûr de vouloir désactiver ce code d\'invitation ?')) {
+    return
+  }
+  
+  try {
+    console.log('🔄 Désactivation du code d\'invitation:', codeId)
+    
+    const response = await OrganizationApiService.deactivateInvitationCode(codeId)
+    
+    if (response.success) {
+      console.log('✅ Code d\'invitation désactivé')
+      // Recharger la liste des codes
+      await loadInvitationCodes()
+      showNotification('success', 'Succès', 'Code d\'invitation désactivé avec succès !')
+    } else {
+      throw new Error(response.message || 'Erreur lors de la désactivation du code')
+    }
+  } catch (error) {
+    console.error('❌ Erreur lors de la désactivation du code:', error)
+    showNotification('error', 'Erreur', 'Erreur lors de la désactivation du code d\'invitation: ' + error.message)
+  }
+}
+
+const reactivateInvitationCode = async (codeId) => {
+  if (!confirm('Êtes-vous sûr de vouloir réactiver ce code d\'invitation ?')) {
+    return
+  }
+  
+  try {
+    console.log('🔄 Réactivation du code d\'invitation:', codeId)
+    
+    const response = await OrganizationApiService.reactivateInvitationCode(codeId)
+    
+    if (response.success) {
+      console.log('✅ Code d\'invitation réactivé')
+      // Recharger la liste des codes
+      await loadInvitationCodes()
+      showNotification('success', 'Succès', 'Code d\'invitation réactivé avec succès !')
+    } else {
+      throw new Error(response.message || 'Erreur lors de la réactivation du code')
+    }
+  } catch (error) {
+    console.error('❌ Erreur lors de la réactivation du code:', error)
+    showNotification('error', 'Erreur', 'Erreur lors de la réactivation du code d\'invitation: ' + error.message)
+  }
+}
+
+const copyInvitationCode = async (code) => {
+  try {
+    await navigator.clipboard.writeText(code)
+    showNotification('success', 'Succès', 'Code copié dans le presse-papiers !')
+  } catch (error) {
+    console.error('❌ Erreur lors de la copie:', error)
+    showNotification('error', 'Erreur', 'Impossible de copier le code d\'invitation')
+  }
+}
+
+const deleteInvitationCode = async (codeId) => {
+  if (!confirm('Êtes-vous sûr de vouloir supprimer ce code d\'invitation ?')) {
+    return
+  }
+  
+  try {
+    console.log('🔄 Suppression du code d\'invitation:', codeId)
+    
+    const response = await OrganizationApiService.deleteInvitationCode(codeId)
+    
+    if (response.success) {
+      console.log('✅ Code d\'invitation supprimé')
+      // Recharger la liste des codes
+      await loadInvitationCodes()
+      showNotification('success', 'Succès', 'Code d\'invitation supprimé avec succès !')
+    } else {
+      throw new Error(response.message || 'Erreur lors de la suppression du code')
+    }
+  } catch (error) {
+    console.error('❌ Erreur lors de la suppression du code:', error)
+    showNotification('error', 'Erreur', 'Erreur lors de la suppression du code d\'invitation: ' + error.message)
+  }
+}
+
+// Fonction pour charger les certificats d'organisation
+const loadOrganizationCertificates = async () => {
+  if (!userOrganization.value?.organization?.id) {
+    console.log('❌ Aucune organisation disponible pour charger les certificats')
+    return
+  }
+  
+  try {
+    isLoadingCertificates.value = true
+    console.log('🔄 Chargement des certificats...')
+    
+    const certificates = await OrganizationApiService.getOrganizationCertificates(userOrganization.value.organization.id)
+    organizationCertificates.value = certificates.certificates || []
+    
+    console.log('✅ Certificats chargés:', organizationCertificates.value)
+  } catch (error) {
+    console.error('❌ Erreur lors du chargement des certificats:', error)
+    organizationCertificates.value = []
+  } finally {
+    isLoadingCertificates.value = false
+  }
+}
+
+// Fonctions pour l'affichage du statut des certificats
+const getCertificateStatusClass = (certificate) => {
+  if (certificate.is_expired) {
+    return 'bg-danger'
+  } else if (certificate.validity_info?.daysUntilExpiry <= 30) {
+    return 'bg-warning'
+  } else {
+    return 'bg-success'
+  }
+}
+
+const getCertificateStatusText = (certificate) => {
+  if (certificate.is_expired) {
+    return 'Expiré'
+  } else if (certificate.validity_info?.daysUntilExpiry <= 30) {
+    return 'Expire bientôt'
+  } else {
+    return 'Valide'
+  }
+}
+
+// Fonctions pour gérer les certificats
+const openCertificateImportModal = () => {
+  isCertificateImportModalOpen.value = true
+  document.body.style.overflow = 'hidden'
+}
+
+const closeCertificateImportModal = () => {
+  isCertificateImportModalOpen.value = false
+  selectedCertificateFile.value = null
+  certificatePassword.value = ''
+  showCertificatePassword.value = false
+  certificateError.value = null
+  document.body.style.overflow = ''
+}
+
+const handleCertificateFileSelect = (event) => {
+  const file = event.target.files[0]
+  if (file && (file.name.endsWith('.pfx') || file.name.endsWith('.p12'))) {
+    selectedCertificateFile.value = file
+  } else {
+    alert('Veuillez sélectionner un fichier certificat valide (.pfx ou .p12).')
+  }
+}
+
+const removeCertificateFile = () => {
+  selectedCertificateFile.value = null
+  if (certificateFileInput.value) {
+    certificateFileInput.value.value = ''
+  }
+}
+
+const toggleCertificatePasswordVisibility = () => {
+  showCertificatePassword.value = !showCertificatePassword.value
+}
+
+const handleDragEnter = (e) => {
+  e.preventDefault()
+  isDraggingCertificate.value = true
+}
+
+const handleDragOver = (e) => {
+  e.preventDefault()
+}
+
+const handleDragLeave = (e) => {
+  e.preventDefault()
+  isDraggingCertificate.value = false
+}
+
+const handleDrop = (e) => {
+  e.preventDefault()
+  isDraggingCertificate.value = false
+  
+  const files = e.dataTransfer.files
+  if (files.length > 0) {
+    const file = files[0]
+    if (file.name.endsWith('.pfx') || file.name.endsWith('.p12')) {
+      selectedCertificateFile.value = file
+    } else {
+      alert('Veuillez sélectionner un fichier certificat valide (.pfx ou .p12).')
+    }
+  }
+}
+
+const importCertificate = async () => {
+  try {
+    certificateError.value = null
+    
+    if (!selectedCertificateFile.value || !certificatePassword.value) {
+      throw new Error('Veuillez sélectionner un fichier et entrer le mot de passe')
+    }
+    
+    // Décoder le certificat avec le service
+    const certificateInfo = await certificateService.decodeCertificate(
+      selectedCertificateFile.value, 
+      certificatePassword.value
+    )
+    
+    // Sauvegarder en base de données pour l'organisation
+    const certificateData = {
+      name: certificateInfo.subject.commonName || 'Certificat d\'organisation',
+      subject_common_name: certificateInfo.subject.commonName,
+      subject_organization: certificateInfo.subject.organization,
+      subject_organizational_unit: certificateInfo.subject.organizationalUnit,
+      subject_country: certificateInfo.subject.country,
+      subject_email: certificateInfo.subject.email,
+      issuer_common_name: certificateInfo.issuer.commonName,
+      issuer_organization: certificateInfo.issuer.organization,
+      issuer_country: certificateInfo.issuer.country,
+      serial_number: certificateInfo.serialNumber,
+      fingerprint: certificateInfo.fingerprint,
+      signature_algorithm: certificateInfo.signatureAlgorithm,
+      not_before: certificateInfo.validity.notBefore,
+      not_after: certificateInfo.validity.notAfter,
+      is_valid: certificateInfo.validity.isValid,
+      key_usage: certificateInfo.keyUsage,
+      private_key_pem: certificateService.getPrivateKeyPem(),
+      public_key_pem: certificateService.getPublicKeyPem(),
+      certificate_pem: certificateService.getCertificatePem()
+    }
+    
+    // Envoyer à l'API
+    const response = await OrganizationApiService.createOrganizationCertificate(
+      userOrganization.value.organization.id,
+      certificateData
+    )
+    
+    if (response.success) {
+      console.log('✅ Certificat importé avec succès:', response.certificate)
+      
+      // Fermer la modale
+      closeCertificateImportModal()
+      
+      // Recharger la liste des certificats
+      await loadOrganizationCertificates()
+      
+      showNotification('success', 'Succès', 'Certificat importé avec succès !')
+    } else {
+      throw new Error(response.message || 'Erreur lors de l\'import du certificat')
+    }
+    
+  } catch (error) {
+    console.error('❌ Erreur lors de l\'import du certificat:', error)
+    certificateError.value = error.message
+  }
+}
+
+const viewCertificateDetails = (certificate) => {
+  // TODO: Implémenter l'affichage des détails du certificat
+  console.log('🔄 Affichage des détails du certificat:', certificate.name)
+}
+
+const deleteCertificate = async (certificateId) => {
+  if (!confirm('Êtes-vous sûr de vouloir supprimer ce certificat ?')) {
+    return
+  }
+  
+  try {
+    console.log('🔄 Suppression du certificat:', certificateId)
+    
+    const response = await OrganizationApiService.deleteOrganizationCertificate(
+      userOrganization.value.organization.id, 
+      certificateId
+    )
+    
+    if (response.success) {
+      console.log('✅ Certificat supprimé')
+      // Recharger la liste des certificats
+      await loadOrganizationCertificates()
+      showNotification('success', 'Succès', 'Certificat supprimé avec succès !')
+    } else {
+      throw new Error(response.message || 'Erreur lors de la suppression du certificat')
+    }
+  } catch (error) {
+    console.error('❌ Erreur lors de la suppression du certificat:', error)
+    showNotification('error', 'Erreur', 'Erreur lors de la suppression du certificat: ' + error.message)
+  }
+}
+
+// Gestionnaire pour l'organisation sélectionnée
+const handleOrganizationSelected = (event) => {
+  const { organization, role } = event.detail
+  console.log('🏢 Organisation sélectionnée dans OrganizationsPage:', organization.name, 'Rôle:', role)
+  
+  // Mettre à jour l'organisation sélectionnée
+  selectedOrganization.value = organization
+  
+  // Mettre à jour userOrganization avec l'organisation sélectionnée
+  userOrganization.value = {
+    organization: organization,
+    role: role
+  }
+  
+  console.log('✅ Organisation mise à jour dans OrganizationsPage:', userOrganization.value)
+  
+  // Nettoyer le localStorage après utilisation
+  localStorage.removeItem('selectedOrganization')
+  
+  // Recharger les données avec la nouvelle organisation
   fetchUserOrganization()
+}
+
+onMounted(() => {
   console.log('Organizations page loaded')
+  
+  // Écouter les événements de sélection d'organisation AVANT de charger les données
+  window.addEventListener('organizationSelected', handleOrganizationSelected)
+  
+  // Attendre un peu pour que l'événement organizationSelected soit traité
+  setTimeout(() => {
+    // Récupérer l'organisation de l'utilisateur
+    fetchUserOrganization()
+  }, 100)
   
   // Vérifier si l'utilisateur vient de créer une organisation
   const urlParams = new URLSearchParams(window.location.search)
@@ -1498,6 +2064,11 @@ onMounted(() => {
     const newUrl = window.location.pathname + '?page=organization'
     window.history.replaceState({}, document.title, newUrl)
   }
+})
+
+onUnmounted(() => {
+  // Nettoyer les écouteurs d'événements
+  window.removeEventListener('organizationSelected', handleOrganizationSelected)
 })
 </script>
 
@@ -1687,10 +2258,12 @@ onMounted(() => {
 
 /* Titres et sous-titres */
 .section-title {
+  font-family: 'Raleway', sans-serif;
   font-size: 3rem;
   font-weight: 700;
   margin-bottom: 1rem;
   line-height: 1.2;
+  letter-spacing: -0.02em;
 }
 
 .section-subtitle {
@@ -2675,10 +3248,12 @@ onMounted(() => {
 }
 
 .sections-title {
+  font-family: 'Raleway', sans-serif;
   font-size: 2.5rem;
-  font-weight: 600;
+  font-weight: 800;
   margin-bottom: 1rem;
   line-height: 1.2;
+  letter-spacing: -0.02em;
 }
 
 .sections-subtitle {
@@ -3048,6 +3623,100 @@ onMounted(() => {
   animation: modalSlideIn 0.3s ease-out;
 }
 
+/* Styles pour les invitations */
+.invitations-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.invitations-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.invitation-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+  background: #fff;
+}
+
+.invitation-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.invitation-code {
+  min-width: 200px;
+}
+
+.invitation-code h6 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+  color: #0066cc;
+}
+
+.invitation-code p {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.invitation-details {
+  flex: 1;
+}
+
+.invitation-status {
+  margin-bottom: 0.5rem;
+}
+
+.invitation-meta {
+  font-size: 0.75rem;
+}
+
+.invitation-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.invitation-buttons {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.invitation-buttons .btn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+/* Styles pour les certificats */
+.certificates-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.certificate-buttons {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.certificate-buttons .btn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+}
+
 .organization-modal-header {
   display: flex;
   align-items: center;
@@ -3198,10 +3867,12 @@ onMounted(() => {
   
   .section-title {
     font-size: 2rem;
+    font-weight: 800;
   }
   
   .sections-title {
     font-size: 2rem;
+    font-weight: 800;
   }
   
   .table-row {
@@ -3216,6 +3887,295 @@ onMounted(() => {
   .organization-modal {
     width: 95%;
     margin: 1rem;
+  }
+}
+
+/* STYLES POUR LA MODALE D'IMPORT DE CERTIFICAT */
+.certificate-modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: transparent;
+  z-index: 10001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Ajustement pour centrer par rapport au contenu principal */
+.organization-settings-content .certificate-modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: transparent;
+  z-index: 10001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.certificate-modal {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(15px) saturate(120%);
+  -webkit-backdrop-filter: blur(15px) saturate(120%);
+  width: 400px;
+  max-height: 500px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.1),
+    inset 1px 0 0 rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  transform: translateY(20px) scale(0.9);
+  animation: modalSlideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.certificate-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.certificate-modal-header h6 {
+  margin: 0;
+  color: var(--text-dark);
+  font-weight: 600;
+  font-family: 'Raleway', sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.certificate-modal-header h6 i {
+  color: var(--primary-blue);
+  font-size: 1.2rem;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: #6c757d;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  background: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+}
+
+.certificate-modal-body {
+  padding: 1.5rem;
+  max-height: 350px;
+  overflow-y: auto;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.certificate-upload-zone {
+  margin-bottom: 1rem;
+}
+
+.drop-zone {
+  border: 2px dashed #e2e8f0;
+  border-radius: 8px;
+  padding: 1.5rem;
+  text-align: center;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  position: relative;
+}
+
+.drop-zone:hover,
+.drop-zone.dragging {
+  border-color: var(--primary-blue);
+  background: rgba(0, 102, 204, 0.05);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.1);
+}
+
+.drop-zone-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.drop-zone-content i {
+  font-size: 2rem;
+  color: var(--primary-blue);
+}
+
+.drop-zone-content p {
+  margin: 0;
+  color: var(--text-dark);
+  font-weight: 500;
+}
+
+.file-input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.selected-file-container {
+  margin-top: 1rem;
+}
+
+.selected-file {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(40, 167, 69, 0.1);
+  border: 1px solid rgba(40, 167, 69, 0.2);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.selected-file i {
+  color: #28a745;
+  font-size: 1.25rem;
+}
+
+.selected-file-name {
+  flex: 1;
+  color: var(--text-dark);
+  font-weight: 500;
+}
+
+.remove-file-btn {
+  background: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+  border: none;
+  padding: 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.remove-file-btn:hover {
+  background: rgba(220, 53, 69, 0.2);
+}
+
+.certificate-password-section {
+  margin-top: 2rem;
+}
+
+.password-input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  background: white;
+  font-family: 'Raleway', sans-serif;
+}
+
+.password-input:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+}
+
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.password-toggle:hover {
+  color: var(--text-dark);
+  background: #f8f9fa;
+}
+
+.certificate-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInOverlay {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .certificate-modal {
+    width: calc(100% - 40px);
+    max-width: calc(100% - 40px);
+    max-height: calc(100% - 40px);
+    margin: 20px;
+  }
+  
+  .certificate-modal-body {
+    padding: 1rem;
+  }
+  
+  .drop-zone {
+    padding: 1rem;
   }
 }
 </style>

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Organization, OrganizationMember, InvitationCode
+from .models import Organization, OrganizationMember, InvitationCode, OrganizationCertificate
 from authentication.serializers import UserSerializer
 
 
@@ -117,6 +117,56 @@ class OrganizationMemberSerializer(serializers.ModelSerializer):
             'role', 'joined_at', 'invited_by', 'invited_by_name'
         ]
         read_only_fields = ['id', 'joined_at', 'invited_by']
+
+
+class OrganizationCertificateSerializer(serializers.ModelSerializer):
+    """
+    Sérialiseur pour les certificats d'organisation
+    """
+    imported_by_name = serializers.CharField(source='imported_by.full_name', read_only=True)
+    subject_info = serializers.SerializerMethodField()
+    issuer_info = serializers.SerializerMethodField()
+    validity_info = serializers.SerializerMethodField()
+    is_expired = serializers.ReadOnlyField()
+    days_until_expiry = serializers.ReadOnlyField()
+    
+    class Meta:
+        model = OrganizationCertificate
+        fields = [
+            'id', 'organization', 'name', 'subject_common_name', 'subject_organization',
+            'subject_organizational_unit', 'subject_country', 'subject_email',
+            'issuer_common_name', 'issuer_organization', 'issuer_country',
+            'serial_number', 'fingerprint', 'signature_algorithm',
+            'not_before', 'not_after', 'is_valid', 'key_usage',
+            'imported_at', 'imported_by', 'imported_by_name', 'is_active',
+            'subject_info', 'issuer_info', 'validity_info', 'is_expired', 'days_until_expiry'
+        ]
+        read_only_fields = ['id', 'imported_at', 'imported_by']
+    
+    def get_subject_info(self, obj):
+        return obj.get_subject_info()
+    
+    def get_issuer_info(self, obj):
+        return obj.get_issuer_info()
+    
+    def get_validity_info(self, obj):
+        return obj.get_validity_info()
+
+
+class OrganizationCertificateCreateSerializer(serializers.ModelSerializer):
+    """
+    Sérialiseur pour la création de certificats d'organisation
+    """
+    class Meta:
+        model = OrganizationCertificate
+        fields = [
+            'name', 'subject_common_name', 'subject_organization',
+            'subject_organizational_unit', 'subject_country', 'subject_email',
+            'issuer_common_name', 'issuer_organization', 'issuer_country',
+            'serial_number', 'fingerprint', 'signature_algorithm',
+            'not_before', 'not_after', 'is_valid', 'key_usage',
+            'private_key_pem', 'public_key_pem', 'certificate_pem'
+        ]
 
 
 class OrganizationCreateSerializer(serializers.ModelSerializer):

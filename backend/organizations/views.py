@@ -5,7 +5,7 @@ from rest_framework.viewsets import ModelViewSet
 from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
-from .models import Organization, OrganizationMember, InvitationCode
+from .models import Organization, OrganizationMember, InvitationCode, OrganizationCertificate
 from .serializers import (
     OrganizationSerializer, 
     OrganizationCreateSerializer, 
@@ -13,7 +13,9 @@ from .serializers import (
     OrganizationMemberSerializer,
     InvitationCodeSerializer,
     InvitationCodeCreateSerializer,
-    InvitationCodeValidateSerializer
+    InvitationCodeValidateSerializer,
+    OrganizationCertificateSerializer,
+    OrganizationCertificateCreateSerializer
 )
 
 
@@ -132,6 +134,42 @@ def list_organizations(request):
         'organizations': serializer.data
     })
 
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def get_organization(request, organization_id):
+    """
+    Récupérer une organisation spécifique
+    """
+    try:
+        organization = get_object_or_404(Organization, id=organization_id)
+        
+        # Vérifier que l'utilisateur appartient à cette organisation
+        user_membership = OrganizationMember.objects.filter(
+            user=request.user, 
+            organization=organization
+        ).first()
+        
+        if not user_membership:
+            return Response({
+                'success': False,
+                'message': 'Accès non autorisé à cette organisation'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Sérialiser l'organisation avec toutes les données
+        serializer = OrganizationSerializer(organization, context={'request': request})
+        
+        return Response({
+            'success': True,
+            'organization': serializer.data
+        })
+        
+    except Exception as e:
+        print(f"❌ Erreur lors de la récupération de l'organisation: {str(e)}")
+        return Response({
+            'success': False,
+            'message': 'Erreur lors de la récupération de l\'organisation'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
@@ -285,12 +323,25 @@ def update_organization(request, organization_id):
     
     organization = get_object_or_404(Organization, id=organization_id)
     
-    # Vérifier que l'utilisateur est administrateur de cette organisation
-    if request.user.organization != organization or request.user.role != 'admin':
-        print(f"🔍 ERREUR: Utilisateur non autorisé - Organisation: {request.user.organization}, Rôle: {request.user.role}")
+    # Vérifier que l'utilisateur est administrateur de cette organisation via OrganizationMember
+    user_membership = OrganizationMember.objects.filter(
+        user=request.user, 
+        organization=organization,
+        role='admin'
+    ).first()
+    
+    if not user_membership:
+        # Vérifier si l'utilisateur appartient à l'organisation avec un autre rôle
+        other_membership = OrganizationMember.objects.filter(
+            user=request.user, 
+            organization=organization
+        ).first()
+        
+        user_role = other_membership.role if other_membership else 'Aucun'
+        print(f"🔍 ERREUR: Utilisateur non autorisé - Organisation: {organization.name}, Rôle de l'utilisateur: {user_role}")
         return Response({
             'success': False,
-            'message': 'Seuls les administrateurs peuvent modifier l\'organisation'
+            'message': f'Seuls les administrateurs peuvent modifier l\'organisation. Votre rôle: {user_role}'
         }, status=status.HTTP_403_FORBIDDEN)
     
     print(f"🔍 Utilisateur autorisé - Utilisation d'OrganizationSerializer")
@@ -524,28 +575,301 @@ def list_invitation_codes(request):
     Lister les codes d'invitation d'une organisation
     """
     try:
-        # Récupérer l'organisation de l'utilisateur
-        user_organization = request.user.organization
-        if not user_organization:
+        organization_id = request.GET.get('organization_id')
+        
+        if not organization_id:
             return Response({
                 'success': False,
-                'message': 'Vous n\'appartenez à aucune organisation.'
+                'message': 'ID de l\'organisation requis'
             }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Vérifier que l'utilisateur appartient à cette organisation
+        user_membership = OrganizationMember.objects.filter(
+            user=request.user, 
+            organization_id=organization_id
+        ).first()
+        
+        if not user_membership:
+            return Response({
+                'success': False,
+                'message': 'Accès non autorisé à cette organisation'
+            }, status=status.HTTP_403_FORBIDDEN)
         
         # Récupérer les codes d'invitation de l'organisation
         invitation_codes = InvitationCode.objects.filter(
-            organization=user_organization
+            organization_id=organization_id
         ).order_by('-created_at')
         
         serializer = InvitationCodeSerializer(invitation_codes, many=True)
         
         return Response({
             'success': True,
-            'data': serializer.data
+            'invitation_codes': serializer.data
         }, status=status.HTTP_200_OK)
         
     except Exception as e:
+        print(f"❌ Erreur lors de la récupération des codes d'invitation: {str(e)}")
         return Response({
             'success': False,
             'message': f'Erreur lors de la récupération des codes: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def deactivate_invitation_code(request, code_id):
+    """
+    Désactiver un code d'invitation
+    """
+    try:
+        invitation_code = get_object_or_404(InvitationCode, id=code_id)
+        
+        # Vérifier que l'utilisateur appartient à cette organisation
+        user_membership = OrganizationMember.objects.filter(
+            user=request.user, 
+            organization=invitation_code.organization
+        ).first()
+        
+        if not user_membership:
+            return Response({
+                'success': False,
+                'message': 'Accès non autorisé à cette organisation'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Désactiver le code
+        invitation_code.is_active = False
+        invitation_code.save()
+        
+        print(f"✅ Code d'invitation {invitation_code.code} désactivé")
+        
+        return Response({
+            'success': True,
+            'message': 'Code d\'invitation désactivé avec succès'
+        })
+        
+    except Exception as e:
+        print(f"❌ Erreur lors de la désactivation du code: {str(e)}")
+        return Response({
+            'success': False,
+            'message': f'Erreur lors de la désactivation du code: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def reactivate_invitation_code(request, code_id):
+    """
+    Réactiver un code d'invitation
+    """
+    try:
+        invitation_code = get_object_or_404(InvitationCode, id=code_id)
+        
+        # Vérifier que l'utilisateur appartient à cette organisation
+        user_membership = OrganizationMember.objects.filter(
+            user=request.user, 
+            organization=invitation_code.organization
+        ).first()
+        
+        if not user_membership:
+            return Response({
+                'success': False,
+                'message': 'Accès non autorisé à cette organisation'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Réactiver le code
+        invitation_code.is_active = True
+        invitation_code.save()
+        
+        print(f"✅ Code d'invitation {invitation_code.code} réactivé")
+        
+        return Response({
+            'success': True,
+            'message': 'Code d\'invitation réactivé avec succès'
+        })
+        
+    except Exception as e:
+        print(f"❌ Erreur lors de la réactivation du code: {str(e)}")
+        return Response({
+            'success': False,
+            'message': f'Erreur lors de la réactivation du code: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['DELETE'])
+@permission_classes([permissions.IsAuthenticated])
+def delete_invitation_code(request, code_id):
+    """
+    Supprimer définitivement un code d'invitation
+    """
+    try:
+        invitation_code = get_object_or_404(InvitationCode, id=code_id)
+        
+        # Vérifier que l'utilisateur appartient à cette organisation
+        user_membership = OrganizationMember.objects.filter(
+            user=request.user, 
+            organization=invitation_code.organization
+        ).first()
+        
+        if not user_membership:
+            return Response({
+                'success': False,
+                'message': 'Accès non autorisé à cette organisation'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Supprimer le code
+        code_value = invitation_code.code
+        invitation_code.delete()
+        
+        print(f"✅ Code d'invitation {code_value} supprimé définitivement")
+        
+        return Response({
+            'success': True,
+            'message': 'Code d\'invitation supprimé avec succès'
+        })
+        
+    except Exception as e:
+        print(f"❌ Erreur lors de la suppression du code: {str(e)}")
+        return Response({
+            'success': False,
+            'message': f'Erreur lors de la suppression du code: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def get_organization_certificates(request, organization_id):
+    """
+    Récupérer les certificats d'une organisation
+    """
+    try:
+        organization = get_object_or_404(Organization, id=organization_id)
+        
+        # Vérifier que l'utilisateur appartient à cette organisation
+        user_membership = OrganizationMember.objects.filter(
+            user=request.user, 
+            organization=organization
+        ).first()
+        
+        if not user_membership:
+            return Response({
+                'success': False,
+                'message': 'Accès non autorisé à cette organisation'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Récupérer les certificats de l'organisation
+        certificates = OrganizationCertificate.objects.filter(
+            organization=organization,
+            is_active=True
+        ).order_by('-imported_at')
+        
+        serializer = OrganizationCertificateSerializer(certificates, many=True)
+        
+        return Response({
+            'success': True,
+            'certificates': serializer.data
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        print(f"❌ Erreur lors de la récupération des certificats: {str(e)}")
+        return Response({
+            'success': False,
+            'message': f'Erreur lors de la récupération des certificats: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def create_organization_certificate(request, organization_id):
+    """
+    Créer un certificat pour une organisation
+    """
+    try:
+        organization = get_object_or_404(Organization, id=organization_id)
+        
+        # Vérifier que l'utilisateur appartient à cette organisation
+        user_membership = OrganizationMember.objects.filter(
+            user=request.user, 
+            organization=organization
+        ).first()
+        
+        if not user_membership:
+            return Response({
+                'success': False,
+                'message': 'Accès non autorisé à cette organisation'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Ajouter l'organisation et l'utilisateur aux données
+        certificate_data = request.data.copy()
+        certificate_data['organization'] = organization.id
+        certificate_data['imported_by'] = request.user.id
+        
+        serializer = OrganizationCertificateCreateSerializer(data=certificate_data)
+        
+        if serializer.is_valid():
+            certificate = serializer.save()
+            print(f"✅ Certificat créé: {certificate.name}")
+            
+            # Retourner le certificat avec toutes les informations
+            response_serializer = OrganizationCertificateSerializer(certificate)
+            
+            return Response({
+                'success': True,
+                'message': 'Certificat importé avec succès',
+                'certificate': response_serializer.data
+            }, status=status.HTTP_201_CREATED)
+        else:
+            return Response({
+                'success': False,
+                'message': 'Erreur de validation',
+                'errors': serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+    except Exception as e:
+        print(f"❌ Erreur lors de la création du certificat: {str(e)}")
+        return Response({
+            'success': False,
+            'message': f'Erreur lors de la création du certificat: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['DELETE'])
+@permission_classes([permissions.IsAuthenticated])
+def delete_organization_certificate(request, organization_id, certificate_id):
+    """
+    Supprimer un certificat d'organisation
+    """
+    try:
+        organization = get_object_or_404(Organization, id=organization_id)
+        
+        # Vérifier que l'utilisateur appartient à cette organisation
+        user_membership = OrganizationMember.objects.filter(
+            user=request.user, 
+            organization=organization
+        ).first()
+        
+        if not user_membership:
+            return Response({
+                'success': False,
+                'message': 'Accès non autorisé à cette organisation'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Récupérer le certificat
+        certificate = get_object_or_404(OrganizationCertificate, id=certificate_id, organization=organization)
+        
+        # Supprimer le certificat
+        certificate_name = certificate.name
+        certificate.delete()
+        
+        print(f"✅ Certificat {certificate_name} supprimé")
+        
+        return Response({
+            'success': True,
+            'message': 'Certificat supprimé avec succès'
+        })
+        
+    except Exception as e:
+        print(f"❌ Erreur lors de la suppression du certificat: {str(e)}")
+        return Response({
+            'success': False,
+            'message': f'Erreur lors de la suppression du certificat: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

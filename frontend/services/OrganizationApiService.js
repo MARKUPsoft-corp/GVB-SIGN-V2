@@ -108,9 +108,9 @@ class OrganizationApiService {
 
       console.log('📤 Envoi des données de mise à jour:', organizationData)
       console.log('📤 Headers:', headers)
-      console.log('📤 URL:', `${API_BASE_URL}/organizations/${organizationId}/`)
+      console.log('📤 URL:', `${API_BASE_URL}/organizations/${organizationId}/update/`)
 
-      const response = await fetch(`${API_BASE_URL}/organizations/${organizationId}/`, {
+      const response = await fetch(`${API_BASE_URL}/organizations/${organizationId}/update/`, {
         method: 'PUT',
         headers,
         credentials: 'include',
@@ -181,6 +181,207 @@ class OrganizationApiService {
       return data
     } catch (error) {
       console.error('Erreur lors de la suppression de l\'organisation:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Récupérer une organisation spécifique
+   */
+  static async getOrganization(organizationId) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/organizations/${organizationId}/`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include'
+      })
+  
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP: ${response.status}`)
+      }
+  
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Erreur lors de la récupération de l\'organisation:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Récupérer les codes d'invitation d'une organisation
+   */
+  static async getInvitationCodes(organizationId) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/organizations/invitations/list/?organization_id=${organizationId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include'
+      })
+  
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP: ${response.status}`)
+      }
+  
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Erreur lors de la récupération des codes d\'invitation:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Désactiver un code d'invitation
+   */
+  static async deactivateInvitationCode(codeId) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/organizations/invitations/${codeId}/deactivate/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include'
+      })
+  
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP: ${response.status}`)
+      }
+  
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Erreur lors de la désactivation du code d\'invitation:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Réactiver un code d'invitation
+   */
+  static async reactivateInvitationCode(codeId) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/organizations/invitations/${codeId}/reactivate/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include'
+      })
+  
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP: ${response.status}`)
+      }
+  
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Erreur lors de la réactivation du code d\'invitation:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Supprimer un code d'invitation
+   */
+  static async deleteInvitationCode(codeId) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/organizations/invitations/${codeId}/delete/`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include'
+      })
+  
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP: ${response.status}`)
+      }
+  
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Erreur lors de la suppression du code d\'invitation:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Récupérer les certificats d'une organisation
+   */
+  static async getOrganizationCertificates(organizationId) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/organizations/${organizationId}/certificates/`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include'
+      })
+  
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP: ${response.status}`)
+      }
+  
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Erreur lors de la récupération des certificats:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Créer un certificat pour une organisation
+   */
+  static async createOrganizationCertificate(organizationId, certificateData) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/organizations/${organizationId}/certificates/create/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(certificateData)
+      })
+  
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP: ${response.status}`)
+      }
+  
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Erreur lors de la création du certificat:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Supprimer un certificat d'organisation
+   */
+  static async deleteOrganizationCertificate(organizationId, certificateId) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/organizations/${organizationId}/certificates/${certificateId}/delete/`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include'
+      })
+  
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP: ${response.status}`)
+      }
+  
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('Erreur lors de la suppression du certificat:', error)
       throw error
     }
   }
