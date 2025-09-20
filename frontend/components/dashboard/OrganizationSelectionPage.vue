@@ -314,30 +314,17 @@ const loadUserOrganizations = async () => {
 const selectOrganization = (organization) => {
   console.log('Organisation sélectionnée:', organization)
   
-  // Rediriger vers la page appropriée selon le rôle
-  const role = organization.role
+  // Sauvegarder l'organisation sélectionnée
+  localStorage.setItem('selectedOrganization', JSON.stringify(organization))
   
-  switch (role) {
-    case 'admin':
-      // Rediriger vers la page admin (page organisation existante)
-      router.push('/dashboard?page=organization')
-      break
-    case 'chef':
-    case 'chef+1':
-    case 'chef+2':
-    case 'chef+n':
-      // Rediriger vers la page manager pour tous les rôles chef
-      router.push('/dashboard?page=organization-manager')
-      break
-    case 'secretaire':
-      // Rediriger vers la page secretary
-      router.push('/dashboard?page=organization-secretary')
-      break
-    case 'member':
-    default:
-      // Par défaut, rediriger vers la page member
-      router.push('/dashboard?page=organization-member')
-  }
+  // Émettre un événement pour changer la page dans le dashboard parent
+  const event = new CustomEvent('organizationSelected', {
+    detail: {
+      organization: organization,
+      role: organization.role
+    }
+  })
+  window.dispatchEvent(event)
 }
 
 // Obtenir le nom d'affichage du rôle

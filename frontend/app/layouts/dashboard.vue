@@ -123,7 +123,7 @@
             </button>
           </li>
           <li class="sidebar-nav-item" v-if="hasOrganization">
-            <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: activePage === 'organization-selection' }" @click="setActivePage('organization-selection')">
+            <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: isOrganizationPage }" @click="setActivePage('organization-selection')">
               <i class="bi bi-building me-3"></i>
               Organisation
             </button>
@@ -183,7 +183,7 @@
             </button>
           </li>
           <li class="nav-item" v-if="hasOrganization">
-            <button class="nav-link" :class="{ active: activePage === 'organization-selection' }" @click="setActivePage('organization-selection')">
+            <button class="nav-link" :class="{ active: isOrganizationPage }" @click="setActivePage('organization-selection')">
               <i class="bi bi-building"></i>
               <span v-show="!isSidebarCollapsed">Organisation</span>
             </button>
@@ -721,6 +721,11 @@ const certificateError = ref(null)
 // État de la navigation du dashboard
 const activePage = ref('dashboard')
 
+// Propriété calculée pour vérifier si on est sur une page d'organisation
+const isOrganizationPage = computed(() => {
+  return ['organization', 'organization-selection', 'organization-member', 'organization-secretary', 'organization-manager'].includes(activePage.value)
+})
+
 // Fonctions de navigation
 const setActivePage = (page) => {
   // Vérification spéciale pour la page d'organisation
@@ -729,6 +734,10 @@ const setActivePage = (page) => {
       console.log('❌ Utilisateur essaie d\'accéder à la page d\'organisation sans en avoir une')
       // Rediriger vers le dashboard
       activePage.value = 'dashboard'
+      localStorage.setItem('dashboardActivePage', 'dashboard')
+      // Mettre à jour l'URL
+      const newUrl = window.location.pathname
+      window.history.pushState({}, '', newUrl)
       closeSidebar()
       return
     }
@@ -738,11 +747,24 @@ const setActivePage = (page) => {
   if (page === 'organization-selection') {
     console.log('✅ Redirection vers la page de sélection d\'organisation')
     activePage.value = 'organization-selection'
+    localStorage.setItem('dashboardActivePage', 'organization-selection')
+    // Mettre à jour l'URL
+    const newUrl = `${window.location.pathname}?page=organization-selection`
+    window.history.pushState({}, '', newUrl)
     closeSidebar()
     return
   }
   
   activePage.value = page
+  localStorage.setItem('dashboardActivePage', page)
+  
+  // Mettre à jour l'URL selon la page
+  let newUrl = window.location.pathname
+  if (page !== 'dashboard') {
+    newUrl = `${window.location.pathname}?page=${page}`
+  }
+  window.history.pushState({}, '', newUrl)
+  
   closeSidebar()
 }
 
@@ -751,6 +773,35 @@ const handleSignatureNavigation = (type) => {
   console.log('Navigation vers signature:', type)
   // Pour l'instant, nous allons directement modifier DocumentsPage pour inclure SignImmediatelyPage
   // La logique sera dans DocumentsPage pour afficher SignImmediatelyPage
+}
+
+// Fonction pour gérer la sélection d'organisation
+const handleOrganizationSelected = (event) => {
+  const { organization, role } = event.detail
+  console.log('🏢 Organisation sélectionnée:', organization.name, 'Rôle:', role)
+  
+  // Rediriger vers la page appropriée selon le rôle
+  switch (role) {
+    case 'admin':
+      console.log('🔄 Redirection vers la page admin')
+      setActivePage('organization')
+      break
+    case 'chef':
+    case 'chef+1':
+    case 'chef+2':
+    case 'chef+n':
+      console.log('🔄 Redirection vers la page manager')
+      setActivePage('organization-manager')
+      break
+    case 'secretaire':
+      console.log('🔄 Redirection vers la page secretary')
+      setActivePage('organization-secretary')
+      break
+    case 'member':
+    default:
+      console.log('🔄 Redirection vers la page member')
+      setActivePage('organization-member')
+  }
 }
 
 // Fonction pour ouvrir la modale de profil depuis DocumentsPage
@@ -1051,6 +1102,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
+  window.removeEventListener('organizationSelected', handleOrganizationSelected)
   // Restaurer le scroll du body au cas où la modale était ouverte
   document.body.style.overflow = ''
 })
@@ -1121,18 +1173,36 @@ onMounted(async () => {
     hasOrganization.value = false
   }
   
-  // Vérifier si l'utilisateur essaie d'accéder à la page d'organisation sans en avoir une
+  // Vérifier les paramètres URL d'abord
   const urlParams = new URLSearchParams(window.location.search)
   const pageParam = urlParams.get('page')
   
+  if (pageParam) {
+    // Si un paramètre page est présent dans l'URL, l'utiliser
+    console.log('📄 Page demandée via URL:', pageParam)
+    activePage.value = pageParam
+    localStorage.setItem('dashboardActivePage', pageParam)
+  } else {
+    // Sinon, restaurer la page sauvegardée
+    const savedPage = localStorage.getItem('dashboardActivePage')
+    if (savedPage && savedPage !== 'dashboard') {
+      activePage.value = savedPage
+    }
+  }
+  
+  // Vérifier si l'utilisateur essaie d'accéder à la page d'organisation sans en avoir une
   if (pageParam === 'organization' && !hasOrganization.value) {
     console.log('❌ Redirection automatique : utilisateur sans organisation essaie d\'accéder à la page d\'organisation')
     // Rediriger vers le dashboard
     activePage.value = 'dashboard'
+    localStorage.setItem('dashboardActivePage', 'dashboard')
     // Mettre à jour l'URL sans recharger la page
     const newUrl = window.location.pathname
     window.history.replaceState({}, '', newUrl)
   }
+  
+  // Écouter les événements de sélection d'organisation
+  window.addEventListener('organizationSelected', handleOrganizationSelected)
 })
 
 // Meta tags pour le dashboard
