@@ -189,7 +189,7 @@ export const useAuthStore = defineStore('auth', {
             last_name: result.user.last_name || userData.last_name
           }
           
-          this.setUser(user, result.token || 'authenticated')
+          this.setUserDirect(user, result.token || 'authenticated')
           console.log('✅ Inscription réussie!')
           return { success: true, user }
         } else {
@@ -204,6 +204,19 @@ export const useAuthStore = defineStore('auth', {
 
     // Définir l'utilisateur
     setUser(userData, token = 'authenticated') {
+      this.user = userData
+      this.token = token
+      this.isAuthenticated = true
+      
+      // Sauvegarder dans localStorage
+      if (process.client) {
+        localStorage.setItem('user', JSON.stringify(userData))
+        localStorage.setItem('token', token)
+      }
+    },
+
+    // Définir l'utilisateur sans vérification de session (pour l'inscription)
+    setUserDirect(userData, token = 'authenticated') {
       this.user = userData
       this.token = token
       this.isAuthenticated = true
@@ -237,10 +250,40 @@ export const useAuthStore = defineStore('auth', {
       this.token = null
       this.isAuthenticated = false
       
-      // Nettoyer le localStorage
+      // Nettoyer complètement le localStorage et sessionStorage
       if (process.client) {
+        // Nettoyer les données d'authentification
         localStorage.removeItem('user')
         localStorage.removeItem('token')
+        
+        // Nettoyer les données d'organisation
+        localStorage.removeItem('user_has_organization')
+        localStorage.removeItem('user_organization')
+        
+        // Nettoyer les données de certificat
+        localStorage.removeItem('certificate')
+        localStorage.removeItem('certificateInfo')
+        localStorage.removeItem('privateKey')
+        localStorage.removeItem('publicKey')
+        
+        // Nettoyer les données de signature
+        localStorage.removeItem('signatureResults')
+        localStorage.removeItem('uploadedFiles')
+        localStorage.removeItem('signatureData')
+        
+        // Nettoyer les données de session
+        localStorage.removeItem('sessionId')
+        localStorage.removeItem('csrfToken')
+        
+        // Nettoyer le sessionStorage également
+        sessionStorage.clear()
+        
+        // Nettoyer tous les cookies (si possible côté client)
+        document.cookie.split(";").forEach(function(c) { 
+          document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+        })
+        
+        console.log('🧹 Session complètement effacée du navigateur')
       }
     }
   }

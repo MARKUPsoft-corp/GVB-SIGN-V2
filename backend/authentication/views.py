@@ -24,6 +24,10 @@ def register_user(request):
         user = serializer.save()
         user_data = UserSerializer(user).data
         
+        # Connecter automatiquement l'utilisateur après l'inscription
+        from django.contrib.auth import login
+        login(request, user)
+        
         return Response({
             'success': True,
             'message': 'Inscription réussie !',

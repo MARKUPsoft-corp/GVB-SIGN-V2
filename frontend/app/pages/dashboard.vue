@@ -342,6 +342,55 @@
         </div>
       </div>
     </div>
+
+    <!-- Modale de saisie du code d'invitation -->
+    <div v-if="isJoinOrganizationModalOpen" class="organization-modal-overlay" @click="closeJoinOrganizationModal">
+      <div class="organization-form-modal" @click.stop ref="joinOrganizationModal">
+        <div class="organization-modal-header">
+          <h5>
+            <i class="bi bi-person-plus"></i>
+            Rejoindre une Organisation
+          </h5>
+          <button class="close-btn" @click="closeJoinOrganizationModal">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <div class="organization-form-content">
+          <form @submit.prevent="joinOrganization" class="organization-form">
+            <div class="form-group">
+              <label for="inviteCode">
+                <i class="bi bi-key"></i>
+                Code d'invitation
+              </label>
+              <input 
+                type="text" 
+                id="inviteCode" 
+                v-model="inviteCode" 
+                class="form-control" 
+                placeholder="Entrez le code d'invitation"
+                required
+              >
+              <small class="form-help">
+                <i class="bi bi-info-circle"></i>
+                Saisissez le code d'invitation fourni par l'administrateur de l'organisation
+              </small>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="btn-cancel" @click="closeJoinOrganizationModal">
+                <i class="bi bi-x-circle"></i>
+                Annuler
+              </button>
+              <button type="submit" class="btn-create" :disabled="isJoiningOrganization">
+                <i class="bi bi-check-circle" v-if="!isJoiningOrganization"></i>
+                <i class="bi bi-hourglass-split" v-else></i>
+                {{ isJoiningOrganization ? 'Rejoindre...' : 'Rejoindre l\'organisation' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -374,6 +423,12 @@ const organizationBtn = ref(null)
 const isCreateOrganizationModalOpen = ref(false)
 const createOrganizationModal = ref(null)
 const isCreatingOrganization = ref(false)
+
+// Variables pour la modale de saisie du code d'invitation
+const isJoinOrganizationModalOpen = ref(false)
+const joinOrganizationModal = ref(null)
+const isJoiningOrganization = ref(false)
+const inviteCode = ref('')
 const newOrganization = ref({
   name: '',
   description: '',
@@ -529,9 +584,9 @@ const selectOrganizationOption = (option) => {
       openCreateOrganizationModal()
       break
     case 'join':
-      // Rediriger vers la page des organisations pour rejoindre
-      console.log('Redirection vers la jointure d\'organisation')
-      // Ici on pourrait naviguer vers la page des organisations
+      // Ouvrir la modale de saisie du code d'invitation
+      console.log('Ouverture de la modale de saisie du code d\'invitation')
+      openJoinOrganizationModal()
       break
   }
 }
@@ -590,6 +645,319 @@ const resetOrganizationForm = () => {
     sector: ''
   }
   isCreatingOrganization.value = false
+}
+
+// Fonctions pour la modale de saisie du code d'invitation
+const openJoinOrganizationModal = () => {
+  console.log('Ouverture de la modale de saisie du code d\'invitation')
+  isJoinOrganizationModalOpen.value = true
+  
+  // Désactiver le scroll du body
+  document.body.style.overflow = 'hidden'
+  
+  // Positionner la modale contextuellement
+  nextTick(() => {
+    positionJoinOrganizationModal()
+  })
+}
+
+const closeJoinOrganizationModal = () => {
+  console.log('Fermeture de la modale de saisie du code d\'invitation')
+  isJoinOrganizationModalOpen.value = false
+  
+  // Réactiver le scroll du body
+  document.body.style.overflow = 'auto'
+  
+  // Réinitialiser le formulaire
+  resetJoinOrganizationForm()
+}
+
+const positionJoinOrganizationModal = () => {
+  if (!joinOrganizationModal.value) return
+  
+  const modal = joinOrganizationModal.value
+  const rect = modal.getBoundingClientRect()
+  const viewportWidth = window.innerWidth
+  const viewportHeight = window.innerHeight
+  
+  // Calculer la position optimale (centré)
+  const left = Math.max(20, (viewportWidth - rect.width) / 2)
+  const top = Math.max(20, (viewportHeight - rect.height) / 2)
+  
+  modal.style.left = `${left}px`
+  modal.style.top = `${top}px`
+  modal.style.transform = 'none'
+}
+
+const resetJoinOrganizationForm = () => {
+  inviteCode.value = ''
+}
+
+const joinOrganization = async () => {
+  if (!inviteCode.value.trim()) {
+    showNotification('warning', 'Attention', 'Veuillez saisir un code d\'invitation')
+    return
+  }
+  
+  isJoiningOrganization.value = true
+  
+  try {
+    console.log('Validation du code d\'invitation:', inviteCode.value)
+    
+    // Récupérer le token CSRF
+    const csrfToken = await getCsrfToken()
+    console.log('Token CSRF récupéré:', csrfToken)
+    
+    if (!csrfToken) {
+      showNotification('error', 'Erreur', 'Impossible de récupérer le token CSRF')
+      return
+    }
+    
+    // Appeler l'API pour valider le code d'invitation
+    const requestHeaders = {
+      'Content-Type': 'application/json',
+      'X-Csrftoken': csrfToken
+    }
+    console.log('Headers envoyés:', requestHeaders)
+    
+    const response = await $fetch('http://127.0.0.1:8000/api/organizations/invitations/validate/', {
+      method: 'POST',
+      headers: requestHeaders,
+      credentials: 'include',
+      body: {
+        code: inviteCode.value
+      }
+    })
+    
+    console.log('Réponse du serveur:', response)
+    
+    if (response.success) {
+      console.log('Code d\'invitation validé avec succès:', response)
+      
+      // Vérifier si l'utilisateur était déjà membre de cette organisation
+      if (response.already_member) {
+        showNotification('info', 'Déjà membre', `Vous appartenez déjà à l'organisation ${response.organization.name} en tant que ${response.role_display}`)
+      } else {
+        showNotification('success', 'Succès', `Vous avez rejoint l'organisation ${response.organization.name} avec succès !`)
+      }
+      
+      closeJoinOrganizationModal()
+      
+      // Rafraîchir la page pour mettre à jour l'état
+      setTimeout(() => {
+        window.location.reload()
+      }, 2000)
+    } else {
+      console.error('Erreur lors de la validation:', response.message)
+      showNotification('error', 'Erreur', response.message || 'Erreur lors de la validation du code d\'invitation')
+    }
+  } catch (error) {
+    console.error('Erreur lors de la jointure:', error)
+    
+    // Gestion des erreurs spécifiques
+    if (error.status === 400) {
+      showNotification('error', 'Code invalide', 'Le code d\'invitation saisi n\'est pas valide ou a expiré')
+    } else if (error.status === 404) {
+      showNotification('error', 'Code introuvable', 'Ce code d\'invitation n\'existe pas dans notre base de données')
+    } else if (error.status === 403) {
+      showNotification('error', 'Accès refusé', 'Vous n\'êtes pas autorisé à utiliser ce code d\'invitation')
+    } else {
+      showNotification('error', 'Erreur de connexion', 'Impossible de rejoindre l\'organisation. Vérifiez votre connexion.')
+    }
+  } finally {
+    isJoiningOrganization.value = false
+  }
+}
+
+// Fonction pour récupérer le token CSRF
+const getCsrfToken = async () => {
+  try {
+    // D'abord, faire une requête GET pour obtenir le cookie CSRF
+    await $fetch('http://127.0.0.1:8000/api/auth/csrf/', {
+      method: 'GET',
+      credentials: 'include'
+    })
+    
+    // Ensuite, récupérer le token depuis les cookies
+    const cookies = document.cookie.split(';')
+    const csrfCookie = cookies.find(cookie => cookie.trim().startsWith('csrftoken='))
+    
+    if (csrfCookie) {
+      const token = csrfCookie.split('=')[1]
+      console.log('Token CSRF récupéré depuis les cookies:', token)
+      return token
+    }
+    
+    // Fallback: utiliser l'endpoint API
+    const response = await $fetch('http://127.0.0.1:8000/api/auth/csrf/', {
+      credentials: 'include'
+    })
+    return response.csrfToken
+  } catch (error) {
+    console.error('Erreur lors de la récupération du token CSRF:', error)
+    return null
+  }
+}
+
+// Fonction pour afficher les notifications
+const showNotification = (type, title, message) => {
+  // Créer l'élément de notification
+  const notification = document.createElement('div')
+  notification.className = `notification notification-${type}`
+  notification.innerHTML = `
+    <div class="notification-content">
+      <div class="notification-icon">
+        <i class="bi bi-${getNotificationIcon(type)}"></i>
+      </div>
+      <div class="notification-text">
+        <div class="notification-title">${title}</div>
+        <div class="notification-message">${message}</div>
+      </div>
+      <button class="notification-close" onclick="this.parentElement.parentElement.remove()">
+        <i class="bi bi-x"></i>
+      </button>
+    </div>
+  `
+  
+  // Ajouter les styles si pas déjà présents
+  if (!document.querySelector('#notification-styles')) {
+    const styles = document.createElement('style')
+    styles.id = 'notification-styles'
+    styles.textContent = `
+      .notification {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 10000;
+        min-width: 300px;
+        max-width: 400px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        animation: slideInRight 0.3s ease-out;
+      }
+      
+      .notification-success {
+        border-left: 4px solid #10b981;
+      }
+      
+      .notification-error {
+        border-left: 4px solid #ef4444;
+      }
+      
+      .notification-warning {
+        border-left: 4px solid #f59e0b;
+      }
+      
+      .notification-info {
+        border-left: 4px solid #3b82f6;
+      }
+      
+      .notification-content {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        gap: 0.75rem;
+      }
+      
+      .notification-icon {
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+      }
+      
+      .notification-error .notification-icon {
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+      }
+      
+      .notification-warning .notification-icon {
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+      }
+      
+      .notification-info .notification-icon {
+        background: rgba(59, 130, 246, 0.1);
+        color: #3b82f6;
+      }
+      
+      .notification-text {
+        flex: 1;
+      }
+      
+      .notification-title {
+        font-weight: 600;
+        color: var(--text-dark);
+        margin-bottom: 0.25rem;
+      }
+      
+      .notification-message {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        line-height: 1.4;
+      }
+      
+      .notification-close {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 0.25rem;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+      }
+      
+      .notification-close:hover {
+        background: rgba(0, 0, 0, 0.1);
+        color: var(--text-dark);
+      }
+      
+      @keyframes slideInRight {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+    `
+    document.head.appendChild(styles)
+  }
+  
+  // Ajouter la notification au DOM
+  document.body.appendChild(notification)
+  
+  // Supprimer automatiquement après 5 secondes
+  setTimeout(() => {
+    if (notification.parentElement) {
+      notification.style.animation = 'slideInRight 0.3s ease-out reverse'
+      setTimeout(() => {
+        if (notification.parentElement) {
+          notification.remove()
+        }
+      }, 300)
+    }
+  }, 5000)
+}
+
+// Fonction pour obtenir l'icône selon le type de notification
+const getNotificationIcon = (type) => {
+  const icons = {
+    success: 'check-circle-fill',
+    error: 'x-circle-fill',
+    warning: 'exclamation-triangle-fill',
+    info: 'info-circle-fill'
+  }
+  return icons[type] || 'info-circle-fill'
 }
 
 const createOrganization = async () => {
@@ -1532,6 +1900,22 @@ const createOrganization = async () => {
   .option-desc {
     font-size: 0.8rem;
   }
+}
+
+/* Styles spécifiques pour la modale de saisie du code d'invitation */
+.form-help {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.form-help i {
+  color: var(--primary-blue);
+  font-size: 0.9rem;
 }
 
 </style>

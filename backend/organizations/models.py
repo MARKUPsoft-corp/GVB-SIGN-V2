@@ -64,8 +64,11 @@ class OrganizationMember(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='organization_memberships', verbose_name="Utilisateur")
     role = models.CharField(max_length=50, choices=[
         ('admin', 'Administrateur'),
-        ('member', 'Membre'),
-        ('viewer', 'Observateur'),
+        ('secretaire', 'Secrétaire'),
+        ('chef', 'Chef'),
+        ('chef+1', 'Chef+1'),
+        ('chef+2', 'Chef+2'),
+        ('chef+n', 'Chef+n'),
     ], default='member', verbose_name="Rôle")
     
     # Métadonnées

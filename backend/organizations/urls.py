@@ -7,6 +7,7 @@ urlpatterns = [
     
     # Récupération d'organisation
     path('my-organization/', views.get_user_organization, name='get_user_organization'),
+    path('user-organizations/', views.get_user_organizations, name='get_user_organizations'),
     path('list/', views.list_organizations, name='list_organizations'),
     
     # Gestion d'organisation

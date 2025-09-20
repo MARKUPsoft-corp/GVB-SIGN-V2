@@ -100,9 +100,14 @@ def get_user_organization(request):
     print(f"🔍 Organisation trouvée: {request.user.organization.name}")
     serializer = OrganizationSerializer(request.user.organization, context={'request': request})
     
+    # Ajouter le rôle de l'utilisateur dans l'organisation
+    organization_data = serializer.data.copy()
+    organization_data['role'] = request.user.role
+    organization_data['role_display'] = request.user.get_role_display()
+    
     return Response({
         'success': True,
-        'organization': serializer.data
+        'organization': organization_data
     })
 
 
@@ -125,6 +130,50 @@ def list_organizations(request):
         'success': True,
         'organizations': serializer.data
     })
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def get_user_organizations(request):
+    """
+    Récupérer toutes les organisations auxquelles appartient l'utilisateur
+    """
+    try:
+        # Récupérer toutes les adhésions de l'utilisateur
+        memberships = OrganizationMember.objects.filter(user=request.user).select_related('organization')
+        
+        organizations_data = []
+        for membership in memberships:
+            org_data = {
+                'id': membership.organization.id,
+                'name': membership.organization.name,
+                'description': membership.organization.description,
+                'email': membership.organization.email,
+                'phone': membership.organization.phone,
+                'address': membership.organization.address,
+                'website': membership.organization.website,
+                'organization_type': membership.organization.organization_type,
+                'sector': membership.organization.sector,
+                'is_active': membership.organization.is_active,
+                'member_count': membership.organization.member_count,
+                'role': membership.role,
+                'role_display': membership.get_role_display(),
+                'joined_at': membership.joined_at,
+                'status': 'active' if membership.organization.is_active else 'inactive'
+            }
+            organizations_data.append(org_data)
+        
+        return Response({
+            'success': True,
+            'organizations': organizations_data
+        })
+        
+    except Exception as e:
+        print(f"❌ Erreur lors de la récupération des organisations: {str(e)}")
+        return Response({
+            'success': False,
+            'message': 'Erreur lors de la récupération des organisations'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['GET'])
@@ -321,14 +370,39 @@ def validate_invitation_code(request):
             print(f"🔍 Rôle: {invitation_code.role}")
             
             # Vérifier si l'utilisateur n'est pas déjà membre de cette organisation
-            if OrganizationMember.objects.filter(
+            existing_member = OrganizationMember.objects.filter(
                 organization=invitation_code.organization,
                 user=request.user
-            ).exists():
+            ).first()
+            
+            if existing_member:
+                # L'utilisateur est déjà membre de cette organisation
+                role_display = existing_member.get_role_display()
                 return Response({
-                    'success': False,
-                    'message': 'Vous êtes déjà membre de cette organisation.'
-                }, status=status.HTTP_400_BAD_REQUEST)
+                    'success': True,
+                    'already_member': True,
+                    'message': f'Vous appartenez déjà à l\'organisation {invitation_code.organization.name}',
+                    'organization': {
+                        'id': invitation_code.organization.id,
+                        'name': invitation_code.organization.name,
+                        'role': existing_member.role
+                    },
+                    'role_display': role_display
+                }, status=status.HTTP_200_OK)
+            
+            # Vérifier si l'utilisateur essaie d'utiliser un code qu'il a lui-même créé
+            if invitation_code.created_by == request.user:
+                return Response({
+                    'success': True,
+                    'already_member': True,
+                    'message': f'Vous êtes déjà administrateur de l\'organisation {invitation_code.organization.name}',
+                    'organization': {
+                        'id': invitation_code.organization.id,
+                        'name': invitation_code.organization.name,
+                        'role': 'admin'
+                    },
+                    'role_display': 'Administrateur'
+                }, status=status.HTTP_200_OK)
             
             # Utiliser le code d'invitation
             invitation_code.use_code(request.user)

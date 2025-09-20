@@ -70,7 +70,12 @@
           <div class="d-flex align-items-center gap-3">
             <div class="user-info-navbar">
               <i class="bi bi-person-circle me-2"></i>
-              <span class="user-name-navbar">{{ userStore.fullName || 'Utilisateur' }}</span>
+              <ClientOnly>
+                <span class="user-name-navbar">{{ userStore.fullName || 'Utilisateur' }}</span>
+                <template #fallback>
+                  <span class="user-name-navbar">Utilisateur</span>
+                </template>
+              </ClientOnly>
             </div>
             <button class="btn btn-outline-danger btn-sm" @click="handleLogout">
               <i class="bi bi-box-arrow-right me-2"></i>
@@ -118,7 +123,7 @@
             </button>
           </li>
           <li class="sidebar-nav-item" v-if="hasOrganization">
-            <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: activePage === 'organization' }" @click="setActivePage('organization')">
+            <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: activePage === 'organization-selection' }" @click="setActivePage('organization-selection')">
               <i class="bi bi-building me-3"></i>
               Organisation
             </button>
@@ -178,7 +183,7 @@
             </button>
           </li>
           <li class="nav-item" v-if="hasOrganization">
-            <button class="nav-link" :class="{ active: activePage === 'organization' }" @click="setActivePage('organization')">
+            <button class="nav-link" :class="{ active: activePage === 'organization-selection' }" @click="setActivePage('organization-selection')">
               <i class="bi bi-building"></i>
               <span v-show="!isSidebarCollapsed">Organisation</span>
             </button>
@@ -194,8 +199,14 @@
               <i class="bi bi-person-circle"></i>
             </div>
             <div class="user-details" v-show="!isSidebarCollapsed">
-              <span class="user-name">{{ userStore.fullName || 'Utilisateur' }}</span>
-              <span class="user-email">{{ userStore.email || 'email@example.com' }}</span>
+              <ClientOnly>
+                <span class="user-name">{{ userStore.fullName || 'Utilisateur' }}</span>
+                <span class="user-email">{{ userStore.email || 'email@example.com' }}</span>
+                <template #fallback>
+                  <span class="user-name">Utilisateur</span>
+                  <span class="user-email">email@example.com</span>
+                </template>
+              </ClientOnly>
             </div>
           </div>
           <button @click="handleLogout" class="logout-btn">
@@ -633,6 +644,18 @@
         <div v-else-if="activePage === 'organization'">
           <OrganizationsPage />
         </div>
+        <div v-else-if="activePage === 'organization-selection'">
+          <OrganizationSelectionPage />
+        </div>
+        <div v-else-if="activePage === 'organization-member'">
+          <OrganizationMemberPage />
+        </div>
+        <div v-else-if="activePage === 'organization-secretary'">
+          <OrganizationSecretaryPage />
+        </div>
+        <div v-else-if="activePage === 'organization-manager'">
+          <OrganizationManagerPage />
+        </div>
         <div v-else>
           <div class="page-placeholder">
             <div class="text-center py-5">
@@ -653,6 +676,10 @@ import { useAuthStore } from '../../stores/auth'
 import DocumentsPage from '../../components/dashboard/DocumentsPage.vue'
 import OrganizationsPage from '../../components/dashboard/OrganizationsPage.vue'
 import SignImmediatelyPage from '../../components/dashboard/SignImmediatelyPage.vue'
+import OrganizationSelectionPage from '../../components/dashboard/OrganizationSelectionPage.vue'
+import OrganizationMemberPage from '../../components/dashboard/OrganizationMemberPage.vue'
+import OrganizationSecretaryPage from '../../components/dashboard/OrganizationSecretaryPage.vue'
+import OrganizationManagerPage from '../../components/dashboard/OrganizationManagerPage.vue'
 import { CertificateService } from '../../services/CertificateService'
 
 // Store d'authentification (côté client seulement)
@@ -707,6 +734,14 @@ const setActivePage = (page) => {
     }
   }
   
+  // Redirection vers la page de sélection d'organisation
+  if (page === 'organization-selection') {
+    console.log('✅ Redirection vers la page de sélection d\'organisation')
+    activePage.value = 'organization-selection'
+    closeSidebar()
+    return
+  }
+  
   activePage.value = page
   closeSidebar()
 }
@@ -734,13 +769,45 @@ const handleOpenProfileModal = (tab = 'profile') => {
 
 // Fonction de déconnexion
 const handleLogout = async () => {
+  console.log('🚪 Déconnexion en cours...')
+  
   // Nettoyer les données du certificat
   certificateService.clearCertificate()
   certificateInfo.value = null
   
+  // Nettoyer les données d'organisation
+  hasOrganization.value = false
+  
+  // Nettoyer les données de session
+  if (process.client) {
+    // Nettoyer les données d'organisation
+    localStorage.removeItem('user_has_organization')
+    localStorage.removeItem('user_organization')
+    
+    // Nettoyer les données de certificat
+    localStorage.removeItem('certificate')
+    localStorage.removeItem('certificateInfo')
+    localStorage.removeItem('privateKey')
+    localStorage.removeItem('publicKey')
+    
+    // Nettoyer les données de signature
+    localStorage.removeItem('signatureResults')
+    localStorage.removeItem('uploadedFiles')
+    localStorage.removeItem('signatureData')
+    
+    // Nettoyer le sessionStorage
+    sessionStorage.clear()
+    
+    // Forcer le nettoyage du cache
+    localStorage.clear()
+    
+    console.log('🧹 Données d\'organisation et de session effacées')
+  }
+  
   if (authStore) {
     await authStore.logout()
   }
+  
   // Redirection vers la page de connexion
   await navigateTo('/login')
 }
@@ -762,6 +829,15 @@ const toggleSidebarCollapse = () => {
 // Fonction pour vérifier si l'utilisateur a une organisation
 const checkUserOrganizations = async () => {
   try {
+    // Vérifier d'abord si l'utilisateur est authentifié
+    if (!authStore || !authStore.isAuthenticated) {
+      console.log('❌ Utilisateur non authentifié, pas de vérification d\'organisation')
+      hasOrganization.value = false
+      localStorage.removeItem('user_has_organization')
+      return
+    }
+    
+    
     console.log('🔍 Vérification des organisations de l\'utilisateur...')
     
     // Appel API pour vérifier si l'utilisateur a une organisation
@@ -781,6 +857,13 @@ const checkUserOrganizations = async () => {
         hasOrganization.value = true
         localStorage.setItem('user_has_organization', 'true')
         console.log('✅ Utilisateur a une organisation:', data.organization.name)
+        console.log('🔍 Rôle de l\'utilisateur:', data.organization.role || 'Non spécifié')
+        
+        // Rediriger automatiquement vers la page de sélection d'organisation
+        if (activePage.value === 'dashboard') {
+          console.log('🔄 Redirection automatique vers la page de sélection d\'organisation')
+          activePage.value = 'organization-selection'
+        }
       } else {
         hasOrganization.value = false
         localStorage.removeItem('user_has_organization')
@@ -1025,8 +1108,18 @@ const removeCertificate = () => {
 
 // Initialisation au montage du composant
 onMounted(async () => {
-  // Vérifier si l'utilisateur a des organisations
-  await checkUserOrganizations()
+  // Attendre que l'authentification soit initialisée
+  if (authStore) {
+    await authStore.initAuth()
+  }
+  
+  // Vérifier si l'utilisateur a des organisations (seulement si authentifié)
+  if (authStore && authStore.isAuthenticated) {
+    await checkUserOrganizations()
+  } else {
+    console.log('❌ Utilisateur non authentifié, pas de vérification d\'organisation')
+    hasOrganization.value = false
+  }
   
   // Vérifier si l'utilisateur essaie d'accéder à la page d'organisation sans en avoir une
   const urlParams = new URLSearchParams(window.location.search)
