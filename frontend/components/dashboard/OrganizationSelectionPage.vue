@@ -135,8 +135,8 @@
               <button class="btn btn-sm btn-outline-primary" @click.stop="viewOrganizationDetails(org)" @mouseenter="showOrganizationInfo(org, $event)" @mouseleave="closeOrganizationInfo" title="Détails">
                 <i class="bi bi-eye"></i>
               </button>
-              <button class="btn btn-sm btn-outline-secondary" @click.stop="openOrganizationSettings(org)" title="Paramètres">
-                <i class="bi bi-gear"></i>
+              <button class="btn btn-sm btn-outline-danger" @click.stop="leaveOrganization(org)" title="Quitter l'organisation">
+                <i class="bi bi-box-arrow-right"></i>
               </button>
             </div>
           </div>
@@ -578,7 +578,13 @@ const showOrganizationMembers = async (organization, event) => {
       if (data.success && data.members) {
         currentOrganizationMembers.value = data.members
         console.log('✅ Membres chargés:', data.members.length)
+      } else {
+        console.log('ℹ️ Aucun membre trouvé pour cette organisation')
+        currentOrganizationMembers.value = []
       }
+    } else if (response.status === 403) {
+      console.log('ℹ️ Accès non autorisé aux membres de cette organisation')
+      currentOrganizationMembers.value = []
     } else {
       console.error('❌ Erreur lors du chargement des membres')
       currentOrganizationMembers.value = []
@@ -612,9 +618,50 @@ const cancelCloseMembersModal = () => {
   }
 }
 
-const openOrganizationSettings = (organization) => {
-  console.log('Ouvrir les paramètres de l\'organisation:', organization)
-  // Logique pour ouvrir les paramètres
+// Quitter l'organisation
+const leaveOrganization = async (organization) => {
+  if (confirm(`Êtes-vous sûr de vouloir quitter l'organisation "${organization.name}" ?\n\nCette action est irréversible.`)) {
+    try {
+      // Récupérer le token CSRF depuis les cookies
+      const getCookie = (name) => {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+      };
+      
+      const csrfToken = getCookie('csrftoken');
+      
+      const response = await fetch(`http://127.0.0.1:8000/api/organizations/${organization.id}/leave/`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken || '',
+        },
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          console.log('✅ Organisation quittée avec succès')
+          alert('Organisation quittée avec succès !')
+          // Recharger la liste des organisations
+          await loadUserOrganizations()
+        } else {
+          console.error('❌ Erreur lors de la sortie de l\'organisation:', data.message)
+          alert('Erreur lors de la sortie de l\'organisation: ' + data.message)
+        }
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        console.error('❌ Erreur lors de la sortie de l\'organisation:', errorData)
+        alert('Erreur lors de la sortie de l\'organisation: ' + (errorData.message || 'Erreur inconnue'))
+      }
+    } catch (error) {
+      console.error('❌ Erreur lors de la sortie de l\'organisation:', error)
+      alert('Erreur lors de la sortie de l\'organisation')
+    }
+  }
 }
 
 
@@ -1022,24 +1069,31 @@ onMounted(async () => {
   letter-spacing: 0.5px;
 }
 
+/* Codes couleurs pour les rôles */
 .role-badge.admin {
   background: rgba(220, 53, 69, 0.1);
   color: #dc3545;
+  border: 1px solid rgba(220, 53, 69, 0.2);
 }
 
-.role-badge.manager {
-  background: rgba(255, 193, 7, 0.1);
-  color: #ffc107;
+.role-badge.secretaire {
+  background: rgba(0, 123, 255, 0.1);
+  color: #007bff;
+  border: 1px solid rgba(0, 123, 255, 0.2);
 }
 
-.role-badge.secretary {
-  background: rgba(23, 162, 184, 0.1);
-  color: #17a2b8;
+.role-badge.chef,
+.role-badge.manager,
+.role-badge[class*="chef+"] {
+  background: rgba(40, 167, 69, 0.1);
+  color: #28a745;
+  border: 1px solid rgba(40, 167, 69, 0.2);
 }
 
 .role-badge.member {
-  background: rgba(108, 117, 125, 0.1);
-  color: #6c757d;
+  background: rgba(255, 193, 7, 0.1);
+  color: #ffc107;
+  border: 1px solid rgba(255, 193, 7, 0.2);
 }
 
 .organization-actions {

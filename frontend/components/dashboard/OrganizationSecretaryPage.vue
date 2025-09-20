@@ -1,5 +1,10 @@
 <template>
   <div class="organization-secretary-page">
+    <!-- Bouton de fermeture -->
+    <button class="close-organization-btn" @click="closeOrganizationDashboard" title="Fermer et retourner à la sélection d'organisation">
+      <i class="bi bi-x"></i>
+    </button>
+    
     <!-- Header avec titre de la section -->
     <div class="organization-header">
       <div class="header-container">
@@ -466,6 +471,11 @@ const newDocument = ref({
 })
 
 // Fonctions de navigation
+const closeOrganizationDashboard = () => {
+  // Émettre un événement pour retourner à la page de sélection d'organisation
+  window.dispatchEvent(new CustomEvent('navigateToOrganizationSelection'))
+}
+
 const toggleAllDocuments = () => {
   showAllDocuments.value = !showAllDocuments.value
 }
@@ -661,6 +671,98 @@ const emit = defineEmits(['open-settings'])
 /* STYLES GÉNÉRAUX */
 .organization-secretary-page {
   min-height: 100vh;
+  position: relative;
+}
+
+/* BOUTON DE FERMETURE */
+.close-organization-btn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: #666;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1000;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.close-organization-btn:hover {
+  background: rgba(255, 255, 255, 1);
+  color: #333;
+  transform: scale(1.1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+.close-organization-btn:active {
+  transform: scale(0.95);
+}
+
+/* Responsive pour mobile */
+@media (max-width: 768px) {
+  .close-organization-btn {
+    position: fixed;
+    top: 70px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    color: #666;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .close-organization-btn:hover {
+    background: rgba(255, 255, 255, 1);
+    color: #333;
+    transform: scale(1.1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  }
+}
+
+/* CODES COULEURS POUR LES RÔLES */
+.role-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.role-badge.admin {
+  background: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+  border: 1px solid rgba(220, 53, 69, 0.2);
+}
+
+.role-badge.secretaire {
+  background: rgba(0, 123, 255, 0.1);
+  color: #007bff;
+  border: 1px solid rgba(0, 123, 255, 0.2);
+}
+
+.role-badge.chef,
+.role-badge.manager,
+.role-badge[class*="chef+"] {
+  background: rgba(40, 167, 69, 0.1);
+  color: #28a745;
+  border: 1px solid rgba(40, 167, 69, 0.2);
+}
+
+.role-badge.member {
+  background: rgba(255, 193, 7, 0.1);
+  color: #ffc107;
+  border: 1px solid rgba(255, 193, 7, 0.2);
 }
 
 /* HEADER */

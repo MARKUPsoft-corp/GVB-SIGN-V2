@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
+from django.utils import timezone
 from .models import Organization, OrganizationMember, InvitationCode
 from .serializers import (
     OrganizationSerializer, 
@@ -184,8 +185,13 @@ def get_organization_members(request, organization_id):
     """
     organization = get_object_or_404(Organization, id=organization_id)
     
-    # Vérifier que l'utilisateur appartient à cette organisation
-    if request.user.organization != organization:
+    # Vérifier que l'utilisateur appartient à cette organisation via OrganizationMember
+    user_membership = OrganizationMember.objects.filter(
+        user=request.user, 
+        organization=organization
+    ).first()
+    
+    if not user_membership:
         return Response({
             'success': False,
             'message': 'Accès non autorisé à cette organisation'
@@ -198,6 +204,69 @@ def get_organization_members(request, organization_id):
         'success': True,
         'members': serializer.data
     })
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+@csrf_exempt
+def leave_organization(request, organization_id):
+    """
+    Quitter une organisation
+    """
+    # Désactiver explicitement la vérification CSRF
+    request.csrf_processing_done = True
+    
+    try:
+        print(f"🔍 Tentative de sortie - Utilisateur: {request.user.email}")
+        print(f"🔍 ID organisation: {organization_id}")
+        
+        organization = get_object_or_404(Organization, id=organization_id)
+        print(f"🔍 Organisation trouvée: {organization.name}")
+        
+        # Vérifier que l'utilisateur appartient à cette organisation
+        user_membership = OrganizationMember.objects.filter(
+            user=request.user, 
+            organization=organization
+        ).first()
+        
+        print(f"🔍 Adhésion trouvée: {user_membership}")
+        
+        if not user_membership:
+            # Vérifier si l'utilisateur est l'admin de l'organisation (ancien système)
+            if hasattr(request.user, 'organization') and request.user.organization == organization:
+                print(f"🔍 Utilisateur admin de l'organisation (ancien système)")
+                # Créer un enregistrement OrganizationMember pour l'admin
+                user_membership = OrganizationMember.objects.create(
+                    user=request.user,
+                    organization=organization,
+                    role='admin',
+                    joined_at=timezone.now()
+                )
+                print(f"✅ Enregistrement OrganizationMember créé pour l'admin")
+            else:
+                print(f"❌ Utilisateur {request.user.email} n'appartient pas à l'organisation {organization.name}")
+                return Response({
+                    'success': False,
+                    'message': 'Vous n\'appartenez pas à cette organisation'
+                }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Supprimer l'adhésion de l'utilisateur
+        # Le signal post_delete s'occupera automatiquement de réactiver les codes d'invitation
+        user_membership.delete()
+        
+        print(f"✅ Utilisateur {request.user.email} a quitté l'organisation {organization.name}")
+        
+        return Response({
+            'success': True,
+            'message': f'Vous avez quitté l\'organisation {organization.name} avec succès'
+        })
+        
+    except Exception as e:
+        print(f"❌ Erreur lors de la sortie de l'organisation: {str(e)}")
+        return Response({
+            'success': False,
+            'message': 'Erreur lors de la sortie de l\'organisation'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['PUT'])

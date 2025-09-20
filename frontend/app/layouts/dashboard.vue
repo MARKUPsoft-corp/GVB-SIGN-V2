@@ -1103,6 +1103,7 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
   window.removeEventListener('organizationSelected', handleOrganizationSelected)
+  window.removeEventListener('navigateToOrganizationSelection', () => {})
   // Restaurer le scroll du body au cas où la modale était ouverte
   document.body.style.overflow = ''
 })
@@ -1203,6 +1204,12 @@ onMounted(async () => {
   
   // Écouter les événements de sélection d'organisation
   window.addEventListener('organizationSelected', handleOrganizationSelected)
+  
+  // Écouter les événements de navigation vers la sélection d'organisation
+  window.addEventListener('navigateToOrganizationSelection', () => {
+    console.log('🔄 Navigation vers la page de sélection d\'organisation')
+    setActivePage('organization-selection')
+  })
 })
 
 // Meta tags pour le dashboard

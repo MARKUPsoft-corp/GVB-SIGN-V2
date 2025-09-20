@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 from datetime import timedelta
 
 User = get_user_model()
@@ -162,3 +164,29 @@ class InvitationCode(models.Model):
             role=self.role,
             invited_by=self.created_by
         )
+
+
+# Signal pour réactiver automatiquement les codes d'invitation quand un membre quitte l'organisation
+@receiver(post_delete, sender=OrganizationMember)
+def reactivate_invitation_codes(sender, instance, **kwargs):
+    """
+    Réactive automatiquement les codes d'invitation quand un membre quitte l'organisation
+    """
+    try:
+        # Trouver tous les codes d'invitation utilisés par cet utilisateur pour cette organisation
+        invitation_codes = InvitationCode.objects.filter(
+            organization=instance.organization,
+            used_by=instance.user,
+            is_used=True
+        )
+        
+        for invitation_code in invitation_codes:
+            # Réactiver le code d'invitation
+            invitation_code.is_used = False
+            invitation_code.used_by = None
+            invitation_code.used_at = None
+            invitation_code.save()
+            print(f"✅ Code d'invitation {invitation_code.code} automatiquement réactivé")
+            
+    except Exception as e:
+        print(f"❌ Erreur lors de la réactivation automatique des codes: {str(e)}")
