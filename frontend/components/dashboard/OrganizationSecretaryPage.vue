@@ -4,18 +4,18 @@
     <div class="organization-header">
       <div class="header-container">
         <div class="header-content">
-          <h1 class="section-title">
-            <span class="text-dark">Espace Secrétaire de l'</span>
-            <span class="text-primary-blue">organisation </span>
-            <span class="text-primary-blue" v-if="userOrganization && userOrganization.organization"> {{ userOrganization.organization.name }}</span>
+          <h1 class="display-4 fw-bold mb-3 text-dark header-title">
+            <span class="text-dark">Espace Secrétaire de </span>
+            <span class="text-primary-blue">l'organisation </span> 
+            <span class="text-primary-blue" v-if="organizationName"> {{ organizationName }}</span>
           </h1>
-          <p class="section-subtitle" v-if="userOrganization && userOrganization.organization">
-            Gérez les documents, les signatures et l'organisation {{ userOrganization.organization.name }}.
+          <p class="lead mb-0 text-dark sections-subtitle" v-if="organizationName">
+            Gérez les documents, les signatures et l'organisation {{ organizationName }}.
           </p>
-          <p class="section-subtitle" v-else>
+          <p class="lead mb-0 text-dark sections-subtitle" v-else>
             Vous êtes secrétaire d'une organisation. Gérez les documents et les signatures.
           </p>
-          <div class="header-actions">
+          <div class="header-actions mt-4">
             <button class="btn btn-primary-custom create-doc-btn" @click="toggleCreateDocumentModal" ref="createDocBtn">
               <i class="bi bi-file-earmark-plus me-2"></i>
               Créer un document
@@ -33,7 +33,7 @@
           <div class="bubble bubble-3"></div>
           <div class="bubble bubble-4"></div>
           
-          <img src="/organisation.svg" alt="Organisation Secrétaire" class="organization-illustration">
+          <img src="/organisation.svg" alt="Organisation Secrétaire" class="header-image">
         </div>
       </div>
     </div>
@@ -369,7 +369,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../../stores/auth'
 
 // Store d'authentification
@@ -377,9 +377,21 @@ const authStore = useAuthStore()
 
 // État des données
 const userOrganization = ref(null)
+const selectedOrganization = ref(null)
 const showAllDocuments = ref(false)
 const showCreateDocumentModal = ref(false)
 const isCreatingDocument = ref(false)
+
+// Computed pour l'organisation
+const organizationName = computed(() => {
+  console.log('🔍 Computed organizationName - userOrganization:', userOrganization.value)
+  console.log('🔍 Computed organizationName - structure:', userOrganization.value?.organization)
+  console.log('🔍 Computed organizationName - name:', userOrganization.value?.organization?.name)
+  console.log('🔍 Computed organizationName - direct name:', userOrganization.value?.name)
+  
+  // Essayer les deux structures possibles
+  return userOrganization.value?.organization?.name || userOrganization.value?.name || ''
+})
 
 // Statistiques du secrétaire
 const secretaryStats = ref({
@@ -540,22 +552,52 @@ const createDocument = async () => {
   }
 }
 
+// Fonction pour écouter l'événement de sélection d'organisation
+const handleOrganizationSelected = (event) => {
+  console.log('🎯 handleOrganizationSelected appelé dans OrganizationSecretaryPage')
+  console.log('📦 Event detail:', event.detail)
+  
+  const { organization, role } = event.detail
+  console.log('🏢 Organisation sélectionnée pour secrétaire:', organization.name, 'Rôle:', role)
+  
+  selectedOrganization.value = organization
+  userOrganization.value = {
+    organization: organization,
+    role: role
+  }
+  
+  console.log('📝 userOrganization mis à jour:', userOrganization.value)
+  console.log('📝 Nom de l\'organisation:', userOrganization.value?.organization?.name)
+  
+  // Charger les statistiques avec la nouvelle organisation
+  loadSecretaryStats()
+}
+
 // Charger les données de l'organisation
 const loadOrganizationData = async () => {
   try {
-    const response = await fetch('http://127.0.0.1:8000/api/organizations/my-organization/', {
-      method: 'GET',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-    
-    if (response.ok) {
-      const data = await response.json()
-      if (data.success && data.organization) {
-        userOrganization.value = data.organization
-        console.log('✅ Organisation chargée:', data.organization.name)
+    // Si une organisation est déjà sélectionnée, l'utiliser
+    if (selectedOrganization.value) {
+      userOrganization.value = {
+        organization: selectedOrganization.value,
+        role: 'secretaire'
+      }
+    } else {
+      // Sinon, essayer de charger depuis l'API
+      const response = await fetch('http://127.0.0.1:8000/api/organizations/my-organization/', {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.organization) {
+          userOrganization.value = data.organization
+          console.log('✅ Organisation chargée:', data.organization.name)
+        }
       }
     }
   } catch (error) {
@@ -581,8 +623,22 @@ const loadSecretaryStats = async () => {
 
 // Initialisation
 onMounted(async () => {
+  console.log('🔧 OrganisationSecretaryPage montée')
+  
+  // Écouter l'événement de sélection d'organisation
+  window.addEventListener('organizationSelected', handleOrganizationSelected)
+  console.log('👂 Event listener organizationSelected ajouté')
+  
   await loadOrganizationData()
+  console.log('📊 userOrganization après loadOrganizationData:', userOrganization.value)
+  console.log('📊 organizationName computed:', organizationName.value)
+  
   await loadSecretaryStats()
+})
+
+// Nettoyage
+onUnmounted(() => {
+  window.removeEventListener('organizationSelected', handleOrganizationSelected)
 })
 
 // Émettre les événements
@@ -605,13 +661,11 @@ const emit = defineEmits(['open-settings'])
 /* STYLES GÉNÉRAUX */
 .organization-secretary-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  padding: 2rem 0;
 }
 
 /* HEADER */
 .organization-header {
-  margin-bottom: 3rem;
+  padding: 2rem 0;
 }
 
 .header-container {
@@ -629,6 +683,32 @@ const emit = defineEmits(['open-settings'])
   text-align: left;
   opacity: 0;
   animation: slideInLeft 1s ease-out 0.3s forwards;
+}
+
+.header-title {
+  font-family: 'Raleway', sans-serif;
+  font-size: 3rem;
+  font-weight: 800;
+  color: var(--text-dark);
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+.sections-title {
+  font-family: 'Raleway', sans-serif;
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--text-dark);
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+.sections-subtitle {
+  font-size: 1.2rem;
+  font-weight: 400;
+  color: var(--dark-gray);
+  margin-bottom: 2rem;
+  line-height: 1.5;
 }
 
 .section-title {
@@ -649,7 +729,7 @@ const emit = defineEmits(['open-settings'])
 .header-actions {
   display: flex;
   gap: 1rem;
-  flex-wrap: wrap;
+  align-items: center;
 }
 
 .header-image {
@@ -679,23 +759,23 @@ const emit = defineEmits(['open-settings'])
 .bubble {
   position: absolute;
   border-radius: 50%;
-  background: linear-gradient(135deg, rgba(0, 102, 204, 0.1) 0%, rgba(0, 123, 255, 0.15) 100%);
+  background: rgba(0, 102, 204, 0.1);
   z-index: 1;
   opacity: 0;
   animation: fadeInScale 1s ease-out forwards, float 6s ease-in-out infinite;
 }
 
 .bubble-1 {
-  width: 60px;
-  height: 60px;
+  width: 90px;
+  height: 90px;
   top: -5%;
   right: 15%;
   animation: fadeInScale 1s ease-out 1.2s forwards, float 6s ease-in-out infinite 1.2s;
 }
 
 .bubble-2 {
-  width: 40px;
-  height: 40px;
+  width: 110px;
+  height: 110px;
   top: 50%;
   right: 5%;
   transform: translateY(-50%);
@@ -703,16 +783,16 @@ const emit = defineEmits(['open-settings'])
 }
 
 .bubble-3 {
-  width: 80px;
-  height: 80px;
+  width: 70px;
+  height: 70px;
   bottom: 5%;
   right: 20%;
   animation: fadeInScale 1s ease-out 1.6s forwards, float 6s ease-in-out infinite 1.6s;
 }
 
 .bubble-4 {
-  width: 50px;
-  height: 50px;
+  width: 80px;
+  height: 80px;
   top: 40%;
   left: 10%;
   animation: fadeInScale 1s ease-out 1.8s forwards, float 6s ease-in-out infinite 1.8s;
@@ -742,10 +822,10 @@ const emit = defineEmits(['open-settings'])
   color: var(--primary-blue);
   background: transparent;
   transition: all 0.3s ease;
-  padding: 0.75rem 2rem;
-  font-weight: 600;
-  border-radius: 12px;
-  font-size: 1rem;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  border-radius: 8px;
+  font-size: 0.875rem;
 }
 
 .manage-docs-btn:hover {
@@ -761,11 +841,13 @@ const emit = defineEmits(['open-settings'])
 }
 
 .stat-card {
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 20px;
-  padding: 2rem;
-  text-align: center;
-  box-shadow: 0 8px 32px rgba(0, 102, 204, 0.1);
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 2px 10px rgba(0, 102, 204, 0.05);
   border: 1px solid rgba(0, 102, 204, 0.08);
   opacity: 0;
   animation: fadeInUp 0.8s ease-out forwards;
@@ -777,31 +859,32 @@ const emit = defineEmits(['open-settings'])
 .stat-card:nth-child(4) { animation-delay: 1.2s; }
 
 .stat-icon {
-  width: 60px;
-  height: 60px;
-  background: linear-gradient(135deg, rgba(0, 102, 204, 0.1) 0%, rgba(0, 123, 255, 0.15) 100%);
-  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  background: rgba(0, 102, 204, 0.1);
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 1rem;
-  font-size: 1.5rem;
   color: var(--primary-blue);
+  font-size: 1.25rem;
+}
+
+.stat-content {
+  flex: 1;
 }
 
 .stat-number {
-  font-size: 2.5rem;
-  font-weight: 800;
+  font-size: 1.75rem;
+  font-weight: 700;
   color: var(--text-dark);
-  margin-bottom: 0.5rem;
-  font-family: 'Raleway', sans-serif;
+  margin-bottom: 0.25rem;
 }
 
 .stat-label {
+  font-size: 0.875rem;
   color: var(--dark-gray);
-  font-weight: 500;
   margin: 0;
-  font-size: 1rem;
 }
 
 /* SECTIONS DES DOCUMENTS */
@@ -1396,12 +1479,16 @@ const emit = defineEmits(['open-settings'])
   }
   
   .header-image {
-    width: 300px;
-    height: 200px;
+    width: 320px;
+    height: 240px;
   }
   
-  .section-title {
-    font-size: 2rem;
+  .header-title {
+    font-size: 2.5rem;
+  }
+  
+  .sections-title {
+    font-size: 2.5rem;
   }
   
   .header-actions {

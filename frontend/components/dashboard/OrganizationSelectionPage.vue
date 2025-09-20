@@ -11,16 +11,6 @@
           <p class="section-subtitle">
             Choisissez l'organisation pour laquelle vous souhaitez accéder au tableau de bord.
           </p>
-          <div class="header-actions">
-            <button class="btn btn-primary-custom create-org-btn" @click="toggleCreateOrganizationModal" ref="createOrgBtn">
-              <i class="bi bi-plus-circle me-2"></i>
-              Créer une organisation
-            </button>
-            <button class="btn btn-outline-primary join-org-btn" @click="toggleJoinOrganizationModal">
-              <i class="bi bi-people me-2"></i>
-              Rejoindre une organisation
-            </button>
-          </div>
         </div>
         <div class="header-image">
           <!-- Bulles décoratives -->
@@ -29,7 +19,57 @@
           <div class="bubble bubble-3"></div>
           <div class="bubble bubble-4"></div>
           
-          <img src="/organisation.svg" alt="Sélection Organisation" class="organization-illustration">
+          <img src="/dashboard.svg" alt="Sélection Organisation" class="dashboard-illustration">
+        </div>
+      </div>
+    </div>
+
+    <!-- Section statistiques -->
+    <div class="stats-section">
+      <div class="row g-4">
+        <div class="col-lg-3">
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i class="bi bi-building"></i>
+            </div>
+            <div class="stat-content">
+              <h4 class="stat-number">{{ userOrganizations.length }}</h4>
+              <p class="stat-label">Organisations</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-3">
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i class="bi bi-people"></i>
+            </div>
+            <div class="stat-content">
+              <h4 class="stat-number">{{ totalMembers }}</h4>
+              <p class="stat-label">Membres total</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-3">
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i class="bi bi-file-earmark-text"></i>
+            </div>
+            <div class="stat-content">
+              <h4 class="stat-number">{{ totalDocuments }}</h4>
+              <p class="stat-label">Documents</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-3">
+          <div class="stat-card">
+            <div class="stat-icon">
+              <i class="bi bi-check-circle"></i>
+            </div>
+            <div class="stat-content">
+              <h4 class="stat-number">{{ activeOrganizations }}</h4>
+              <p class="stat-label">Actives</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -92,7 +132,7 @@
               <span class="role-badge" :class="org.role">{{ getRoleDisplayName(org.role) }}</span>
             </div>
             <div class="organization-actions">
-              <button class="btn btn-sm btn-outline-primary" @click.stop="viewOrganizationDetails(org)" title="Détails">
+              <button class="btn btn-sm btn-outline-primary" @click.stop="viewOrganizationDetails(org)" @mouseenter="showOrganizationInfo(org, $event)" @mouseleave="closeOrganizationInfo" title="Détails">
                 <i class="bi bi-eye"></i>
               </button>
               <button class="btn btn-sm btn-outline-secondary" @click.stop="openOrganizationSettings(org)" title="Paramètres">
@@ -128,79 +168,7 @@
       </div>
     </div>
 
-    <!-- Modale de création d'organisation -->
-    <div v-if="showCreateOrganizationModal" class="modal-overlay" @click="closeCreateOrganizationModal">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h5 class="modal-title">Créer une nouvelle organisation</h5>
-          <button class="btn-close" @click="closeCreateOrganizationModal">
-            <i class="bi bi-x"></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <form @submit.prevent="createOrganization">
-            <div class="mb-3">
-              <label for="organizationName" class="form-label">Nom de l'organisation</label>
-              <input type="text" class="form-control" id="organizationName" v-model="newOrganization.name" required>
-            </div>
-            <div class="mb-3">
-              <label for="organizationDescription" class="form-label">Description</label>
-              <textarea class="form-control" id="organizationDescription" v-model="newOrganization.description" rows="3"></textarea>
-            </div>
-            <div class="mb-3">
-              <label for="organizationType" class="form-label">Type d'organisation</label>
-              <select class="form-select" id="organizationType" v-model="newOrganization.type" required>
-                <option value="">Sélectionner un type</option>
-                <option value="company">Entreprise</option>
-                <option value="association">Association</option>
-                <option value="ngo">ONG</option>
-                <option value="government">Gouvernement</option>
-                <option value="other">Autre</option>
-              </select>
-            </div>
-            <div class="d-flex justify-content-end gap-2">
-              <button type="button" class="btn btn-outline-secondary" @click="closeCreateOrganizationModal">
-                Annuler
-              </button>
-              <button type="submit" class="btn btn-primary" :disabled="isCreatingOrganization">
-                <span v-if="isCreatingOrganization" class="spinner-border spinner-border-sm me-2"></span>
-                Créer l'organisation
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
 
-    <!-- Modale de rejoindre une organisation -->
-    <div v-if="showJoinOrganizationModal" class="modal-overlay" @click="closeJoinOrganizationModal">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h5 class="modal-title">Rejoindre une organisation</h5>
-          <button class="btn-close" @click="closeJoinOrganizationModal">
-            <i class="bi bi-x"></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <form @submit.prevent="joinOrganization">
-            <div class="mb-3">
-              <label for="invitationCode" class="form-label">Code d'invitation</label>
-              <input type="text" class="form-control" id="invitationCode" v-model="invitationCode" required placeholder="Entrez le code d'invitation">
-              <div class="form-text">Demandez le code d'invitation à l'administrateur de l'organisation.</div>
-            </div>
-            <div class="d-flex justify-content-end gap-2">
-              <button type="button" class="btn btn-outline-secondary" @click="closeJoinOrganizationModal">
-                Annuler
-              </button>
-              <button type="submit" class="btn btn-primary" :disabled="isJoiningOrganization">
-                <span v-if="isJoiningOrganization" class="spinner-border spinner-border-sm me-2"></span>
-                Rejoindre
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- Bulle d'informations des membres -->
@@ -246,6 +214,76 @@
       </div>
     </div>
   </div>
+
+  <!-- Bulle d'informations de l'organisation -->
+  <div v-if="showOrganizationInfoModal" class="organization-info-tooltip" :style="{ top: organizationInfoPosition.top + 'px', left: organizationInfoPosition.left + 'px' }" @click.stop @mouseenter="cancelCloseOrganizationInfo" @mouseleave="closeOrganizationInfo">
+    <div class="tooltip-arrow" :class="'arrow-' + organizationInfoDirection"></div>
+    <div class="tooltip-content">
+      <div class="tooltip-header">
+        <h4 class="tooltip-title">
+          <i class="bi bi-building me-2"></i>
+          {{ currentOrganizationInfo?.name }}
+        </h4>
+        <button class="tooltip-close" @click="closeOrganizationInfo">
+          <i class="bi bi-x"></i>
+        </button>
+      </div>
+      
+      <div class="tooltip-body">
+        <div class="organization-info-list">
+          <div class="info-item">
+            <i class="bi bi-envelope me-2"></i>
+            <span class="info-label">Email:</span>
+            <span class="info-value">{{ currentOrganizationInfo?.email || 'Non renseigné' }}</span>
+          </div>
+          
+          <div class="info-item">
+            <i class="bi bi-telephone me-2"></i>
+            <span class="info-label">Téléphone:</span>
+            <span class="info-value">{{ currentOrganizationInfo?.phone || 'Non renseigné' }}</span>
+          </div>
+          
+          <div class="info-item">
+            <i class="bi bi-geo-alt me-2"></i>
+            <span class="info-label">Adresse:</span>
+            <span class="info-value">{{ currentOrganizationInfo?.address || 'Non renseignée' }}</span>
+          </div>
+          
+          <div class="info-item">
+            <i class="bi bi-globe me-2"></i>
+            <span class="info-label">Site web:</span>
+            <span class="info-value">{{ currentOrganizationInfo?.website || 'Non renseigné' }}</span>
+          </div>
+          
+          <div class="info-item">
+            <i class="bi bi-tag me-2"></i>
+            <span class="info-label">Type:</span>
+            <span class="info-value">{{ currentOrganizationInfo?.organization_type || 'Non renseigné' }}</span>
+          </div>
+          
+          <div class="info-item">
+            <i class="bi bi-briefcase me-2"></i>
+            <span class="info-label">Secteur:</span>
+            <span class="info-value">{{ currentOrganizationInfo?.sector || 'Non renseigné' }}</span>
+          </div>
+          
+          <div class="info-item">
+            <i class="bi bi-people me-2"></i>
+            <span class="info-label">Membres:</span>
+            <span class="info-value">{{ currentOrganizationInfo?.member_count || 0 }}</span>
+          </div>
+          
+          <div class="info-item">
+            <i class="bi bi-check-circle me-2"></i>
+            <span class="info-label">Statut:</span>
+            <span class="info-value" :class="currentOrganizationInfo?.is_active ? 'text-success' : 'text-danger'">
+              {{ currentOrganizationInfo?.is_active ? 'Active' : 'Inactive' }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -259,25 +297,31 @@ const router = useRouter()
 
 // État des données
 const userOrganizations = ref([])
-const showCreateOrganizationModal = ref(false)
-const showJoinOrganizationModal = ref(false)
 const showMembersModal = ref(false)
-const isCreatingOrganization = ref(false)
-const isJoiningOrganization = ref(false)
 const currentOrganizationMembers = ref([])
 const currentOrganization = ref(null)
 const tooltipPosition = ref({ top: 0, left: 0 })
 const tooltipDirection = ref('bottom') // 'top', 'bottom', 'left', 'right'
 
-// Nouvelle organisation
-const newOrganization = ref({
-  name: '',
-  description: '',
-  type: ''
+// Bulle d'informations de l'organisation
+const showOrganizationInfoModal = ref(false)
+const currentOrganizationInfo = ref(null)
+const organizationInfoPosition = ref({ top: 0, left: 0 })
+const organizationInfoDirection = ref('bottom')
+const closeOrganizationInfoTimeout = ref(null)
+
+// Computed pour les statistiques
+const totalMembers = computed(() => {
+  return userOrganizations.value.reduce((total, org) => total + (org.member_count || 0), 0)
 })
 
-// Code d'invitation
-const invitationCode = ref('')
+const totalDocuments = computed(() => {
+  return userOrganizations.value.reduce((total, org) => total + (org.document_count || 0), 0)
+})
+
+const activeOrganizations = computed(() => {
+  return userOrganizations.value.filter(org => org.is_active).length
+})
 
 // Charger les organisations de l'utilisateur
 const loadUserOrganizations = async () => {
@@ -347,6 +391,90 @@ const viewOrganizationDetails = (organization) => {
   // Logique pour voir les détails
 }
 
+// Gestion de la bulle d'informations de l'organisation
+const showOrganizationInfo = (organization, event) => {
+  // Annuler le délai de fermeture si la souris revient
+  if (closeOrganizationInfoTimeout.value) {
+    clearTimeout(closeOrganizationInfoTimeout.value)
+    closeOrganizationInfoTimeout.value = null
+  }
+  
+  if (event && event.target) {
+    const rect = event.target.getBoundingClientRect()
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft
+    
+    const tooltipWidth = 450 // Largeur approximative de la bulle
+    const tooltipHeight = 300 // Hauteur approximative de la bulle
+    const windowWidth = window.innerWidth
+    const windowHeight = window.innerHeight
+    
+    const spaceLeft = rect.left
+    const spaceRight = windowWidth - rect.right
+    const spaceTop = rect.top
+    const spaceBottom = windowHeight - rect.bottom
+    
+    let top, left, direction
+    
+    // Calculer l'espace total disponible
+    const totalHorizontalSpace = spaceLeft + spaceRight
+    const totalVerticalSpace = spaceTop + spaceBottom
+    
+    // Positionner à droite de l'œil, au niveau du début de la carte
+    left = rect.right + scrollLeft + 15
+    top = rect.top + scrollTop - 80 // Positionner au niveau du début de la carte
+    direction = 'left'
+    
+    organizationInfoDirection.value = direction
+    
+    // Ajustements finaux pour éviter de sortir de l'écran
+    const margin = 20
+    
+    // Ajustement horizontal
+    if (left < margin) {
+      left = margin
+    } else if (left + tooltipWidth > windowWidth - margin) {
+      left = windowWidth - tooltipWidth - margin
+    }
+    
+    // Ajustement vertical - priorité pour garder la bulle entièrement visible
+    if (top < scrollTop + margin) {
+      top = scrollTop + margin
+    } else if (top + tooltipHeight > windowHeight + scrollTop - margin) {
+      // Si la bulle dépasse en bas, la repositionner plus haut
+      top = windowHeight + scrollTop - tooltipHeight - margin
+      
+      // Si même en haut elle ne rentre pas, la centrer verticalement
+      if (top < scrollTop + margin) {
+        top = scrollTop + (windowHeight - tooltipHeight) / 2
+      }
+    }
+    
+    // Vérification finale pour s'assurer que la bulle est entièrement visible
+    const finalLeft = Math.max(margin, Math.min(left, windowWidth - tooltipWidth - margin))
+    const finalTop = Math.max(scrollTop + margin, Math.min(top, windowHeight + scrollTop - tooltipHeight - margin))
+    
+    organizationInfoPosition.value = { top: finalTop, left: finalLeft }
+  }
+  
+  currentOrganizationInfo.value = organization
+  showOrganizationInfoModal.value = true
+}
+
+const closeOrganizationInfo = () => {
+  closeOrganizationInfoTimeout.value = setTimeout(() => {
+    showOrganizationInfoModal.value = false
+    currentOrganizationInfo.value = null
+  }, 150)
+}
+
+const cancelCloseOrganizationInfo = () => {
+  if (closeOrganizationInfoTimeout.value) {
+    clearTimeout(closeOrganizationInfoTimeout.value)
+    closeOrganizationInfoTimeout.value = null
+  }
+}
+
 // Gestion de la modale des membres
 const showOrganizationMembers = async (organization, event) => {
   // Annuler le délai de fermeture si la souris revient
@@ -409,21 +537,27 @@ const showOrganizationMembers = async (organization, event) => {
     tooltipDirection.value = direction
     
     // Ajustements finaux pour éviter de sortir de l'écran
-    // Horizontal
-    if (left < 10) {
-      left = 10
-    } else if (left + tooltipWidth > windowWidth - 10) {
-      left = windowWidth - tooltipWidth - 10
+    const margin = 20
+    
+    // Ajustement horizontal
+    if (left < margin) {
+      left = margin
+    } else if (left + tooltipWidth > windowWidth - margin) {
+      left = windowWidth - tooltipWidth - margin
     }
     
-    // Vertical
-    if (top < scrollTop + 10) {
-      top = scrollTop + 10
-    } else if (top + tooltipHeight > windowHeight + scrollTop - 10) {
-      top = windowHeight + scrollTop - tooltipHeight - 10
+    // Ajustement vertical
+    if (top < scrollTop + margin) {
+      top = scrollTop + margin
+    } else if (top + tooltipHeight > windowHeight + scrollTop - margin) {
+      top = windowHeight + scrollTop - tooltipHeight - margin
     }
     
-    tooltipPosition.value = { top, left }
+    // Vérification finale pour s'assurer que la bulle est entièrement visible
+    const finalLeft = Math.max(margin, Math.min(left, windowWidth - tooltipWidth - margin))
+    const finalTop = Math.max(scrollTop + margin, Math.min(top, windowHeight + scrollTop - tooltipHeight - margin))
+    
+    tooltipPosition.value = { top: finalTop, left: finalLeft }
   }
   
   try {
@@ -483,78 +617,7 @@ const openOrganizationSettings = (organization) => {
   // Logique pour ouvrir les paramètres
 }
 
-// Modales
-const toggleCreateOrganizationModal = () => {
-  showCreateOrganizationModal.value = !showCreateOrganizationModal.value
-}
 
-const closeCreateOrganizationModal = () => {
-  showCreateOrganizationModal.value = false
-  newOrganization.value = {
-    name: '',
-    description: '',
-    type: ''
-  }
-}
-
-const toggleJoinOrganizationModal = () => {
-  showJoinOrganizationModal.value = !showJoinOrganizationModal.value
-}
-
-const closeJoinOrganizationModal = () => {
-  showJoinOrganizationModal.value = false
-  invitationCode.value = ''
-}
-
-// Créer une organisation
-const createOrganization = async () => {
-  isCreatingOrganization.value = true
-  try {
-    console.log('Création de l\'organisation:', newOrganization.value)
-    // Ici on peut faire un appel API pour créer l'organisation
-    await new Promise(resolve => setTimeout(resolve, 1000)) // Simulation
-    
-    // Ajouter la nouvelle organisation à la liste
-    const organization = {
-      id: Date.now(),
-      name: newOrganization.value.name,
-      description: newOrganization.value.description,
-      type: newOrganization.value.type,
-      status: 'active',
-      userRole: 'admin',
-      memberCount: 1,
-      documentCount: 0
-    }
-    
-    userOrganizations.value.unshift(organization)
-    closeCreateOrganizationModal()
-    console.log('✅ Organisation créée avec succès')
-  } catch (error) {
-    console.error('❌ Erreur lors de la création de l\'organisation:', error)
-  } finally {
-    isCreatingOrganization.value = false
-  }
-}
-
-// Rejoindre une organisation
-const joinOrganization = async () => {
-  isJoiningOrganization.value = true
-  try {
-    console.log('Rejoindre l\'organisation avec le code:', invitationCode.value)
-    // Ici on peut faire un appel API pour rejoindre l'organisation
-    await new Promise(resolve => setTimeout(resolve, 1000)) // Simulation
-    
-    closeJoinOrganizationModal()
-    console.log('✅ Organisation rejointe avec succès')
-    
-    // Recharger les organisations
-    await loadUserOrganizations()
-  } catch (error) {
-    console.error('❌ Erreur lors de la jonction à l\'organisation:', error)
-  } finally {
-    isJoiningOrganization.value = false
-  }
-}
 
 // Initialisation
 onMounted(async () => {
@@ -630,12 +693,10 @@ onMounted(async () => {
   opacity: 0;
   animation: slideInRight 1s ease-out 0.5s forwards;
   position: relative;
-  width: 370px;
-  height: 270px;
 }
 
-.organization-illustration {
-  width: 100%;
+.dashboard-illustration {
+  width: 420px;
   height: auto;
   filter: drop-shadow(0 4px 12px rgba(0, 102, 204, 0.1));
   transition: all 0.3s ease;
@@ -643,7 +704,7 @@ onMounted(async () => {
   z-index: 2;
 }
 
-.organization-illustration:hover {
+.dashboard-illustration:hover {
   transform: translateY(-4px);
   filter: drop-shadow(0 8px 20px rgba(0, 102, 204, 0.15));
 }
@@ -729,6 +790,59 @@ onMounted(async () => {
 }
 
 /* SECTIONS DES ORGANISATIONS */
+/* STATISTIQUES */
+.stats-section {
+  margin-bottom: 3rem;
+  padding: 0 2rem;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 2px 10px rgba(0, 102, 204, 0.05);
+  border: 1px solid rgba(0, 102, 204, 0.08);
+  opacity: 0;
+  animation: fadeInUp 0.8s ease-out forwards;
+}
+
+.stat-card:nth-child(1) { animation-delay: 0.9s; }
+.stat-card:nth-child(2) { animation-delay: 1s; }
+.stat-card:nth-child(3) { animation-delay: 1.1s; }
+.stat-card:nth-child(4) { animation-delay: 1.2s; }
+
+.stat-icon {
+  width: 50px;
+  height: 50px;
+  background: rgba(0, 102, 204, 0.1);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary-blue);
+  font-size: 1.25rem;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-number {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 0.25rem;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: var(--dark-gray);
+  margin: 0;
+}
+
 .organizations-section {
   max-width: 1200px;
   margin: 0 auto;
@@ -1464,9 +1578,8 @@ onMounted(async () => {
     gap: 2rem;
   }
   
-  .header-image {
-    width: 280px;
-    height: 180px;
+  .dashboard-illustration {
+    width: 300px;
   }
   
   .section-title {
@@ -1544,7 +1657,103 @@ onMounted(async () => {
     gap: 0.5rem;
     padding: 0.5rem;
   }
-  
+}
+
+/* Bulle d'informations de l'organisation */
+.organization-info-tooltip {
+  position: absolute;
+  z-index: 10000;
+  max-width: 450px;
+  max-height: 300px;
+  animation: tooltipFadeIn 0.3s ease-out;
+}
+
+.organization-info-tooltip .tooltip-content {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 8px 32px rgba(0, 102, 204, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+  max-width: 450px;
+  width: 90vw;
+  max-height: 300px;
+  overflow: hidden;
+}
+
+.organization-info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.organization-info-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.organization-info-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+.organization-info-list::-webkit-scrollbar-thumb {
+  background: rgba(0, 102, 204, 0.3);
+  border-radius: 2px;
+}
+
+.organization-info-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 102, 204, 0.5);
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.info-item i {
+  color: var(--primary-blue);
+  font-size: 0.9rem;
+  width: 16px;
+  text-align: center;
+}
+
+.info-label {
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-right: 0.5rem;
+  min-width: 80px;
+}
+
+.info-value {
+  color: var(--dark-gray);
+  font-size: 0.9rem;
+}
+
+.text-success {
+  color: #28a745 !important;
+}
+
+.text-danger {
+  color: #dc3545 !important;
+}
+
+@media (max-width: 768px) {
   .member-info {
     align-items: center;
   }
