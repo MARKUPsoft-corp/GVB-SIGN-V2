@@ -1,0 +1,101 @@
+{% extends "admin/change_list.html" %}
+{% load i18n admin_urls static admin_list %}
+
+{% block extrahead %}
+{{ block.super }}
+<style>
+    .token-stats {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+    .stat-card {
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 6px;
+        padding: 15px;
+        margin: 10px;
+        display: inline-block;
+        min-width: 150px;
+        text-align: center;
+    }
+    .stat-number {
+        font-size: 24px;
+        font-weight: bold;
+        color: #007bff;
+    }
+    .stat-label {
+        color: #6c757d;
+        font-size: 14px;
+    }
+    .status-active { color: #28a745; }
+    .status-expired { color: #dc3545; }
+    .status-warning { color: #ffc107; }
+    .token-preview {
+        font-family: monospace;
+        background: #f8f9fa;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 12px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="token-stats">
+    <h3>📊 Statistiques des Tokens d'Authentification</h3>
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-around;">
+        <div class="stat-card">
+            <div class="stat-number">{{ cl.result_count|default:0 }}</div>
+            <div class="stat-label">Total Tokens</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number status-active">{{ cl.result_count|default:0 }}</div>
+            <div class="stat-label">Tokens Actifs</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number status-expired">0</div>
+            <div class="stat-label">Tokens Expirés</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number status-warning">0</div>
+            <div class="stat-label">Expirent Bientôt</div>
+        </div>
+    </div>
+</div>
+
+{{ block.super }}
+{% endblock %}
+
+{% block result_list %}
+{{ block.super }}
+
+<script>
+// Améliorer l'affichage des tokens
+document.addEventListener('DOMContentLoaded', function() {
+    // Ajouter des icônes de statut
+    const statusCells = document.querySelectorAll('.field-status');
+    statusCells.forEach(cell => {
+        const text = cell.textContent.trim();
+        if (text.includes('Actif')) {
+            cell.innerHTML = '<span style="color: #28a745;">✅ ' + text + '</span>';
+        } else if (text.includes('Expiré')) {
+            cell.innerHTML = '<span style="color: #dc3545;">❌ ' + text + '</span>';
+        } else if (text.includes('Expire bientôt')) {
+            cell.innerHTML = '<span style="color: #ffc107;">⚠️ ' + text + '</span>';
+        }
+    });
+    
+    // Améliorer l'affichage des tokens
+    const tokenCells = document.querySelectorAll('.field-token_preview');
+    tokenCells.forEach(cell => {
+        const text = cell.textContent.trim();
+        if (text && text !== 'N/A') {
+            cell.innerHTML = '<span class="token-preview">' + text + '</span>';
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -673,6 +673,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../../stores/auth'
+import { useSessionRefresh } from '../../composables/useSessionRefresh'
 import DocumentsPage from '../../components/dashboard/DocumentsPage.vue'
 import OrganizationsPage from '../../components/dashboard/OrganizationsPage.vue'
 import SignImmediatelyPage from '../../components/dashboard/SignImmediatelyPage.vue'
@@ -684,6 +685,9 @@ import { CertificateService } from '../../services/CertificateService'
 
 // Store d'authentification (côté client seulement)
 const authStore = process.client ? useAuthStore() : null
+
+// Système de rafraîchissement de session
+const { startSessionRefresh, stopSessionRefresh, cleanup } = useSessionRefresh()
 
 // Store utilisateur avec les données du store d'authentification
 const userStore = computed(() => ({
@@ -1098,6 +1102,11 @@ const handleScroll = () => {
 onMounted(() => {
   window.addEventListener('scroll', handleScroll)
   handleScroll() // Vérification initiale
+  
+  // Démarrer le rafraîchissement automatique de session
+  if (authStore && authStore.isAuthenticated) {
+    startSessionRefresh()
+  }
 })
 
 onUnmounted(() => {
@@ -1106,6 +1115,9 @@ onUnmounted(() => {
   window.removeEventListener('navigateToOrganizationSelection', () => {})
   // Restaurer le scroll du body au cas où la modale était ouverte
   document.body.style.overflow = ''
+  
+  // Arrêter le rafraîchissement automatique de session
+  cleanup()
 })
 
 // Initialiser l'authentification au montage

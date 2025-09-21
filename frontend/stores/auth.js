@@ -52,6 +52,33 @@ export const useAuthStore = defineStore('auth', {
       return false
     },
 
+    // Vérifier la session en arrière-plan (non bloquant)
+    async verifySessionInBackground() {
+      if (process.client && this.isAuthenticated) {
+        try {
+          const response = await fetch('http://127.0.0.1:8000/api/auth/profile/', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include'
+          })
+
+          if (!response.ok) {
+            console.log('Session Django expirée en arrière-plan, nettoyage du localStorage')
+            this.clearAuth()
+            // Rediriger vers login seulement si on n'est pas déjà sur une page d'auth
+            if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
+              await navigateTo('/login')
+            }
+          }
+        } catch (error) {
+          console.error('Erreur lors de la vérification de session en arrière-plan:', error)
+          // Ne pas nettoyer automatiquement en cas d'erreur réseau
+        }
+      }
+    },
+
     // Connexion
     async login(credentials) {
       try {
@@ -239,13 +266,61 @@ export const useAuthStore = defineStore('auth', {
       } catch (error) {
         console.error('Erreur lors de la déconnexion:', error)
       } finally {
-        // Nettoyer l'état même si l'API échoue
-        this.clearAuth()
+        // Nettoyer complètement l'état même si l'API échoue
+        this.clearAllData()
       }
     },
 
-    // Nettoyer l'authentification
+    // Rafraîchir la session (pour éviter les expirations)
+    async refreshSession() {
+      if (process.client && this.isAuthenticated) {
+        try {
+          const response = await fetch('http://127.0.0.1:8000/api/auth/profile/', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include'
+          })
+
+          if (response.ok) {
+            console.log('✅ Session rafraîchie avec succès')
+            return true
+          } else {
+            console.log('❌ Session expirée, nettoyage nécessaire')
+            this.clearAuth()
+            return false
+          }
+        } catch (error) {
+          console.error('Erreur lors du rafraîchissement de session:', error)
+          return false
+        }
+      }
+      return false
+    },
+
+    // Nettoyer l'authentification (version optimisée)
     clearAuth() {
+      this.user = null
+      this.token = null
+      this.isAuthenticated = false
+      
+      // Nettoyer seulement les données d'authentification essentielles
+      if (process.client) {
+        // Nettoyer les données d'authentification
+        localStorage.removeItem('user')
+        localStorage.removeItem('token')
+        
+        // Nettoyer les données de session
+        localStorage.removeItem('sessionId')
+        localStorage.removeItem('csrfToken')
+        
+        console.log('🧹 Session d\'authentification effacée')
+      }
+    },
+
+    // Nettoyer complètement (pour déconnexion volontaire)
+    clearAllData() {
       this.user = null
       this.token = null
       this.isAuthenticated = false

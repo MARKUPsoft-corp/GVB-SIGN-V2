@@ -155,6 +155,8 @@ REST_FRAMEWORK = {
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "http://localhost:3003",  # Port alternatif
+    "http://127.0.0.1:3003",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
@@ -181,6 +183,13 @@ CORS_ALLOW_HEADERS = [
     'user-agent',
     'x-csrftoken',
     'x-requested-with',
+    'x-csrf-token',  # Ajout pour CSRF
+]
+
+# CORS expose headers pour les cookies
+CORS_EXPOSE_HEADERS = [
+    'set-cookie',
+    'x-csrftoken',
 ]
 
 # CSRF settings pour le développement
@@ -190,6 +199,9 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 # Session settings
+SESSION_COOKIE_AGE = 86400 * 7  # 7 jours (en secondes)
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Ne pas expirer à la fermeture du navigateur
+SESSION_SAVE_EVERY_REQUEST = True  # Sauvegarder la session à chaque requête
 SESSION_COOKIE_SAMESITE = 'Lax'   # Lax pour HTTP en développement
 CSRF_COOKIE_SAMESITE = 'Lax'      # Lax pour HTTP en développement
 SESSION_COOKIE_HTTPONLY = False   # Permet l'accès JavaScript
