@@ -261,7 +261,7 @@
                     <button class="btn btn-sm btn-outline-primary" @click="viewOrganizationDetails(org)" @mouseenter="showOrganizationInfo(org, $event)" @mouseleave="closeOrganizationInfo" title="Détails">
                       <i class="bi bi-eye"></i>
                     </button>
-                    <button class="btn btn-sm btn-primary" @click="requestToJoin(org)" title="Demander à rejoindre">
+                    <button class="btn btn-sm btn-primary" @click="requestToJoin(org, $event)" title="Demander à rejoindre">
                       <i class="bi bi-person-plus"></i>
                     </button>
                   </div>
@@ -425,10 +425,56 @@
       </div>
     </div>
   </div>
+
+  <!-- Pop-up de confirmation pour rejoindre une organisation -->
+  <div v-if="showJoinConfirmationPopup" class="join-confirmation-popup" :style="{ top: popupPosition.top + 'px', left: popupPosition.left + 'px' }" @click.stop>
+    <div v-if="showPopupArrow" class="popup-arrow"></div>
+    <div class="popup-content">
+      <div class="popup-header">
+        <div class="popup-icon">
+          <i class="bi bi-people-fill"></i>
+        </div>
+        <h6 class="popup-title">Rejoindre {{ organizationToJoin?.name }} ?</h6>
+        <button class="popup-close" @click="closeJoinConfirmation">
+          <i class="bi bi-x"></i>
+        </button>
+      </div>
+      
+      <div class="popup-body">
+        <p class="popup-message">Vous deviendrez membre de cette organisation.</p>
+      </div>
+      
+      <div class="popup-actions">
+        <button class="btn btn-sm btn-outline-secondary" @click="closeJoinConfirmation">
+          Annuler
+        </button>
+        <button class="btn btn-sm btn-primary" @click="confirmJoinOrganization">
+          <i class="bi bi-person-plus me-1"></i>
+          Rejoindre
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div v-if="showNotification" class="notification-toast" :class="`notification-${notificationData.type}`">
+    <div class="notification-content">
+      <div class="notification-icon">
+        <i class="bi" :class="`bi-${getNotificationIcon(notificationData.type)}`"></i>
+      </div>
+      <div class="notification-text">
+        <div class="notification-title">{{ notificationData.title }}</div>
+        <div class="notification-message">{{ notificationData.message }}</div>
+      </div>
+      <button class="notification-close" @click="showNotification = false">
+        <i class="bi bi-x"></i>
+      </button>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../../stores/auth'
 import { useRouter } from 'vue-router'
 
@@ -459,6 +505,14 @@ const searchQuery = ref('')
 const allOrganizations = ref([])
 const filteredOrganizations = ref([])
 const isLoading = ref(false)
+
+// Gestion des notifications et pop-ups
+const showJoinConfirmationPopup = ref(false)
+const organizationToJoin = ref(null)
+const popupPosition = ref({ top: 0, left: 0 })
+const showPopupArrow = ref(true)
+const showNotification = ref(false)
+const notificationData = ref({ type: '', title: '', message: '' })
 
 // Computed pour les statistiques
 const totalMembers = computed(() => {
@@ -894,53 +948,166 @@ const formatDate = (dateString) => {
   })
 }
 
-// Demander à rejoindre une organisation
-const requestToJoin = async (organization) => {
-  if (confirm(`Êtes-vous sûr de vouloir demander à rejoindre l'organisation "${organization.name}" ?`)) {
-    try {
-      // Récupérer le token CSRF depuis les cookies
-      const getCookie = (name) => {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) return parts.pop().split(';').shift();
-        return null;
-      };
-      
-      const csrfToken = getCookie('csrftoken');
-      
-      const response = await fetch(`http://127.0.0.1:8000/api/organizations/${organization.id}/request-join/`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken || '',
-        },
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success) {
-          console.log('✅ Demande de rejoindre l\'organisation envoyée')
-          alert('Votre demande a été envoyée avec succès !')
-        } else {
-          console.error('❌ Erreur lors de la demande:', data.message)
-          alert('Erreur lors de la demande: ' + data.message)
-        }
-      } else {
-        const errorData = await response.json().catch(() => ({}))
-        console.error('❌ Erreur lors de la demande:', errorData)
-        alert('Erreur lors de la demande: ' + (errorData.message || 'Erreur inconnue'))
-      }
-    } catch (error) {
-      console.error('❌ Erreur lors de la demande:', error)
-      alert('Erreur lors de la demande')
+// Fonction pour afficher une notification
+const displayNotification = (type, title, message) => {
+  notificationData.value = { type, title, message }
+  showNotification.value = true
+  
+  // Masquer automatiquement après 5 secondes
+  setTimeout(() => {
+    showNotification.value = false
+  }, 5000)
+}
+
+// Fonction pour obtenir l'icône selon le type de notification
+const getNotificationIcon = (type) => {
+  const icons = {
+    success: 'check-circle-fill',
+    error: 'x-circle-fill',
+    warning: 'exclamation-triangle-fill',
+    info: 'info-circle-fill'
+  }
+  return icons[type] || 'info-circle-fill'
+}
+
+// Ouvrir le pop-up de confirmation pour rejoindre une organisation
+const openJoinConfirmation = (organization, event) => {
+  console.log('🔍 Ouverture du pop-up pour:', organization.name)
+  
+  if (event && event.target) {
+    const rect = event.target.getBoundingClientRect()
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft
+    
+    // Dimensions du pop-up
+    const popupWidth = 300
+    const popupHeight = 200
+    const margin = 20
+    
+    // Position initiale (au-dessus du bouton)
+    let top = rect.top + scrollTop - popupHeight - 20
+    let left = rect.left + scrollLeft + (rect.width / 2) - (popupWidth / 2)
+    
+    // Vérifier les limites de l'écran
+    const viewportWidth = window.innerWidth
+    const viewportHeight = window.innerHeight
+    
+    // Ajuster horizontalement si nécessaire
+    if (left < margin) {
+      left = margin
+    } else if (left + popupWidth > viewportWidth - margin) {
+      left = viewportWidth - popupWidth - margin
     }
+    
+    // Ajuster verticalement si nécessaire
+    if (top < margin) {
+      // Si pas assez d'espace au-dessus, placer en dessous
+      top = rect.bottom + scrollTop + 20
+      showPopupArrow.value = false // Masquer la flèche si en dessous
+    } else {
+      showPopupArrow.value = true // Afficher la flèche si au-dessus
+    }
+    
+    // Vérifier si le pop-up dépasse en bas
+    if (top + popupHeight > viewportHeight + scrollTop - margin) {
+      // Centrer verticalement si possible
+      top = Math.max(margin, (viewportHeight - popupHeight) / 2 + scrollTop)
+      showPopupArrow.value = false // Masquer la flèche si centré
+    }
+    
+    popupPosition.value = {
+      top: top,
+      left: left
+    }
+    
+    console.log('📍 Position du pop-up:', popupPosition.value)
+  }
+  
+  organizationToJoin.value = organization
+  showJoinConfirmationPopup.value = true
+  console.log('✅ Pop-up ouvert:', showJoinConfirmationPopup.value)
+}
+
+// Fermer le pop-up de confirmation
+const closeJoinConfirmation = () => {
+  showJoinConfirmationPopup.value = false
+  organizationToJoin.value = null
+  showPopupArrow.value = true // Réinitialiser la flèche
+}
+
+// Confirmer et rejoindre l'organisation
+const confirmJoinOrganization = async () => {
+  if (!organizationToJoin.value) return
+  
+  try {
+    // Récupérer le token CSRF depuis les cookies
+    const getCookie = (name) => {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+      return null;
+    };
+    
+    const csrfToken = getCookie('csrftoken');
+    
+    const response = await fetch(`http://127.0.0.1:8000/api/organizations/${organizationToJoin.value.id}/request-join/`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken || '',
+      },
+    })
+    
+    if (response.ok) {
+      const data = await response.json()
+      if (data.success) {
+        console.log('✅ Demande de rejoindre l\'organisation envoyée')
+        displayNotification('success', 'Succès', data.message)
+        // Recharger les organisations de l'utilisateur
+        await loadUserOrganizations()
+      } else {
+        console.error('❌ Erreur lors de la demande:', data.message)
+        displayNotification('error', 'Erreur', data.message)
+      }
+    } else {
+      const errorData = await response.json().catch(() => ({}))
+      console.error('❌ Erreur lors de la demande:', errorData)
+      displayNotification('error', 'Erreur', errorData.message || 'Erreur inconnue')
+    }
+  } catch (error) {
+    console.error('❌ Erreur lors de la demande:', error)
+    displayNotification('error', 'Erreur', 'Erreur lors de la demande')
+  } finally {
+    closeJoinConfirmation()
+  }
+}
+
+// Demander à rejoindre une organisation (ancienne fonction pour compatibilité)
+const requestToJoin = (organization, event) => {
+  console.log('🔍 Clic sur le bouton rejoindre:', organization.name)
+  // Empêcher la propagation de l'événement pour éviter la fermeture immédiate
+  event.stopPropagation()
+  openJoinConfirmation(organization, event)
+}
+
+// Gestionnaire pour fermer le pop-up en cliquant en dehors
+const handleClickOutside = (event) => {
+  if (showJoinConfirmationPopup.value && !event.target.closest('.join-confirmation-popup')) {
+    closeJoinConfirmation()
   }
 }
 
 // Initialisation
 onMounted(async () => {
   await loadUserOrganizations()
+  // Ajouter le gestionnaire d'événements
+  document.addEventListener('click', handleClickOutside)
+})
+
+// Nettoyage
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
 })
 </script>
 
@@ -2287,6 +2454,314 @@ onMounted(async () => {
   
   .no-results-description, .search-welcome-description {
     font-size: 0.9rem;
+  }
+}
+
+/* POP-UP DE CONFIRMATION POUR REJOINDRE UNE ORGANISATION */
+.join-confirmation-popup {
+  position: absolute;
+  z-index: 10000;
+  animation: popupBounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.popup-arrow {
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid rgba(255, 255, 255, 0.3);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  opacity: 0.8;
+}
+
+.popup-content {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 
+    0 8px 32px rgba(0, 102, 204, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+  min-width: 300px;
+  max-width: 350px;
+  overflow: hidden;
+}
+
+.popup-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.popup-icon {
+  width: 24px;
+  height: 24px;
+  background: linear-gradient(135deg, rgba(0, 102, 204, 0.1) 0%, rgba(0, 123, 255, 0.15) 100%);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  color: var(--primary-blue);
+  flex-shrink: 0;
+}
+
+.popup-title {
+  flex: 1;
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  line-height: 1.2;
+}
+
+.popup-close {
+  background: none;
+  border: none;
+  color: var(--dark-gray);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.popup-close:hover {
+  background: rgba(0, 102, 204, 0.1);
+  color: var(--primary-blue);
+}
+
+.popup-body {
+  padding: 1rem;
+}
+
+.popup-message {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #333333;
+  line-height: 1.4;
+}
+
+.popup-actions {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.popup-actions .btn {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.85rem;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.popup-actions .btn-outline-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--dark-gray);
+}
+
+.popup-actions .btn-outline-secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: var(--text-dark);
+}
+
+.popup-actions .btn-primary {
+  background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-dark) 100%);
+  border: none;
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 102, 204, 0.3);
+}
+
+.popup-actions .btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.4);
+}
+
+/* NOTIFICATION TOAST */
+.notification-toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10001;
+  min-width: 300px;
+  max-width: 400px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  animation: slideInRight 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.notification-content {
+  display: flex;
+  align-items: flex-start;
+  padding: 1rem;
+  gap: 0.75rem;
+}
+
+.notification-icon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+}
+
+.notification-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-title {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--text-dark);
+}
+
+.notification-message {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--dark-gray);
+  line-height: 1.4;
+}
+
+.notification-close {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--dark-gray);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.notification-close:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: var(--text-dark);
+}
+
+/* Types de notifications */
+.notification-success {
+  border-left: 4px solid #28a745;
+}
+
+.notification-success .notification-icon {
+  color: #28a745;
+}
+
+.notification-error {
+  border-left: 4px solid #dc3545;
+}
+
+.notification-error .notification-icon {
+  color: #dc3545;
+}
+
+.notification-warning {
+  border-left: 4px solid #ffc107;
+}
+
+.notification-warning .notification-icon {
+  color: #ffc107;
+}
+
+.notification-info {
+  border-left: 4px solid #17a2b8;
+}
+
+.notification-info .notification-icon {
+  color: #17a2b8;
+}
+
+/* Animations */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes popupBounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) translateY(-50px);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05) translateY(0);
+  }
+  70% {
+    transform: scale(0.95) translateY(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Responsive pour le pop-up */
+@media (max-width: 768px) {
+  .popup-content {
+    min-width: 280px;
+    max-width: 320px;
+  }
+  
+  .popup-header,
+  .popup-body,
+  .popup-actions {
+    padding: 0.75rem;
+  }
+  
+  .popup-actions {
+    flex-direction: column;
+  }
+  
+  .popup-actions .btn {
+    width: 100%;
+  }
+  
+  .notification-toast {
+    right: 10px;
+    left: 10px;
+    min-width: auto;
+    max-width: none;
   }
 }
 
