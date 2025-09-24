@@ -418,7 +418,7 @@
                     @click="setActiveMembersTab('active')"
                   >
                     <i class="bi bi-people-fill me-2"></i>
-                    Membres actifs
+                    Actifs
                     <span class="tab-badge">{{ organizationMembers.length }}</span>
                   </button>
                   <button 
@@ -427,8 +427,17 @@
                     @click="setActiveMembersTab('pending')"
                   >
                     <i class="bi bi-clock-fill me-2"></i>
-                    Membres en attente
+                    En attente
                     <span class="tab-badge">{{ pendingMembers.length }}</span>
+                  </button>
+                  <button 
+                    class="members-tab-btn" 
+                    :class="{ active: activeMembersTab === 'rejected' }"
+                    @click="setActiveMembersTab('rejected')"
+                  >
+                    <i class="bi bi-x-circle-fill me-2"></i>
+                    Rejeté
+                    <span class="tab-badge">{{ rejectedMembers.length }}</span>
                   </button>
                 </div>
                 
@@ -436,39 +445,39 @@
                 <div class="members-tab-content">
                   <!-- Onglet Membres actifs -->
                   <div v-if="activeMembersTab === 'active'" class="members-tab-pane">
-                    <!-- Loading state -->
-                    <div v-if="isLoadingMembers" class="text-center py-4">
-                      <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Chargement...</span>
-                      </div>
-                      <p class="text-muted mt-2">Chargement des membres...</p>
-                    </div>
-                    
+              <!-- Loading state -->
+              <div v-if="isLoadingMembers" class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Chargement...</span>
+                </div>
+                <p class="text-muted mt-2">Chargement des membres...</p>
+              </div>
+              
                     <!-- Liste des membres actifs -->
-                    <div v-else-if="organizationMembers.length > 0" class="members-list">
-                      <div v-for="member in organizationMembers" :key="member.id" class="member-item">
-                        <div class="member-info">
-                          <div class="member-avatar">
-                            <i class="bi bi-person-circle"></i>
-                          </div>
-                          <div class="member-details">
-                            <h6>{{ member.user_name || member.user_email }}</h6>
-                            <p class="text-muted">{{ member.user_email }}</p>
-                            <small class="text-muted">
-                              Rejoint le {{ formatDate(member.joined_at) }}
-                            </small>
-                          </div>
-                        </div>
-                        <div class="member-actions">
-                          <span class="badge" :class="getRoleBadgeClass(member.role)">
-                            {{ getRoleDisplayName(member.role) }}
-                          </span>
-                        </div>
-                      </div>
+              <div v-else-if="organizationMembers.length > 0" class="members-list">
+                <div v-for="member in organizationMembers" :key="member.id" class="member-item">
+                  <div class="member-info">
+                    <div class="member-avatar">
+                      <i class="bi bi-person-circle"></i>
                     </div>
-                    
+                    <div class="member-details">
+                      <h6>{{ member.user_name || member.user_email }}</h6>
+                      <p class="text-muted">{{ member.user_email }}</p>
+                      <small class="text-muted">
+                        Rejoint le {{ formatDate(member.joined_at) }}
+                      </small>
+                    </div>
+                  </div>
+                  <div class="member-actions">
+                    <span class="badge" :class="getRoleBadgeClass(member.role)">
+                      {{ getRoleDisplayName(member.role) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
                     <!-- Aucun membre actif -->
-                    <div v-else class="text-center py-4">
+              <div v-else class="text-center py-4">
                       <i class="bi bi-people text-muted" style="font-size: 2rem;"></i>
                       <p class="text-muted mt-2">Aucun membre actif dans cette organisation</p>
                     </div>
@@ -521,6 +530,59 @@
                     <div v-else class="text-center py-4">
                       <i class="bi bi-clock text-muted" style="font-size: 2rem;"></i>
                       <p class="text-muted mt-2">Aucune demande d'adhésion en attente</p>
+                    </div>
+                  </div>
+                  
+                  <!-- Onglet Membres rejetés -->
+                  <div v-if="activeMembersTab === 'rejected'" class="members-tab-pane">
+                    <!-- Loading state -->
+                    <div v-if="isLoadingRejectedMembers" class="text-center py-4">
+                      <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Chargement...</span>
+                      </div>
+                      <p class="text-muted mt-2">Chargement des membres rejetés...</p>
+                    </div>
+                    
+                    <!-- Liste des membres rejetés -->
+                    <div v-else-if="rejectedMembers.length > 0" class="members-list">
+                      <div v-for="request in rejectedMembers" :key="request.id" class="member-item rejected-member">
+                        <div class="member-info">
+                          <div class="member-avatar rejected">
+                            <i class="bi bi-person-x"></i>
+                          </div>
+                          <div class="member-details">
+                            <h6>{{ request.user_name || request.user_email }}</h6>
+                            <p class="text-muted">{{ request.user_email }}</p>
+                            <small class="text-muted">
+                              Rejeté le {{ formatDate(request.processed_at) }}
+                            </small>
+                            <div class="request-role">
+                              <span class="badge bg-secondary">{{ getRoleDisplayName(request.requested_role) }}</span>
+                            </div>
+                            <div v-if="request.response_message" class="rejection-reason mt-2">
+                              <small class="text-muted">
+                                <strong>Raison :</strong> {{ request.response_message }}
+                              </small>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="member-actions">
+                          <button 
+                            class="btn btn-success btn-sm me-2" 
+                            @click="reapproveMembershipRequest(request.id)"
+                            :disabled="isProcessingRequest"
+                          >
+                            <i class="bi bi-check-circle me-1"></i>
+                            Réapprouver
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <!-- Aucun membre rejeté -->
+                    <div v-else class="text-center py-4">
+                      <i class="bi bi-x-circle text-muted" style="font-size: 2rem;"></i>
+                      <p class="text-muted mt-2">Aucun membre rejeté</p>
                     </div>
                   </div>
                 </div>
@@ -1121,7 +1183,9 @@ const showCertificatePassword = ref(false)
 // État des onglets membres
 const activeMembersTab = ref('active')
 const pendingMembers = ref([])
+const rejectedMembers = ref([])
 const isLoadingPendingMembers = ref(false)
+const isLoadingRejectedMembers = ref(false)
 const isDraggingCertificate = ref(false)
 const certificateFileInput = ref(null)
 const certificateError = ref(null)
@@ -1691,6 +1755,11 @@ const closeOrganizationSettingsModal = () => {
 
 const setActiveOrganizationTab = (tab) => {
   activeOrganizationTab.value = tab
+  
+  // Charger toutes les données des membres dès qu'on clique sur l'onglet "Membres"
+  if (tab === 'members') {
+    loadAllMembersData()
+  }
 }
 
 // Fonction pour changer l'onglet des membres
@@ -1698,12 +1767,29 @@ const setActiveMembersTab = (tab) => {
   activeMembersTab.value = tab
   if (tab === 'pending') {
     loadPendingMembers()
+  } else if (tab === 'rejected') {
+    loadRejectedMembers()
   }
+}
+
+// Fonction pour charger toutes les données des membres (pour l'onglet principal "Membres")
+const loadAllMembersData = async () => {
+  // Charger les membres actifs (déjà chargés)
+  await loadOrganizationMembers()
+  
+  // Charger en parallèle les membres en attente et rejetés pour un effet temps réel
+  await Promise.all([
+    loadPendingMembers(),
+    loadRejectedMembers()
+  ])
 }
 
 // Charger les demandes d'adhésion en attente
 const loadPendingMembers = async () => {
   if (!userOrganization.value?.organization?.id) return
+  
+  // Éviter de recharger si déjà en cours de chargement
+  if (isLoadingPendingMembers.value) return
   
   isLoadingPendingMembers.value = true
   try {
@@ -1826,6 +1912,94 @@ const rejectMembershipRequest = async (request) => {
   } catch (error) {
     console.error('❌ Erreur lors du rejet:', error)
     alert('Erreur lors du rejet')
+  }
+}
+
+// Charger les membres rejetés
+const loadRejectedMembers = async () => {
+  if (!userOrganization.value?.organization?.id) return
+  
+  // Éviter de recharger si déjà en cours de chargement
+  if (isLoadingRejectedMembers.value) return
+  
+  isLoadingRejectedMembers.value = true
+  try {
+    const response = await fetch(`http://127.0.0.1:8000/api/organizations/${userOrganization.value.organization.id}/rejected-membership-requests/`, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    })
+    
+    if (response.ok) {
+      const data = await response.json()
+      if (data.success) {
+        rejectedMembers.value = data.requests || []
+        console.log('✅ Membres rejetés chargés:', rejectedMembers.value)
+      } else {
+        console.error('❌ Erreur lors du chargement des membres rejetés:', data.message)
+        rejectedMembers.value = []
+      }
+    } else {
+      console.error('❌ Erreur HTTP lors du chargement des membres rejetés')
+      rejectedMembers.value = []
+    }
+  } catch (error) {
+    console.error('❌ Erreur lors du chargement des membres rejetés:', error)
+    rejectedMembers.value = []
+  } finally {
+    isLoadingRejectedMembers.value = false
+  }
+}
+
+// Réapprouver une demande d'adhésion rejetée
+const reapproveMembershipRequest = async (requestId) => {
+  if (!confirm('Êtes-vous sûr de vouloir réapprouver cette demande d\'adhésion ?')) {
+    return
+  }
+  
+  try {
+    // Récupérer le token CSRF
+    const getCookie = (name) => {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+      return null;
+    };
+    
+    const csrfToken = getCookie('csrftoken');
+    
+    const response = await fetch(`http://127.0.0.1:8000/api/organizations/membership-requests/${requestId}/reapprove/`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken
+      }
+    })
+    
+    if (response.ok) {
+      const data = await response.json()
+      if (data.success) {
+        // Recharger les listes
+        await loadRejectedMembers()
+        await loadPendingMembers()
+        await loadOrganizationMembers()
+        // Notification de succès
+        alert('Demande d\'adhésion réapprouvée avec succès')
+      } else {
+        console.error('❌ Erreur lors de la réapprobation:', data.message)
+        alert('Erreur lors de la réapprobation: ' + data.message)
+      }
+    } else {
+      const errorData = await response.json().catch(() => ({ message: 'Erreur inconnue' }))
+      console.error('❌ Erreur HTTP lors de la réapprobation:', response.status, errorData)
+      alert(`Erreur ${response.status}: ${errorData.message || 'Erreur lors de la réapprobation'}`)
+    }
+  } catch (error) {
+    console.error('❌ Erreur lors de la réapprobation:', error)
+    alert('Erreur lors de la réapprobation')
   }
 }
 
@@ -2771,14 +2945,14 @@ onUnmounted(() => {
   height: 100%;
   background: rgba(0, 0, 0, 0.3);
   z-index: 10000;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(1px);
+  -webkit-backdrop-filter: blur(1px);
   animation: fadeInOverlay 0.3s ease-out;
 }
 
 .organization-settings-modal {
   position: fixed;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.25);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   width: 800px;
@@ -2799,7 +2973,7 @@ onUnmounted(() => {
 
 .organization-settings-menu {
   width: 250px;
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-right: 1px solid rgba(255, 255, 255, 0.3);
@@ -2834,7 +3008,7 @@ onUnmounted(() => {
   text-align: center;
   position: relative;
   z-index: 2;
-  background: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   border-top-left-radius: 16px;
@@ -3136,6 +3310,28 @@ onUnmounted(() => {
 .member-avatar.pending {
   background: linear-gradient(135deg, #ffc107 0%, #ffb300 100%);
   color: white;
+}
+
+.member-item.rejected-member {
+  border-color: rgba(220, 53, 69, 0.3);
+  background: rgba(220, 53, 69, 0.05);
+}
+
+.member-item.rejected-member:hover {
+  border-color: rgba(220, 53, 69, 0.5);
+  background: rgba(220, 53, 69, 0.1);
+}
+
+.member-avatar.rejected {
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+  color: white;
+}
+
+.rejection-reason {
+  background: rgba(220, 53, 69, 0.1);
+  padding: 0.5rem;
+  border-radius: 6px;
+  border-left: 3px solid #dc3545;
 }
 
 .request-role {

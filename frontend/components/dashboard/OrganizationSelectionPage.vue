@@ -126,69 +126,69 @@
         <!-- Contenu de l'onglet "Mes Organisations" -->
         <div v-if="activeTab === 'my-organizations'" class="tab-content">
           <!-- Grille des organisations de l'utilisateur -->
-          <div class="organizations-grid" v-if="userOrganizations.length > 0">
-            <div 
-              class="organization-card" 
-              v-for="(org, index) in userOrganizations" 
-              :key="org.id"
-              @click="selectOrganization(org)"
-              :style="{ animationDelay: `${index * 0.1}s` }"
-            >
-              <div class="card-header">
-                <div class="organization-icon">
-                  <i class="bi bi-building"></i>
-                </div>
-                <div class="organization-header-content">
-                  <h3 class="organization-name">{{ org.name }}</h3>
-                  <p class="organization-subtitle">{{ org.role || 'Membre' }}</p>
-                </div>
-                <div class="organization-status" :class="org.status">
-                  <i class="bi bi-circle-fill"></i>
-                </div>
+      <div class="organizations-grid" v-if="userOrganizations.length > 0">
+        <div 
+          class="organization-card" 
+          v-for="(org, index) in userOrganizations" 
+          :key="org.id"
+          @click="selectOrganization(org)"
+          :style="{ animationDelay: `${index * 0.1}s` }"
+        >
+          <div class="card-header">
+            <div class="organization-icon">
+              <i class="bi bi-building"></i>
+            </div>
+            <div class="organization-header-content">
+              <h3 class="organization-name">{{ org.name }}</h3>
+              <p class="organization-subtitle">{{ org.role || 'Membre' }}</p>
+            </div>
+            <div class="organization-status" :class="org.status">
+              <i class="bi bi-circle-fill"></i>
+            </div>
+          </div>
+          
+          <div class="card-content">
+            <p class="organization-description">{{ org.description || 'Aucune description' }}</p>
+            
+            <div class="organization-meta">
+              <div class="meta-item" @mouseenter="showOrganizationMembers(org, $event)" @mouseleave="closeMembersModal" @click="showOrganizationMembers(org, $event)" style="cursor: pointer;" title="Voir les membres">
+                <i class="bi bi-people"></i>
+                <span>{{ org.member_count || 0 }} membres</span>
               </div>
-              
-              <div class="card-content">
-                <p class="organization-description">{{ org.description || 'Aucune description' }}</p>
-                
-                <div class="organization-meta">
-                  <div class="meta-item" @mouseenter="showOrganizationMembers(org, $event)" @mouseleave="closeMembersModal" @click="showOrganizationMembers(org, $event)" style="cursor: pointer;" title="Voir les membres">
-                    <i class="bi bi-people"></i>
-                    <span>{{ org.member_count || 0 }} membres</span>
-                  </div>
-                  <div class="meta-item">
-                    <i class="bi bi-file-earmark-text"></i>
-                    <span>{{ org.documentCount || 0 }} documents</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="card-footer">
-                <div class="user-role">
-                  <span class="role-badge" :class="org.role">{{ getRoleDisplayName(org.role) }}</span>
-                </div>
-                <div class="organization-actions">
-                  <button class="btn btn-sm btn-outline-primary" @click.stop="viewOrganizationDetails(org)" @mouseenter="showOrganizationInfo(org, $event)" @mouseleave="closeOrganizationInfo" title="Détails">
-                    <i class="bi bi-eye"></i>
-                  </button>
-                  <button class="btn btn-sm btn-outline-danger" @click.stop="leaveOrganization(org)" title="Quitter l'organisation">
-                    <i class="bi bi-box-arrow-right"></i>
-                  </button>
-                </div>
+              <div class="meta-item">
+                <i class="bi bi-file-earmark-text"></i>
+                <span>{{ org.documentCount || 0 }} documents</span>
               </div>
             </div>
           </div>
+          
+          <div class="card-footer">
+            <div class="user-role">
+              <span class="role-badge" :class="org.role">{{ getRoleDisplayName(org.role) }}</span>
+            </div>
+            <div class="organization-actions">
+              <button class="btn btn-sm btn-outline-primary" @click.stop="viewOrganizationDetails(org)" @mouseenter="showOrganizationInfo(org, $event)" @mouseleave="closeOrganizationInfo" title="Détails">
+                <i class="bi bi-eye"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger" @click.stop="leaveOrganization(org)" title="Quitter l'organisation">
+                <i class="bi bi-box-arrow-right"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
-          <!-- Message si aucune organisation -->
-          <div v-else class="no-organizations">
-            <div class="no-org-content">
-              <div class="no-org-icon">
-                <i class="bi bi-building"></i>
-              </div>
-              <h3 class="no-org-title">Aucune organisation trouvée</h3>
-              <p class="no-org-description">
-                Vous n'appartenez à aucune organisation pour le moment. 
-                Créez-en une ou rejoignez une organisation existante.
-              </p>
+      <!-- Message si aucune organisation -->
+      <div v-else class="no-organizations">
+        <div class="no-org-content">
+          <div class="no-org-icon">
+            <i class="bi bi-building"></i>
+          </div>
+          <h3 class="no-org-title">Aucune organisation trouvée</h3>
+          <p class="no-org-description">
+            Vous n'appartenez à aucune organisation pour le moment. 
+            Créez-en une ou rejoignez une organisation existante.
+          </p>
             </div>
           </div>
         </div>
@@ -213,7 +213,7 @@
                   @click="clearSearch"
                 >
                   <i class="bi bi-x"></i>
-                </button>
+            </button>
               </div>
             </div>
           </div>
@@ -265,11 +265,11 @@
                     </button>
                     <button class="btn btn-sm btn-primary" @click="requestToJoin(org, $event)" title="Demander à rejoindre">
                       <i class="bi bi-person-plus"></i>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
             <!-- Message si aucune organisation trouvée -->
             <div v-else-if="searchQuery && !isLoading" class="no-results">

@@ -420,6 +420,225 @@ def reject_membership_request(request, request_id):
             'message': f'Erreur lors du rejet: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def get_rejected_membership_requests(request, organization_id):
+    """
+    Récupérer les demandes d'adhésion rejetées pour une organisation
+    """
+    print(f"🔍 === RÉCUPÉRATION DES DEMANDES REJETÉES ===")
+    print(f"🔍 Utilisateur: {request.user}")
+    print(f"🔍 Organisation ID: {organization_id}")
+    
+    try:
+        # Vérifier si l'organisation existe
+        organization = Organization.objects.get(id=organization_id, is_active=True)
+        print(f"🔍 Organisation trouvée: {organization.name}")
+        
+        # Vérifier que l'utilisateur est membre de l'organisation
+        is_member = OrganizationMember.objects.filter(
+            organization=organization,
+            user=request.user
+        ).exists()
+        
+        if not is_member:
+            print(f"🔍 ERREUR: Utilisateur non membre de l'organisation")
+            return Response({
+                'success': False,
+                'message': 'Vous devez être membre de cette organisation pour voir les demandes rejetées'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Récupérer les demandes rejetées
+        rejected_requests = DemandeAdhesion.objects.filter(
+            organization=organization,
+            status='rejected'
+        ).select_related('user', 'invitation_code')
+        
+        # Sérialiser les demandes
+        requests_data = []
+        for req in rejected_requests:
+            requests_data.append({
+                'id': req.id,
+                'user_name': req.user.full_name,
+                'user_email': req.user.email,
+                'requested_role': req.requested_role,
+                'created_at': req.created_at,
+                'processed_at': req.processed_at,
+                'processed_by': req.processed_by.full_name if req.processed_by else None,
+                'message': req.message,
+                'response_message': req.response_message,
+                'invitation_code': req.invitation_code.code
+            })
+        
+        print(f"🔍 Demandes rejetées trouvées: {len(requests_data)}")
+        
+        return Response({
+            'success': True,
+            'requests': requests_data,
+            'count': len(requests_data)
+        }, status=status.HTTP_200_OK)
+        
+    except Organization.DoesNotExist:
+        print(f"🔍 Organisation introuvable: {organization_id}")
+        return Response({
+            'success': False,
+            'message': 'Organisation introuvable'
+        }, status=status.HTTP_404_NOT_FOUND)
+        
+    except Exception as e:
+        print(f"🔍 Erreur lors de la récupération: {str(e)}")
+        return Response({
+            'success': False,
+            'message': f'Erreur lors de la récupération: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def get_all_membership_requests(request, organization_id):
+    """
+    Récupérer toutes les demandes d'adhésion pour une organisation (pour débogage)
+    """
+    print(f"🔍 === RÉCUPÉRATION DE TOUTES LES DEMANDES ===")
+    print(f"🔍 Utilisateur: {request.user}")
+    print(f"🔍 Organisation ID: {organization_id}")
+    
+    try:
+        # Vérifier si l'organisation existe
+        organization = Organization.objects.get(id=organization_id, is_active=True)
+        print(f"🔍 Organisation trouvée: {organization.name}")
+        
+        # Vérifier que l'utilisateur est membre de l'organisation
+        is_member = OrganizationMember.objects.filter(
+            organization=organization,
+            user=request.user
+        ).exists()
+        
+        if not is_member:
+            print(f"🔍 ERREUR: Utilisateur non membre de l'organisation")
+            return Response({
+                'success': False,
+                'message': 'Vous devez être membre de cette organisation pour voir les demandes'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Récupérer toutes les demandes
+        all_requests = DemandeAdhesion.objects.filter(
+            organization=organization
+        ).select_related('user', 'invitation_code')
+        
+        # Sérialiser les demandes
+        requests_data = []
+        for req in all_requests:
+            requests_data.append({
+                'id': req.id,
+                'user_name': req.user.full_name,
+                'user_email': req.user.email,
+                'requested_role': req.requested_role,
+                'status': req.status,
+                'status_display': req.get_status_display(),
+                'created_at': req.created_at,
+                'processed_at': req.processed_at,
+                'processed_by': req.processed_by.full_name if req.processed_by else None,
+                'message': req.message,
+                'response_message': req.response_message,
+                'invitation_code': req.invitation_code.code,
+                'invitation_code_active': req.invitation_code.is_active,
+                'invitation_code_used': req.invitation_code.is_used
+            })
+        
+        print(f"🔍 Toutes les demandes trouvées: {len(requests_data)}")
+        for req in requests_data:
+            print(f"  - ID: {req['id']}, Statut: {req['status']}, Code actif: {req['invitation_code_active']}, Code utilisé: {req['invitation_code_used']}")
+        
+        return Response({
+            'success': True,
+            'requests': requests_data,
+            'count': len(requests_data)
+        }, status=status.HTTP_200_OK)
+        
+    except Organization.DoesNotExist:
+        print(f"🔍 Organisation introuvable: {organization_id}")
+        return Response({
+            'success': False,
+            'message': 'Organisation introuvable'
+        }, status=status.HTTP_404_NOT_FOUND)
+        
+    except Exception as e:
+        print(f"🔍 Erreur lors de la récupération: {str(e)}")
+        return Response({
+            'success': False,
+            'message': f'Erreur lors de la récupération: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+@csrf_exempt
+def reapprove_membership_request(request, request_id):
+    """
+    Réapprouver une demande d'adhésion rejetée
+    """
+    print(f"🔍 === RÉAPPROBATION D'UNE DEMANDE D'ADHÉSION ===")
+    print(f"🔍 Utilisateur: {request.user}")
+    print(f"🔍 Demande ID: {request_id}")
+    
+    try:
+        # Vérifier d'abord si la demande existe
+        try:
+            demande = DemandeAdhesion.objects.get(id=request_id)
+            print(f"🔍 Demande trouvée: {demande} (statut: {demande.status})")
+        except DemandeAdhesion.DoesNotExist:
+            print(f"🔍 Demande introuvable: {request_id}")
+            return Response({
+                'success': False,
+                'message': 'Demande d\'adhésion introuvable'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Vérifier le statut
+        if demande.status != 'rejected':
+            print(f"🔍 Demande trouvée mais statut incorrect: {demande.status} (attendu: rejected)")
+            return Response({
+                'success': False,
+                'message': f'Cette demande n\'est pas rejetée (statut actuel: {demande.get_status_display()})'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Vérifier que l'utilisateur est membre de l'organisation
+        is_member = OrganizationMember.objects.filter(
+            organization=demande.organization,
+            user=request.user
+        ).exists()
+        
+        if not is_member:
+            print(f"🔍 ERREUR: Utilisateur non membre de l'organisation")
+            return Response({
+                'success': False,
+                'message': 'Vous devez être membre de cette organisation pour réapprouver les demandes'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Réapprouver la demande
+        demande.approve(request.user, "Demande réapprouvée")
+        print(f"🔍 Demande réapprouvée avec succès")
+        
+        return Response({
+            'success': True,
+            'message': 'Demande d\'adhésion réapprouvée avec succès'
+        }, status=status.HTTP_200_OK)
+        
+    except DemandeAdhesion.DoesNotExist:
+        print(f"🔍 Demande introuvable: {request_id}")
+        return Response({
+            'success': False,
+            'message': 'Demande d\'adhésion introuvable'
+        }, status=status.HTTP_404_NOT_FOUND)
+        
+    except Exception as e:
+        print(f"🔍 Erreur lors de la réapprobation: {str(e)}")
+        return Response({
+            'success': False,
+            'message': f'Erreur lors de la réapprobation: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
 @csrf_exempt

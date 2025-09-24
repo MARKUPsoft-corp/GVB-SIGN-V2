@@ -232,8 +232,27 @@ class DemandeAdhesion(models.Model):
         self.response_message = response_message
         self.save()
         
-        # Utiliser le code d'invitation pour ajouter l'utilisateur à l'organisation
-        self.invitation_code.use_code(self.user)
+        # Réactiver le code d'invitation s'il était désactivé (cas de réapprobation)
+        if not self.invitation_code.is_active:
+            self.invitation_code.is_active = True
+            self.invitation_code.save()
+        
+        # Si le code était déjà utilisé (cas de réapprobation), créer directement l'adhésion
+        if self.invitation_code.is_used:
+            # Vérifier si l'utilisateur n'est pas déjà membre
+            if not OrganizationMember.objects.filter(
+                organization=self.invitation_code.organization,
+                user=self.user
+            ).exists():
+                OrganizationMember.objects.create(
+                    organization=self.invitation_code.organization,
+                    user=self.user,
+                    role=self.invitation_code.role,
+                    invited_by=self.invitation_code.created_by
+                )
+        else:
+            # Utiliser le code d'invitation normalement
+            self.invitation_code.use_code(self.user)
     
     def reject(self, processed_by_user, response_message=None):
         """Rejette la demande d'adhésion"""
