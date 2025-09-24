@@ -21,6 +21,11 @@ urlpatterns = [
     # Rejoindre une organisation (utilise maintenant validate_invitation_code)
     path('join/', views.validate_invitation_code, name='join_organization'),
     path('<int:organization_id>/request-join/', views.request_to_join_organization, name='request_to_join_organization'),
+    path('<int:organization_id>/check-membership/', views.check_membership, name='check_membership'),
+    path('<int:organization_id>/pending-membership-requests/', views.get_pending_membership_requests, name='get_pending_membership_requests'),
+    path('membership-requests/<int:request_id>/approve/', views.approve_membership_request, name='approve_membership_request'),
+    path('membership-requests/<int:request_id>/reject/', views.reject_membership_request, name='reject_membership_request'),
+    path('membership-request/', views.create_membership_request, name='create_membership_request'),
     
     # Codes d'invitation
     path('invitations/create/', views.create_invitation_code, name='create_invitation_code'),

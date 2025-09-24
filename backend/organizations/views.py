@@ -5,7 +5,7 @@ from rest_framework.viewsets import ModelViewSet
 from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
-from .models import Organization, OrganizationMember, InvitationCode, OrganizationCertificate
+from .models import Organization, OrganizationMember, InvitationCode, OrganizationCertificate, DemandeAdhesion
 from .serializers import (
     OrganizationSerializer, 
     OrganizationCreateSerializer, 
@@ -15,7 +15,9 @@ from .serializers import (
     InvitationCodeCreateSerializer,
     InvitationCodeValidateSerializer,
     OrganizationCertificateSerializer,
-    OrganizationCertificateCreateSerializer
+    OrganizationCertificateCreateSerializer,
+    DemandeAdhesionSerializer,
+    DemandeAdhesionCreateSerializer
 )
 
 
@@ -191,6 +193,274 @@ def request_to_join_organization(request, organization_id):
             'success': False,
             'message': 'Erreur lors de la demande de rejoindre l\'organisation'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def check_membership(request, organization_id):
+    """
+    Vérifier si l'utilisateur est déjà membre d'une organisation ou a une demande en attente
+    """
+    print(f"🔍 === VÉRIFICATION D'ADHÉSION ===")
+    print(f"🔍 Utilisateur: {request.user}")
+    print(f"🔍 Organisation ID: {organization_id}")
+    
+    try:
+        # Vérifier si l'organisation existe
+        organization = Organization.objects.get(id=organization_id, is_active=True)
+        print(f"🔍 Organisation trouvée: {organization.name}")
+        
+        # Vérifier si l'utilisateur est membre
+        is_member = OrganizationMember.objects.filter(
+            organization=organization,
+            user=request.user
+        ).exists()
+        
+        # Vérifier si l'utilisateur a une demande en attente
+        has_pending_request = DemandeAdhesion.objects.filter(
+            organization=organization,
+            user=request.user,
+            status='pending'
+        ).exists()
+        
+        print(f"🔍 Utilisateur membre: {is_member}")
+        print(f"🔍 Demande en attente: {has_pending_request}")
+        
+        return Response({
+            'success': True,
+            'is_member': is_member,
+            'has_pending_request': has_pending_request,
+            'organization_name': organization.name
+        }, status=status.HTTP_200_OK)
+        
+    except Organization.DoesNotExist:
+        print(f"🔍 Organisation introuvable: {organization_id}")
+        return Response({
+            'success': False,
+            'message': 'Organisation introuvable'
+        }, status=status.HTTP_404_NOT_FOUND)
+        
+    except Exception as e:
+        print(f"🔍 Erreur lors de la vérification: {str(e)}")
+        return Response({
+            'success': False,
+            'message': f'Erreur lors de la vérification: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def get_pending_membership_requests(request, organization_id):
+    """
+    Récupérer les demandes d'adhésion en attente pour une organisation
+    """
+    print(f"🔍 === RÉCUPÉRATION DES DEMANDES EN ATTENTE ===")
+    print(f"🔍 Utilisateur: {request.user}")
+    print(f"🔍 Organisation ID: {organization_id}")
+    
+    try:
+        # Vérifier si l'organisation existe
+        organization = Organization.objects.get(id=organization_id, is_active=True)
+        print(f"🔍 Organisation trouvée: {organization.name}")
+        
+        # Vérifier que l'utilisateur est membre de l'organisation
+        is_member = OrganizationMember.objects.filter(
+            organization=organization,
+            user=request.user
+        ).exists()
+        
+        if not is_member:
+            print(f"🔍 ERREUR: Utilisateur non membre de l'organisation")
+            return Response({
+                'success': False,
+                'message': 'Vous devez être membre de cette organisation pour voir les demandes'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Récupérer les demandes en attente
+        pending_requests = DemandeAdhesion.objects.filter(
+            organization=organization,
+            status='pending'
+        ).select_related('user', 'invitation_code')
+        
+        # Sérialiser les demandes
+        requests_data = []
+        for req in pending_requests:
+            requests_data.append({
+                'id': req.id,
+                'user_name': req.user.full_name,
+                'user_email': req.user.email,
+                'requested_role': req.requested_role,
+                'created_at': req.created_at,
+                'message': req.message,
+                'invitation_code': req.invitation_code.code
+            })
+        
+        print(f"🔍 Demandes en attente trouvées: {len(requests_data)}")
+        
+        return Response({
+            'success': True,
+            'requests': requests_data,
+            'count': len(requests_data)
+        }, status=status.HTTP_200_OK)
+        
+    except Organization.DoesNotExist:
+        print(f"🔍 Organisation introuvable: {organization_id}")
+        return Response({
+            'success': False,
+            'message': 'Organisation introuvable'
+        }, status=status.HTTP_404_NOT_FOUND)
+        
+    except Exception as e:
+        print(f"🔍 Erreur lors de la récupération: {str(e)}")
+        return Response({
+            'success': False,
+            'message': f'Erreur lors de la récupération: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+@csrf_exempt
+def approve_membership_request(request, request_id):
+    """
+    Approuver une demande d'adhésion
+    """
+    print(f"🔍 === APPROBATION D'UNE DEMANDE D'ADHÉSION ===")
+    print(f"🔍 Utilisateur: {request.user}")
+    print(f"🔍 Demande ID: {request_id}")
+    
+    try:
+        # Récupérer la demande
+        demande = DemandeAdhesion.objects.get(id=request_id, status='pending')
+        print(f"🔍 Demande trouvée: {demande}")
+        
+        # Vérifier que l'utilisateur est membre de l'organisation
+        is_member = OrganizationMember.objects.filter(
+            organization=demande.organization,
+            user=request.user
+        ).exists()
+        
+        if not is_member:
+            print(f"🔍 ERREUR: Utilisateur non membre de l'organisation")
+            return Response({
+                'success': False,
+                'message': 'Vous devez être membre de cette organisation pour approuver les demandes'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Approuver la demande
+        demande.approve(request.user, "Demande approuvée")
+        print(f"🔍 Demande approuvée avec succès")
+        
+        return Response({
+            'success': True,
+            'message': 'Demande d\'adhésion approuvée avec succès'
+        }, status=status.HTTP_200_OK)
+        
+    except DemandeAdhesion.DoesNotExist:
+        print(f"🔍 Demande introuvable: {request_id}")
+        return Response({
+            'success': False,
+            'message': 'Demande d\'adhésion introuvable'
+        }, status=status.HTTP_404_NOT_FOUND)
+        
+    except Exception as e:
+        print(f"🔍 Erreur lors de l'approbation: {str(e)}")
+        return Response({
+            'success': False,
+            'message': f'Erreur lors de l\'approbation: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+@csrf_exempt
+def reject_membership_request(request, request_id):
+    """
+    Rejeter une demande d'adhésion
+    """
+    print(f"🔍 === REJET D'UNE DEMANDE D'ADHÉSION ===")
+    print(f"🔍 Utilisateur: {request.user}")
+    print(f"🔍 Demande ID: {request_id}")
+    
+    try:
+        # Récupérer la demande
+        demande = DemandeAdhesion.objects.get(id=request_id, status='pending')
+        print(f"🔍 Demande trouvée: {demande}")
+        
+        # Vérifier que l'utilisateur est membre de l'organisation
+        is_member = OrganizationMember.objects.filter(
+            organization=demande.organization,
+            user=request.user
+        ).exists()
+        
+        if not is_member:
+            print(f"🔍 ERREUR: Utilisateur non membre de l'organisation")
+            return Response({
+                'success': False,
+                'message': 'Vous devez être membre de cette organisation pour rejeter les demandes'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Rejeter la demande
+        demande.reject(request.user, "Demande rejetée")
+        print(f"🔍 Demande rejetée avec succès")
+        
+        return Response({
+            'success': True,
+            'message': 'Demande d\'adhésion rejetée'
+        }, status=status.HTTP_200_OK)
+        
+    except DemandeAdhesion.DoesNotExist:
+        print(f"🔍 Demande introuvable: {request_id}")
+        return Response({
+            'success': False,
+            'message': 'Demande d\'adhésion introuvable'
+        }, status=status.HTTP_404_NOT_FOUND)
+        
+    except Exception as e:
+        print(f"🔍 Erreur lors du rejet: {str(e)}")
+        return Response({
+            'success': False,
+            'message': f'Erreur lors du rejet: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+@csrf_exempt
+def create_membership_request(request):
+    """
+    Créer une demande d'adhésion à une organisation
+    """
+    print(f"🔍 === CRÉATION D'UNE DEMANDE D'ADHÉSION ===")
+    print(f"🔍 Utilisateur: {request.user}")
+    print(f"🔍 Données reçues: {request.data}")
+    
+    serializer = DemandeAdhesionCreateSerializer(data=request.data, context={'request': request})
+    
+    if serializer.is_valid():
+        try:
+            demande = serializer.save()
+            print(f"🔍 Demande d'adhésion créée: {demande.id}")
+            print(f"🔍 Code d'invitation généré: {demande.invitation_code.code}")
+            
+            # Sérialiser la réponse
+            response_serializer = DemandeAdhesionSerializer(demande)
+            
+            return Response({
+                'success': True,
+                'message': f'Votre demande d\'adhésion pour le rôle "{demande.get_requested_role_display()}" a été envoyée avec succès !',
+                'data': response_serializer.data
+            }, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            print(f"🔍 Erreur lors de la création: {str(e)}")
+            return Response({
+                'success': False,
+                'message': f'Erreur lors de la création de la demande d\'adhésion: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    else:
+        print(f"🔍 Erreurs de validation: {serializer.errors}")
+        return Response({
+            'success': False,
+            'message': 'Données invalides',
+            'errors': serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])

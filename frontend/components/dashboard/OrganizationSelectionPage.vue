@@ -11,6 +11,18 @@
           <p class="section-subtitle">
             Choisissez l'organisation pour laquelle vous souhaitez accéder au tableau de bord.
           </p>
+          
+          <!-- Boutons d'action rapide -->
+          <div class="header-actions">
+            <button class="btn-create-org" @click="openCreateOrganizationModal">
+              <i class="bi bi-building-add"></i>
+              Créer une organisation
+            </button>
+    <button class="btn-join-org" @click="openJoinOrganizationModal">
+      <i class="bi bi-person-plus"></i>
+      Rejoindre
+    </button>
+          </div>
         </div>
         <div class="header-image">
           <!-- Bulles décoratives -->
@@ -177,16 +189,6 @@
                 Vous n'appartenez à aucune organisation pour le moment. 
                 Créez-en une ou rejoignez une organisation existante.
               </p>
-              <div class="no-org-actions">
-                <button class="btn btn-primary" @click="toggleCreateOrganizationModal">
-                  <i class="bi bi-plus-circle me-2"></i>
-                  Créer une organisation
-                </button>
-                <button class="btn btn-outline-primary" @click="toggleJoinOrganizationModal">
-                  <i class="bi bi-people me-2"></i>
-                  Rejoindre une organisation
-                </button>
-              </div>
             </div>
           </div>
         </div>
@@ -426,6 +428,58 @@
     </div>
   </div>
 
+  <!-- Pop-up de sélection de rôle -->
+  <div v-if="showRoleSelectionPopup" class="role-selection-popup" :style="{ top: popupPosition.top + 'px', left: popupPosition.left + 'px' }" @click.stop>
+    <div v-if="showPopupArrow" class="popup-arrow"></div>
+    <div class="popup-content">
+      <div class="popup-header">
+        <div class="popup-icon">
+          <i class="bi bi-person-badge-fill"></i>
+        </div>
+        <h6 class="popup-title">Choisir votre rôle dans {{ organizationToJoin?.name }}</h6>
+        <button class="popup-close" @click="closeRoleSelection">
+          <i class="bi bi-x"></i>
+        </button>
+      </div>
+      
+      <div class="popup-body">
+        <p class="popup-message">Sélectionnez le rôle que vous souhaitez avoir dans cette organisation :</p>
+        
+        <div class="role-dropdown-container">
+          <select 
+            v-model="selectedRole" 
+            class="role-dropdown"
+            @change="onRoleChange"
+          >
+            <option 
+              v-for="role in availableRoles" 
+              :key="role.value"
+              :value="role.value"
+            >
+              {{ role.label }}
+            </option>
+          </select>
+          
+          <!-- Description du rôle sélectionné -->
+          <div v-if="selectedRoleDescription" class="role-description-display">
+            <i class="bi bi-info-circle me-2"></i>
+            {{ selectedRoleDescription }}
+          </div>
+        </div>
+      </div>
+      
+      <div class="popup-actions">
+        <button class="btn btn-sm btn-outline-secondary" @click="closeRoleSelection">
+          Annuler
+        </button>
+        <button class="btn btn-sm btn-primary" @click="confirmRoleSelection" :disabled="!selectedRole">
+          <i class="bi bi-send me-1"></i>
+          Envoyer la demande
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Pop-up de confirmation pour rejoindre une organisation -->
   <div v-if="showJoinConfirmationPopup" class="join-confirmation-popup" :style="{ top: popupPosition.top + 'px', left: popupPosition.left + 'px' }" @click.stop>
     <div v-if="showPopupArrow" class="popup-arrow"></div>
@@ -441,7 +495,7 @@
       </div>
       
       <div class="popup-body">
-        <p class="popup-message">Vous deviendrez membre de cette organisation.</p>
+        <p class="popup-message">Vous allez faire une demande d'adhésion à cette organisation. Vous devrez choisir le rôle que vous souhaitez avoir.</p>
       </div>
       
       <div class="popup-actions">
@@ -449,8 +503,8 @@
           Annuler
         </button>
         <button class="btn btn-sm btn-primary" @click="confirmJoinOrganization">
-          <i class="bi bi-person-plus me-1"></i>
-          Rejoindre
+          <i class="bi bi-arrow-right me-1"></i>
+          Continuer
         </button>
       </div>
     </div>
@@ -471,12 +525,200 @@
       </button>
     </div>
   </div>
+
+  <!-- Modale de création d'organisation -->
+  <div v-if="isCreateOrganizationModalOpen" class="organization-modal-overlay" @click="closeCreateOrganizationModal">
+    <div class="organization-form-modal" @click.stop ref="createOrganizationModal">
+      <div class="organization-modal-header">
+        <h5>
+          <i class="bi bi-building-add"></i>
+          Créer une Organisation
+        </h5>
+        <button class="close-btn" @click="closeCreateOrganizationModal">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      <div class="organization-form-content">
+        <form @submit.prevent="createOrganization" class="organization-form">
+          <div class="form-group">
+            <label for="orgName">
+              <i class="bi bi-building"></i>
+              Nom de l'organisation
+            </label>
+            <input 
+              type="text" 
+              id="orgName" 
+              v-model="newOrganization.name" 
+              placeholder="Entrez le nom de votre organisation"
+              required
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="orgDescription">
+              <i class="bi bi-file-text"></i>
+              Description
+            </label>
+            <textarea 
+              id="orgDescription" 
+              v-model="newOrganization.description" 
+              placeholder="Décrivez votre organisation..."
+              rows="3"
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="orgEmail">
+              <i class="bi bi-envelope"></i>
+              Email de contact
+            </label>
+            <input 
+              type="email" 
+              id="orgEmail" 
+              v-model="newOrganization.email" 
+              placeholder="contact@organisation.com"
+              required
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="orgPhone">
+              <i class="bi bi-telephone"></i>
+              Téléphone
+            </label>
+            <input 
+              type="tel" 
+              id="orgPhone" 
+              v-model="newOrganization.phone" 
+              placeholder="+237 xx xx xx xx"
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="orgAddress">
+              <i class="bi bi-geo-alt"></i>
+              Adresse
+            </label>
+            <textarea 
+              id="orgAddress" 
+              v-model="newOrganization.address" 
+              placeholder="Adresse complète de l'organisation..."
+              rows="2"
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="orgWebsite">
+              <i class="bi bi-globe"></i>
+              Site web
+            </label>
+            <input 
+              type="url" 
+              id="orgWebsite" 
+              v-model="newOrganization.website" 
+              placeholder="https://www.organisation.com"
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="orgType">
+              <i class="bi bi-tags"></i>
+              Type d'organisation
+            </label>
+            <select id="orgType" v-model="newOrganization.organization_type" required>
+              <option value="">Sélectionnez un type</option>
+              <option value="entreprise">Entreprise</option>
+              <option value="association">Association</option>
+              <option value="administration">Administration</option>
+              <option value="collectivite">Collectivité</option>
+              <option value="autre">Autre</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="orgSector">
+              <i class="bi bi-briefcase"></i>
+              Secteur d'activité
+            </label>
+            <input 
+              type="text" 
+              id="orgSector" 
+              v-model="newOrganization.sector" 
+              placeholder="Ex: Technologies, Santé, Éducation..."
+            >
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn-cancel" @click="closeCreateOrganizationModal">
+              <i class="bi bi-x-circle"></i>
+              Annuler
+            </button>
+            <button type="submit" class="btn-create" :disabled="isCreatingOrganization">
+              <i class="bi bi-check-circle" v-if="!isCreatingOrganization"></i>
+              <i class="bi bi-hourglass-split" v-else></i>
+              {{ isCreatingOrganization ? 'Création...' : 'Créer l\'organisation' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modale de saisie du code d'invitation -->
+  <div v-if="isJoinOrganizationModalOpen" class="organization-modal-overlay" @click="closeJoinOrganizationModal">
+    <div class="organization-form-modal" @click.stop ref="joinOrganizationModal">
+      <div class="organization-modal-header">
+        <h5>
+          <i class="bi bi-person-plus"></i>
+          Rejoindre une Organisation
+        </h5>
+        <button class="close-btn" @click="closeJoinOrganizationModal">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      <div class="organization-form-content">
+        <form @submit.prevent="joinOrganization" class="organization-form">
+          <div class="form-group">
+            <label for="inviteCode">
+              <i class="bi bi-key"></i>
+              Code d'invitation
+            </label>
+            <input 
+              type="text" 
+              id="inviteCode" 
+              v-model="inviteCode" 
+              class="form-control" 
+              placeholder="Entrez le code d'invitation"
+              required
+            >
+            <small class="form-help">
+              <i class="bi bi-info-circle"></i>
+              Saisissez le code d'invitation fourni par l'administrateur de l'organisation
+            </small>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn-cancel" @click="closeJoinOrganizationModal">
+              <i class="bi bi-x-circle"></i>
+              Annuler
+            </button>
+            <button type="submit" class="btn-create" :disabled="isJoiningOrganization">
+              <i class="bi bi-check-circle" v-if="!isJoiningOrganization"></i>
+              <i class="bi bi-hourglass-split" v-else></i>
+              {{ isJoiningOrganization ? 'Rejoindre...' : 'Rejoindre l\'organisation' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useAuthStore } from '../../stores/auth'
 import { useRouter } from 'vue-router'
+import OrganizationApiService from '../../services/OrganizationApiService'
 
 // Store d'authentification et router
 const authStore = useAuthStore()
@@ -514,6 +756,36 @@ const showPopupArrow = ref(true)
 const showNotification = ref(false)
 const notificationData = ref({ type: '', title: '', message: '' })
 
+// Gestion de la sélection de rôle
+const showRoleSelectionPopup = ref(false)
+const selectedRole = ref('secretaire') // Rôle par défaut
+const availableRoles = ref([
+  { value: 'secretaire', label: 'Secrétaire', description: 'Gestion administrative et secrétariat' },
+  { value: 'chef', label: 'Chef', description: 'Responsable d\'équipe ou de service' },
+  { value: 'chef+1', label: 'Chef+1', description: 'Responsable de niveau supérieur' },
+  { value: 'chef+2', label: 'Chef+2', description: 'Responsable de niveau élevé' },
+  { value: 'chef+n', label: 'Chef+n', description: 'Responsable de niveau exécutif' }
+])
+
+// Variables pour les modales d'organisation
+const isCreateOrganizationModalOpen = ref(false)
+const createOrganizationModal = ref(null)
+const isCreatingOrganization = ref(false)
+const isJoinOrganizationModalOpen = ref(false)
+const joinOrganizationModal = ref(null)
+const isJoiningOrganization = ref(false)
+const inviteCode = ref('')
+const newOrganization = ref({
+  name: '',
+  description: '',
+  email: '',
+  phone: '',
+  address: '',
+  website: '',
+  organization_type: '',
+  sector: ''
+})
+
 // Computed pour les statistiques
 const totalMembers = computed(() => {
   return userOrganizations.value.reduce((total, org) => total + (org.member_count || 0), 0)
@@ -525,6 +797,13 @@ const totalDocuments = computed(() => {
 
 const activeOrganizations = computed(() => {
   return userOrganizations.value.filter(org => org.is_active).length
+})
+
+// Computed pour la description du rôle sélectionné
+const selectedRoleDescription = computed(() => {
+  if (!selectedRole.value) return ''
+  const role = availableRoles.value.find(r => r.value === selectedRole.value)
+  return role ? role.description : ''
 })
 
 // Charger les organisations de l'utilisateur
@@ -972,15 +1251,15 @@ const getNotificationIcon = (type) => {
 
 // Ouvrir le pop-up de confirmation pour rejoindre une organisation
 const openJoinConfirmation = (organization, event) => {
-  console.log('🔍 Ouverture du pop-up pour:', organization.name)
+  console.log('🔍 Ouverture du pop-up de confirmation pour:', organization.name)
   
   if (event && event.target) {
     const rect = event.target.getBoundingClientRect()
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop
     const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft
     
-    // Dimensions du pop-up
-    const popupWidth = 300
+    // Dimensions du pop-up de confirmation (plus petit)
+    const popupWidth = 350
     const popupHeight = 200
     const margin = 20
     
@@ -1020,12 +1299,101 @@ const openJoinConfirmation = (organization, event) => {
       left: left
     }
     
-    console.log('📍 Position du pop-up:', popupPosition.value)
+    console.log('📍 Position du pop-up de confirmation:', popupPosition.value)
+  } else {
+    // Si pas d'événement, centrer le pop-up
+    const popupWidth = 350
+    const popupHeight = 200
+    const viewportWidth = window.innerWidth
+    const viewportHeight = window.innerHeight
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+    
+    popupPosition.value = {
+      top: Math.max(20, (viewportHeight - popupHeight) / 2 + scrollTop),
+      left: Math.max(20, (viewportWidth - popupWidth) / 2)
+    }
+    
+    showPopupArrow.value = false // Pas de flèche quand centré
+    console.log('📍 Position du pop-up de confirmation (centré):', popupPosition.value)
   }
   
   organizationToJoin.value = organization
   showJoinConfirmationPopup.value = true
-  console.log('✅ Pop-up ouvert:', showJoinConfirmationPopup.value)
+  console.log('✅ Pop-up de confirmation ouvert:', showJoinConfirmationPopup.value)
+}
+
+// Ouvrir le pop-up de sélection de rôle
+const openRoleSelection = (organization, event) => {
+  console.log('🔍 Ouverture du pop-up de sélection de rôle pour:', organization.name)
+  
+  if (event && event.target) {
+    const rect = event.target.getBoundingClientRect()
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft
+    
+    // Dimensions du pop-up (plus grand pour la sélection de rôle)
+    const popupWidth = 400
+    const popupHeight = 300
+    const margin = 20
+    
+    // Position initiale (au-dessus du bouton)
+    let top = rect.top + scrollTop - popupHeight - 20
+    let left = rect.left + scrollLeft + (rect.width / 2) - (popupWidth / 2)
+    
+    // Vérifier les limites de l'écran
+    const viewportWidth = window.innerWidth
+    const viewportHeight = window.innerHeight
+    
+    // Ajuster horizontalement si nécessaire
+    if (left < margin) {
+      left = margin
+    } else if (left + popupWidth > viewportWidth - margin) {
+      left = viewportWidth - popupWidth - margin
+    }
+    
+    // Ajuster verticalement si nécessaire
+    if (top < margin) {
+      // Si pas assez d'espace au-dessus, placer en dessous
+      top = rect.bottom + scrollTop + 20
+      showPopupArrow.value = false // Masquer la flèche si en dessous
+    } else {
+      showPopupArrow.value = true // Afficher la flèche si au-dessus
+    }
+    
+    // Vérifier si le pop-up dépasse en bas
+    if (top + popupHeight > viewportHeight + scrollTop - margin) {
+      // Centrer verticalement si possible
+      top = Math.max(margin, (viewportHeight - popupHeight) / 2 + scrollTop)
+      showPopupArrow.value = false // Masquer la flèche si centré
+    }
+    
+    popupPosition.value = {
+      top: top,
+      left: left
+    }
+    
+    console.log('📍 Position du pop-up:', popupPosition.value)
+  } else {
+    // Si pas d'événement (appel depuis la confirmation), centrer le pop-up
+    const popupWidth = 400
+    const popupHeight = 300
+    const viewportWidth = window.innerWidth
+    const viewportHeight = window.innerHeight
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+    
+    popupPosition.value = {
+      top: Math.max(20, (viewportHeight - popupHeight) / 2 + scrollTop),
+      left: Math.max(20, (viewportWidth - popupWidth) / 2)
+    }
+    
+    showPopupArrow.value = false // Pas de flèche quand centré
+    console.log('📍 Position du pop-up (centré):', popupPosition.value)
+  }
+  
+  organizationToJoin.value = organization
+  selectedRole.value = 'secretaire' // Rôle par défaut
+  showRoleSelectionPopup.value = true
+  console.log('✅ Pop-up de sélection de rôle ouvert:', showRoleSelectionPopup.value)
 }
 
 // Fermer le pop-up de confirmation
@@ -1035,9 +1403,93 @@ const closeJoinConfirmation = () => {
   showPopupArrow.value = true // Réinitialiser la flèche
 }
 
-// Confirmer et rejoindre l'organisation
-const confirmJoinOrganization = async () => {
+// Fermer le pop-up de sélection de rôle
+const closeRoleSelection = () => {
+  showRoleSelectionPopup.value = false
+  organizationToJoin.value = null
+  selectedRole.value = 'secretaire' // Remettre le rôle par défaut
+  showPopupArrow.value = true // Réinitialiser la flèche
+}
+
+// Gestionnaire pour le changement de rôle dans la dropdown
+const onRoleChange = () => {
+  console.log('🔍 Rôle sélectionné:', selectedRole.value)
+}
+
+// Vérifier l'adhésion et procéder selon le résultat
+const checkMembershipAndProceed = async (organization, event) => {
+  try {
+    console.log('🔍 Vérification de l\'adhésion pour:', organization.name)
+    
+    // Récupérer le token CSRF
+    const getCookie = (name) => {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+      return null;
+    };
+    
+    const csrfToken = getCookie('csrftoken');
+    
+    // Vérifier si l'utilisateur est déjà membre ou a une demande en attente
+    const response = await fetch(`http://127.0.0.1:8000/api/organizations/${organization.id}/check-membership/`, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken || '',
+      },
+    })
+    
+    if (response.ok) {
+      const data = await response.json()
+      console.log('📥 Réponse vérification adhésion:', data)
+      
+      if (data.is_member) {
+        // L'utilisateur est déjà membre
+        console.log('⚠️ Utilisateur déjà membre de l\'organisation')
+        displayNotification('warning', 'Information', 'Vous êtes déjà membre de cette organisation')
+      } else if (data.has_pending_request) {
+        // L'utilisateur a déjà une demande en attente
+        console.log('⚠️ Utilisateur a déjà une demande en attente')
+        displayNotification('info', 'Information', 'Vous avez déjà une demande d\'adhésion en attente pour cette organisation')
+      } else {
+        // L'utilisateur n'est pas membre et n'a pas de demande en attente, ouvrir la pop-up de confirmation
+        console.log('✅ Utilisateur pas membre et pas de demande en attente, ouverture de la pop-up de confirmation')
+        openJoinConfirmation(organization, event)
+      }
+    } else {
+      console.error('❌ Erreur lors de la vérification d\'adhésion')
+      displayNotification('error', 'Erreur', 'Erreur lors de la vérification de votre adhésion')
+    }
+  } catch (error) {
+    console.error('❌ Erreur lors de la vérification d\'adhésion:', error)
+    displayNotification('error', 'Erreur', 'Erreur lors de la vérification de votre adhésion')
+  }
+}
+
+// Confirmer et passer à la sélection de rôle
+const confirmJoinOrganization = () => {
   if (!organizationToJoin.value) return
+  
+  console.log('✅ Confirmation de rejoindre l\'organisation, ouverture de la sélection de rôle')
+  
+  // Stocker l'organisation avant de fermer la pop-up
+  const organization = organizationToJoin.value
+  
+  // Fermer la pop-up de confirmation
+  closeJoinConfirmation()
+  
+  // Ouvrir la pop-up de sélection de rôle avec l'organisation stockée
+  openRoleSelection(organization, null)
+}
+
+// Confirmer la sélection de rôle et créer la demande d'adhésion
+const confirmRoleSelection = async () => {
+  if (!selectedRole.value || !organizationToJoin.value) {
+    displayNotification('error', 'Erreur', 'Veuillez sélectionner un rôle')
+    return
+  }
   
   try {
     // Récupérer le token CSRF depuis les cookies
@@ -1050,51 +1502,61 @@ const confirmJoinOrganization = async () => {
     
     const csrfToken = getCookie('csrftoken');
     
-    const response = await fetch(`http://127.0.0.1:8000/api/organizations/${organizationToJoin.value.id}/request-join/`, {
+    const response = await fetch(`http://127.0.0.1:8000/api/organizations/membership-request/`, {
       method: 'POST',
       credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
         'X-CSRFToken': csrfToken || '',
       },
+      body: JSON.stringify({
+        organization_id: organizationToJoin.value.id,
+        requested_role: selectedRole.value,
+        message: `Demande d'adhésion pour le rôle: ${availableRoles.value.find(r => r.value === selectedRole.value)?.label}`
+      })
     })
     
     if (response.ok) {
       const data = await response.json()
       if (data.success) {
-        console.log('✅ Demande de rejoindre l\'organisation envoyée')
+        console.log('✅ Demande d\'adhésion créée avec succès')
         displayNotification('success', 'Succès', data.message)
         // Recharger les organisations de l'utilisateur
         await loadUserOrganizations()
       } else {
-        console.error('❌ Erreur lors de la demande:', data.message)
+        console.error('❌ Erreur lors de la création de la demande:', data.message)
         displayNotification('error', 'Erreur', data.message)
       }
     } else {
       const errorData = await response.json().catch(() => ({}))
-      console.error('❌ Erreur lors de la demande:', errorData)
+      console.error('❌ Erreur lors de la création de la demande:', errorData)
       displayNotification('error', 'Erreur', errorData.message || 'Erreur inconnue')
     }
   } catch (error) {
-    console.error('❌ Erreur lors de la demande:', error)
-    displayNotification('error', 'Erreur', 'Erreur lors de la demande')
+    console.error('❌ Erreur lors de la création de la demande:', error)
+    displayNotification('error', 'Erreur', 'Erreur lors de la création de la demande')
   } finally {
-    closeJoinConfirmation()
+    closeRoleSelection()
   }
 }
 
 // Demander à rejoindre une organisation (ancienne fonction pour compatibilité)
-const requestToJoin = (organization, event) => {
+const requestToJoin = async (organization, event) => {
   console.log('🔍 Clic sur le bouton rejoindre:', organization.name)
   // Empêcher la propagation de l'événement pour éviter la fermeture immédiate
   event.stopPropagation()
-  openJoinConfirmation(organization, event)
+  
+  // Vérifier d'abord si l'utilisateur est déjà membre
+  await checkMembershipAndProceed(organization, event)
 }
 
 // Gestionnaire pour fermer le pop-up en cliquant en dehors
 const handleClickOutside = (event) => {
   if (showJoinConfirmationPopup.value && !event.target.closest('.join-confirmation-popup')) {
     closeJoinConfirmation()
+  }
+  if (showRoleSelectionPopup.value && !event.target.closest('.role-selection-popup')) {
+    closeRoleSelection()
   }
 }
 
@@ -1109,6 +1571,258 @@ onMounted(async () => {
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
 })
+
+// Fonctions pour les modales d'organisation
+const openCreateOrganizationModal = () => {
+  console.log('Ouverture de la modale de création d\'organisation')
+  isCreateOrganizationModalOpen.value = true
+  
+  // Désactiver le scroll du body
+  document.body.style.overflow = 'hidden'
+  
+  // Positionner la modale contextuellement
+  nextTick(() => {
+    positionCreateOrganizationModal()
+  })
+}
+
+const closeCreateOrganizationModal = () => {
+  console.log('Fermeture de la modale de création d\'organisation')
+  isCreateOrganizationModalOpen.value = false
+  
+  // Réactiver le scroll du body
+  document.body.style.overflow = 'auto'
+  
+  // Réinitialiser le formulaire
+  resetOrganizationForm()
+}
+
+const positionCreateOrganizationModal = () => {
+  if (!createOrganizationModal.value) return
+  
+  const modal = createOrganizationModal.value
+  const rect = modal.getBoundingClientRect()
+  const viewportWidth = window.innerWidth
+  const viewportHeight = window.innerHeight
+  
+  // Calculer la position optimale (centré horizontalement, plus haut verticalement)
+  const left = Math.max(20, (viewportWidth - rect.width) / 2)
+  const top = Math.max(20, (viewportHeight - rect.height) / 2 - 50) // Décalage de 50px vers le haut
+  
+  modal.style.left = `${left}px`
+  modal.style.top = `${top}px`
+  modal.style.transform = 'none'
+}
+
+const resetOrganizationForm = () => {
+  newOrganization.value = {
+    name: '',
+    description: '',
+    email: '',
+    phone: '',
+    address: '',
+    website: '',
+    organization_type: '',
+    sector: ''
+  }
+  isCreatingOrganization.value = false
+}
+
+const openJoinOrganizationModal = () => {
+  console.log('Ouverture de la modale de saisie du code d\'invitation')
+  isJoinOrganizationModalOpen.value = true
+  
+  // Désactiver le scroll du body
+  document.body.style.overflow = 'hidden'
+  
+  // Positionner la modale contextuellement
+  nextTick(() => {
+    positionJoinOrganizationModal()
+  })
+}
+
+const closeJoinOrganizationModal = () => {
+  console.log('Fermeture de la modale de saisie du code d\'invitation')
+  isJoinOrganizationModalOpen.value = false
+  
+  // Réactiver le scroll du body
+  document.body.style.overflow = 'auto'
+  
+  // Réinitialiser le formulaire
+  resetJoinOrganizationForm()
+}
+
+const positionJoinOrganizationModal = () => {
+  if (!joinOrganizationModal.value) return
+  
+  const modal = joinOrganizationModal.value
+  const rect = modal.getBoundingClientRect()
+  const viewportWidth = window.innerWidth
+  const viewportHeight = window.innerHeight
+  
+  // Calculer la position optimale (centré)
+  const left = Math.max(20, (viewportWidth - rect.width) / 2)
+  const top = Math.max(20, (viewportHeight - rect.height) / 2)
+  
+  modal.style.left = `${left}px`
+  modal.style.top = `${top}px`
+  modal.style.transform = 'none'
+}
+
+const resetJoinOrganizationForm = () => {
+  inviteCode.value = ''
+}
+
+const createOrganization = async () => {
+  try {
+    isCreatingOrganization.value = true
+    console.log('Création de l\'organisation:', newOrganization.value)
+    
+    // Récupérer l'utilisateur connecté depuis le store
+    const currentUser = authStore.user
+    
+    console.log('Utilisateur connecté:', currentUser)
+    console.log('ID utilisateur connecté:', currentUser?.id)
+    
+    if (!currentUser || !currentUser.id) {
+      throw new Error('Aucun utilisateur connecté trouvé')
+    }
+    
+    // Ajouter l'ID de l'utilisateur connecté aux données
+    const organizationData = {
+      ...newOrganization.value,
+      user_id: currentUser.id
+    }
+    
+    console.log('Données d\'organisation avec user_id:', organizationData)
+    
+    // Appel à l'API pour créer l'organisation
+    const response = await OrganizationApiService.createOrganization(organizationData)
+    
+    console.log('Organisation créée avec succès!', response)
+    
+    // Marquer que l'utilisateur a maintenant une organisation
+    localStorage.setItem('user_has_organization', 'true')
+    
+    // Fermer la modale
+    closeCreateOrganizationModal()
+    
+    // Rafraîchir la page et ouvrir directement la page d'organisation
+    window.location.href = '/dashboard?page=organization'
+    
+  } catch (error) {
+    console.error('Erreur lors de la création de l\'organisation:', error)
+    displayNotification('error', 'Erreur', 'Erreur lors de la création de l\'organisation: ' + error.message)
+  } finally {
+    isCreatingOrganization.value = false
+  }
+}
+
+const joinOrganization = async () => {
+  if (!inviteCode.value.trim()) {
+    displayNotification('warning', 'Attention', 'Veuillez saisir un code d\'invitation')
+    return
+  }
+  
+  isJoiningOrganization.value = true
+  
+  try {
+    console.log('Validation du code d\'invitation:', inviteCode.value)
+    
+    // Récupérer le token CSRF
+    const csrfToken = await getCsrfToken()
+    console.log('Token CSRF récupéré:', csrfToken)
+    
+    if (!csrfToken) {
+      displayNotification('error', 'Erreur', 'Impossible de récupérer le token CSRF')
+      return
+    }
+    
+    // Appeler l'API pour valider le code d'invitation
+    const requestHeaders = {
+      'Content-Type': 'application/json',
+      'X-Csrftoken': csrfToken
+    }
+    console.log('Headers envoyés:', requestHeaders)
+    
+    const response = await $fetch('http://127.0.0.1:8000/api/organizations/invitations/validate/', {
+      method: 'POST',
+      headers: requestHeaders,
+      credentials: 'include',
+      body: {
+        code: inviteCode.value
+      }
+    })
+    
+    console.log('Réponse du serveur:', response)
+    
+    if (response.success) {
+      console.log('Code d\'invitation validé avec succès:', response)
+      
+      // Vérifier si l'utilisateur était déjà membre de cette organisation
+      if (response.already_member) {
+        displayNotification('info', 'Déjà membre', `Vous appartenez déjà à l'organisation ${response.organization.name} en tant que ${response.role_display}`)
+      } else {
+        displayNotification('success', 'Succès', `Vous avez rejoint l'organisation ${response.organization.name} avec succès !`)
+      }
+      
+      closeJoinOrganizationModal()
+      
+      // Rafraîchir la page pour mettre à jour l'état
+      setTimeout(() => {
+        window.location.reload()
+      }, 2000)
+    } else {
+      console.error('Erreur lors de la validation:', response.message)
+      displayNotification('error', 'Erreur', response.message || 'Erreur lors de la validation du code d\'invitation')
+    }
+  } catch (error) {
+    console.error('Erreur lors de la jointure:', error)
+    
+    // Gestion des erreurs spécifiques
+    if (error.status === 400) {
+      displayNotification('error', 'Code invalide', 'Le code d\'invitation saisi n\'est pas valide ou a expiré')
+    } else if (error.status === 404) {
+      displayNotification('error', 'Code introuvable', 'Ce code d\'invitation n\'existe pas dans notre base de données')
+    } else if (error.status === 403) {
+      displayNotification('error', 'Accès refusé', 'Vous n\'êtes pas autorisé à utiliser ce code d\'invitation')
+    } else {
+      displayNotification('error', 'Erreur de connexion', 'Impossible de rejoindre l\'organisation. Vérifiez votre connexion.')
+    }
+  } finally {
+    isJoiningOrganization.value = false
+  }
+}
+
+// Fonction pour récupérer le token CSRF
+const getCsrfToken = async () => {
+  try {
+    // D'abord, faire une requête GET pour obtenir le cookie CSRF
+    await $fetch('http://127.0.0.1:8000/api/auth/csrf/', {
+      method: 'GET',
+      credentials: 'include'
+    })
+    
+    // Ensuite, récupérer le token depuis les cookies
+    const cookies = document.cookie.split(';')
+    const csrfCookie = cookies.find(cookie => cookie.trim().startsWith('csrftoken='))
+    
+    if (csrfCookie) {
+      const token = csrfCookie.split('=')[1]
+      console.log('Token CSRF récupéré depuis les cookies:', token)
+      return token
+    }
+    
+    // Fallback: utiliser l'endpoint API
+    const response = await $fetch('http://127.0.0.1:8000/api/auth/csrf/', {
+      credentials: 'include'
+    })
+    return response.csrfToken
+  } catch (error) {
+    console.error('Erreur lors de la récupération du token CSRF:', error)
+    return null
+  }
+}
 </script>
 
 <style scoped>
@@ -1837,12 +2551,6 @@ onUnmounted(() => {
   line-height: 1.6;
 }
 
-.no-org-actions {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  flex-wrap: wrap;
-}
 
 /* MODALES */
 .modal-overlay {
@@ -2324,7 +3032,6 @@ onUnmounted(() => {
   }
   
   .header-actions {
-    flex-direction: column;
     width: 100%;
   }
   
@@ -2360,14 +3067,6 @@ onUnmounted(() => {
     align-self: flex-end;
   }
   
-  .no-org-actions {
-    flex-direction: column;
-    width: 100%;
-  }
-  
-  .no-org-actions .btn {
-    width: 100%;
-  }
   
   .modal-content {
     margin: 1rem;
@@ -2455,6 +3154,157 @@ onUnmounted(() => {
   .no-results-description, .search-welcome-description {
     font-size: 0.9rem;
   }
+}
+
+/* POP-UP DE SÉLECTION DE RÔLE */
+.role-selection-popup {
+  position: absolute;
+  z-index: 10000;
+  animation: popupBounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.role-selection-popup .popup-content {
+  min-width: 400px;
+  max-width: 450px;
+}
+
+.role-dropdown-container {
+  margin-top: 1rem;
+}
+
+.role-dropdown {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid #0d6efd;
+  border-radius: 8px;
+  background: rgba(13, 110, 253, 0.1);
+  color: #2c3e50;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%230d6efd' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.75rem center;
+  background-repeat: no-repeat;
+  background-size: 1rem;
+  padding-right: 2.5rem;
+}
+
+.role-dropdown:focus {
+  outline: none;
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.2);
+  background: rgba(13, 110, 253, 0.15);
+}
+
+.role-dropdown:hover {
+  background: rgba(13, 110, 253, 0.15);
+  border-color: #0d6efd;
+}
+
+.role-dropdown option {
+  background: #ffffff;
+  color: #2c3e50;
+  padding: 0.5rem;
+  font-weight: 500;
+}
+
+.role-description-display {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(13, 110, 253, 0.1);
+  border: 1px solid rgba(13, 110, 253, 0.3);
+  border-radius: 8px;
+  color: #2c3e50;
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.4;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  animation: fadeIn 0.3s ease;
+}
+
+.role-description-display i {
+  color: #0d6efd;
+  margin-top: 0.1rem;
+  flex-shrink: 0;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.role-selection {
+  margin-top: 1rem;
+}
+
+.role-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.role-option:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.role-option.selected {
+  background: rgba(0, 102, 204, 0.1);
+  border-color: var(--primary-blue);
+}
+
+.role-radio {
+  flex-shrink: 0;
+}
+
+.radio-circle {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.radio-circle.checked {
+  background: var(--primary-blue);
+  border-color: var(--primary-blue);
+  color: white;
+}
+
+.role-info {
+  flex: 1;
+}
+
+.role-label {
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 0.25rem;
+}
+
+.role-description {
+  font-size: 0.8rem;
+  color: var(--dark-gray);
+  line-height: 1.3;
 }
 
 /* POP-UP DE CONFIRMATION POUR REJOINDRE UNE ORGANISATION */
@@ -2743,6 +3593,11 @@ onUnmounted(() => {
     max-width: 320px;
   }
   
+  .role-selection-popup .popup-content {
+    min-width: 300px;
+    max-width: 350px;
+  }
+  
   .popup-header,
   .popup-body,
   .popup-actions {
@@ -2755,6 +3610,16 @@ onUnmounted(() => {
   
   .popup-actions .btn {
     width: 100%;
+  }
+  
+  .role-dropdown {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+  }
+  
+  .role-description-display {
+    padding: 0.5rem;
+    font-size: 0.8rem;
   }
   
   .notification-toast {
@@ -2876,6 +3741,350 @@ onUnmounted(() => {
   
   .member-email {
     font-size: 0.75rem;
+  }
+}
+
+/* Styles pour les boutons d'action rapide dans le header */
+.header-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+  flex-wrap: nowrap;
+}
+
+.btn-create-org,
+.btn-join-org {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+  font-family: inherit;
+  text-decoration: none;
+}
+
+.btn-create-org {
+  background: linear-gradient(135deg, var(--primary-blue), #0056b3);
+  color: white;
+  border: 2px solid var(--primary-blue);
+}
+
+.btn-create-org:hover {
+  background: linear-gradient(135deg, #0056b3, var(--primary-blue));
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 102, 204, 0.3);
+}
+
+.btn-join-org {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--primary-blue);
+  border: 2px solid var(--primary-blue);
+}
+
+.btn-join-org:hover {
+  background: var(--primary-blue);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 102, 204, 0.2);
+}
+
+/* Styles pour les modales d'organisation */
+.organization-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(1px);
+  animation: fadeInOverlay 0.3s ease-out;
+}
+
+.organization-form-modal {
+  position: fixed;
+  width: 600px;
+  max-width: 90vw;
+  max-height: 90vh;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(0, 102, 204, 0.1);
+  z-index: 10000;
+  animation: modalSlideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-origin: center bottom;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.organization-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(0, 102, 204, 0.1);
+  background: rgba(0, 102, 204, 0.02);
+  border-radius: 16px 16px 0 0;
+}
+
+.organization-modal-header h5 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.organization-modal-header h5 i {
+  color: var(--primary-blue);
+  font-size: 1.3rem;
+}
+
+.close-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #6c757d;
+}
+
+.close-btn:hover {
+  background: rgba(0, 102, 204, 0.1);
+  color: var(--primary-blue);
+}
+
+.organization-form-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+.organization-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 0.25rem;
+}
+
+.form-group label i {
+  color: var(--primary-blue);
+  font-size: 0.9rem;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  padding: 0.75rem 1rem;
+  border: 2px solid rgba(0, 102, 204, 0.1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  font-size: 0.9rem;
+  color: var(--text-dark);
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+  transform: translateY(-1px);
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: rgba(108, 117, 125, 0.7);
+  font-style: italic;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+}
+
+.form-group select {
+  cursor: pointer;
+}
+
+.form-group select option {
+  padding: 0.5rem;
+  background: white;
+  color: var(--text-dark);
+}
+
+.form-help {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-style: italic;
+}
+
+.form-help i {
+  color: var(--primary-blue);
+  font-size: 0.9rem;
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(0, 102, 204, 0.1);
+}
+
+.btn-cancel,
+.btn-create {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+  font-family: inherit;
+}
+
+.btn-cancel {
+  background: rgba(108, 117, 125, 0.1);
+  color: #6c757d;
+  border: 2px solid rgba(108, 117, 125, 0.2);
+}
+
+.btn-cancel:hover {
+  background: rgba(108, 117, 125, 0.15);
+  border-color: rgba(108, 117, 125, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-create {
+  background: linear-gradient(135deg, var(--primary-blue), #0056b3);
+  color: white;
+  border: 2px solid var(--primary-blue);
+}
+
+.btn-create:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0056b3, var(--primary-blue));
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px rgba(0, 102, 204, 0.3);
+}
+
+.btn-create:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-create:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* Animations pour les modales */
+@keyframes fadeInOverlay {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(1px);
+  }
+}
+
+@keyframes modalSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.8) rotateX(-10deg);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translateY(-5px) scale(1.05) rotateX(2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotateX(0deg);
+  }
+}
+
+/* Responsive pour les boutons d'action */
+@media (max-width: 768px) {
+  .header-actions {
+    gap: 0.75rem;
+  }
+  
+  .btn-create-org,
+  .btn-join-org {
+    flex: 1;
+    justify-content: center;
+  }
+  
+  .organization-form-modal {
+    width: 98%;
+    max-width: none;
+    max-height: 95vh;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+  }
+  
+  .organization-form-content {
+    padding: 1rem;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .btn-cancel,
+  .btn-create {
+    width: 100%;
+    justify-content: center;
   }
 }
 </style>

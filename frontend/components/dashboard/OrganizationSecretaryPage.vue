@@ -579,6 +579,9 @@ const handleOrganizationSelected = (event) => {
   console.log('📝 userOrganization mis à jour:', userOrganization.value)
   console.log('📝 Nom de l\'organisation:', userOrganization.value?.organization?.name)
   
+  // Nettoyer le localStorage après utilisation
+  localStorage.removeItem('selectedOrganization')
+  
   // Charger les statistiques avec la nouvelle organisation
   loadSecretaryStats()
 }
@@ -586,28 +589,44 @@ const handleOrganizationSelected = (event) => {
 // Charger les données de l'organisation
 const loadOrganizationData = async () => {
   try {
-    // Si une organisation est déjà sélectionnée, l'utiliser
+    // Vérifier d'abord le localStorage pour une organisation sélectionnée
+    const storedOrganization = localStorage.getItem('selectedOrganization')
+    if (storedOrganization) {
+      const organization = JSON.parse(storedOrganization)
+      console.log('🏢 Organisation trouvée dans localStorage:', organization.name)
+      userOrganization.value = {
+        organization: organization,
+        role: organization.role || 'secretaire'
+      }
+      selectedOrganization.value = organization
+      return
+    }
+    
+    // Si une organisation est déjà sélectionnée en mémoire, l'utiliser
     if (selectedOrganization.value) {
+      console.log('🏢 Organisation sélectionnée en mémoire:', selectedOrganization.value.name)
       userOrganization.value = {
         organization: selectedOrganization.value,
-        role: 'secretaire'
+        role: selectedOrganization.value.role || 'secretaire'
       }
-    } else {
-      // Sinon, essayer de charger depuis l'API
-      const response = await fetch('http://127.0.0.1:8000/api/organizations/my-organization/', {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success && data.organization) {
-          userOrganization.value = data.organization
-          console.log('✅ Organisation chargée:', data.organization.name)
-        }
+      return
+    }
+    
+    // Sinon, essayer de charger depuis l'API (organisation par défaut)
+    console.log('🔄 Chargement de l\'organisation par défaut depuis l\'API')
+    const response = await fetch('http://127.0.0.1:8000/api/organizations/my-organization/', {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+    
+    if (response.ok) {
+      const data = await response.json()
+      if (data.success && data.organization) {
+        userOrganization.value = data.organization
+        console.log('✅ Organisation par défaut chargée:', data.organization.name)
       }
     }
   } catch (error) {

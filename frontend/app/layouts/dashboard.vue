@@ -122,7 +122,7 @@
               Signatures
             </button>
           </li>
-          <li class="sidebar-nav-item" v-if="hasOrganization">
+          <li class="sidebar-nav-item">
             <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: isOrganizationPage }" @click="setActivePage('organization-selection')">
               <i class="bi bi-building me-3"></i>
               Organisation
@@ -182,7 +182,7 @@
               <span v-show="!isSidebarCollapsed">Signatures</span>
             </button>
           </li>
-          <li class="nav-item" v-if="hasOrganization">
+          <li class="nav-item">
             <button class="nav-link" :class="{ active: isOrganizationPage }" @click="setActivePage('organization-selection')">
               <i class="bi bi-building"></i>
               <span v-show="!isSidebarCollapsed">Organisation</span>
@@ -735,12 +735,12 @@ const setActivePage = (page) => {
   // Vérification spéciale pour la page d'organisation
   if (page === 'organization') {
     if (!hasOrganization.value) {
-      console.log('❌ Utilisateur essaie d\'accéder à la page d\'organisation sans en avoir une')
-      // Rediriger vers le dashboard
-      activePage.value = 'dashboard'
-      localStorage.setItem('dashboardActivePage', 'dashboard')
+      console.log('🔄 Utilisateur sans organisation redirigé vers la page de sélection d\'organisation')
+      // Rediriger vers la page de sélection d'organisation au lieu du dashboard
+      activePage.value = 'organization-selection'
+      localStorage.setItem('dashboardActivePage', 'organization-selection')
       // Mettre à jour l'URL
-      const newUrl = window.location.pathname
+      const newUrl = `${window.location.pathname}?page=organization-selection`
       window.history.pushState({}, '', newUrl)
       closeSidebar()
       return
@@ -914,26 +914,32 @@ const checkUserOrganizations = async () => {
         console.log('✅ Utilisateur a une organisation:', data.organization.name)
         console.log('🔍 Rôle de l\'utilisateur:', data.organization.role || 'Non spécifié')
         
-        // Rediriger automatiquement vers la page de sélection d'organisation
-        if (activePage.value === 'dashboard') {
-          console.log('🔄 Redirection automatique vers la page de sélection d\'organisation')
-          activePage.value = 'organization-selection'
-        }
+        // L'utilisateur a une organisation, pas de redirection automatique
+        console.log('✅ Utilisateur a une organisation, rester sur la page actuelle')
       } else {
         hasOrganization.value = false
         localStorage.removeItem('user_has_organization')
         console.log('❌ Utilisateur n\'a pas d\'organisation')
+        
+        // L'utilisateur n'a pas d'organisation, rester sur la page actuelle
+        console.log('ℹ️ Utilisateur sans organisation, rester sur la page actuelle')
       }
     } else if (response.status === 404) {
       // 404 signifie que l'utilisateur n'a pas d'organisation
       hasOrganization.value = false
       localStorage.removeItem('user_has_organization')
       console.log('❌ Utilisateur n\'a pas d\'organisation (404)')
+      
+      // L'utilisateur n'a pas d'organisation (404), rester sur la page actuelle
+      console.log('ℹ️ Utilisateur sans organisation (404), rester sur la page actuelle')
     } else {
       // Autre erreur
       hasOrganization.value = false
       localStorage.removeItem('user_has_organization')
       console.log('❌ Erreur lors de la vérification des organisations:', response.status)
+      
+      // Erreur lors de la vérification, rester sur la page actuelle
+      console.log('ℹ️ Erreur lors de la vérification, rester sur la page actuelle')
     }
     
     console.log('🔍 État final hasOrganization:', hasOrganization.value)
@@ -941,6 +947,9 @@ const checkUserOrganizations = async () => {
     console.error('❌ Erreur lors de la vérification des organisations:', error)
     hasOrganization.value = false
     localStorage.removeItem('user_has_organization')
+    
+    // Erreur lors de la vérification, rester sur la page actuelle
+    console.log('ℹ️ Erreur lors de la vérification (catch), rester sur la page actuelle')
   }
 }
 
@@ -1184,6 +1193,9 @@ onMounted(async () => {
   } else {
     console.log('❌ Utilisateur non authentifié, pas de vérification d\'organisation')
     hasOrganization.value = false
+    
+    // Utilisateur non authentifié, rester sur la page actuelle
+    console.log('ℹ️ Utilisateur non authentifié, rester sur la page actuelle')
   }
   
   // Vérifier les paramètres URL d'abord
@@ -1205,12 +1217,12 @@ onMounted(async () => {
   
   // Vérifier si l'utilisateur essaie d'accéder à la page d'organisation sans en avoir une
   if (pageParam === 'organization' && !hasOrganization.value) {
-    console.log('❌ Redirection automatique : utilisateur sans organisation essaie d\'accéder à la page d\'organisation')
-    // Rediriger vers le dashboard
-    activePage.value = 'dashboard'
-    localStorage.setItem('dashboardActivePage', 'dashboard')
+    console.log('🔄 Redirection automatique : utilisateur sans organisation redirigé vers la page de sélection d\'organisation')
+    // Rediriger vers la page de sélection d'organisation au lieu du dashboard
+    activePage.value = 'organization-selection'
+    localStorage.setItem('dashboardActivePage', 'organization-selection')
     // Mettre à jour l'URL sans recharger la page
-    const newUrl = window.location.pathname
+    const newUrl = `${window.location.pathname}?page=organization-selection`
     window.history.replaceState({}, '', newUrl)
   }
   

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Organization, OrganizationMember, InvitationCode, OrganizationCertificate
+from .models import Organization, OrganizationMember, InvitationCode, OrganizationCertificate, DemandeAdhesion
 
 
 @admin.register(Organization)
@@ -98,3 +98,56 @@ class OrganizationCertificateAdmin(admin.ModelAdmin):
         return super().get_queryset(request).select_related(
             'organization', 'imported_by'
         )
+
+
+@admin.register(DemandeAdhesion)
+class DemandeAdhesionAdmin(admin.ModelAdmin):
+    list_display = ['user', 'organization', 'requested_role', 'status', 'created_at', 'processed_at']
+    list_filter = ['status', 'requested_role', 'organization', 'created_at', 'processed_at']
+    search_fields = ['user__first_name', 'user__last_name', 'user__email', 'organization__name']
+    readonly_fields = ['created_at', 'updated_at', 'invitation_code']
+    
+    fieldsets = (
+        ('Demande', {
+            'fields': ('user', 'organization', 'requested_role', 'message')
+        }),
+        ('Code d\'invitation', {
+            'fields': ('invitation_code',),
+            'classes': ('collapse',)
+        }),
+        ('Statut', {
+            'fields': ('status', 'processed_by', 'processed_at', 'response_message')
+        }),
+        ('Métadonnées', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    actions = ['approve_requests', 'reject_requests']
+    
+    def approve_requests(self, request, queryset):
+        """Action pour approuver les demandes sélectionnées"""
+        count = 0
+        for demande in queryset.filter(status='pending'):
+            try:
+                demande.approve(request.user, "Demande approuvée par l'administrateur")
+                count += 1
+            except Exception as e:
+                self.message_user(request, f"Erreur lors de l'approbation de {demande}: {str(e)}", level='ERROR')
+        
+        self.message_user(request, f"{count} demande(s) approuvée(s) avec succès.")
+    approve_requests.short_description = "Approuver les demandes sélectionnées"
+    
+    def reject_requests(self, request, queryset):
+        """Action pour rejeter les demandes sélectionnées"""
+        count = 0
+        for demande in queryset.filter(status='pending'):
+            try:
+                demande.reject(request.user, "Demande rejetée par l'administrateur")
+                count += 1
+            except Exception as e:
+                self.message_user(request, f"Erreur lors du rejet de {demande}: {str(e)}", level='ERROR')
+        
+        self.message_user(request, f"{count} demande(s) rejetée(s) avec succès.")
+    reject_requests.short_description = "Rejeter les demandes sélectionnées"

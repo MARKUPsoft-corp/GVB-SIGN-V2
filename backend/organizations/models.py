@@ -170,6 +170,94 @@ class InvitationCode(models.Model):
         )
 
 
+class DemandeAdhesion(models.Model):
+    """
+    Modèle pour gérer les demandes d'adhésion aux organisations
+    """
+    # Utilisateur qui fait la demande
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='membership_requests', verbose_name="Utilisateur")
+    
+    # Organisation demandée
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='membership_requests', verbose_name="Organisation")
+    
+    # Rôle souhaité par l'utilisateur
+    requested_role = models.CharField(max_length=50, choices=[
+        ('secretaire', 'Secrétaire'),
+        ('chef', 'Chef'),
+        ('chef+1', 'Chef+1'),
+        ('chef+2', 'Chef+2'),
+        ('chef+n', 'Chef+n'),
+    ], verbose_name="Rôle souhaité")
+    
+    # Code d'invitation généré pour cette demande
+    invitation_code = models.OneToOneField(InvitationCode, on_delete=models.CASCADE, related_name='membership_request', verbose_name="Code d'invitation")
+    
+    # Statut de la demande
+    status = models.CharField(max_length=20, choices=[
+        ('pending', 'En attente'),
+        ('approved', 'Approuvée'),
+        ('rejected', 'Rejetée'),
+        ('cancelled', 'Annulée'),
+    ], default='pending', verbose_name="Statut")
+    
+    # Dates
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Date de création")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Date de modification")
+    processed_at = models.DateTimeField(null=True, blank=True, verbose_name="Date de traitement")
+    
+    # Utilisateur qui a traité la demande (admin de l'organisation)
+    processed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='processed_membership_requests', verbose_name="Traité par")
+    
+    # Message de l'utilisateur (optionnel)
+    message = models.TextField(blank=True, null=True, verbose_name="Message")
+    
+    # Réponse de l'organisation (optionnel)
+    response_message = models.TextField(blank=True, null=True, verbose_name="Message de réponse")
+    
+    class Meta:
+        verbose_name = "Demande d'adhésion"
+        verbose_name_plural = "Demandes d'adhésion"
+        db_table = 'organizations_membership_request'
+        ordering = ['-created_at']
+        unique_together = ['user', 'organization']  # Un utilisateur ne peut faire qu'une demande par organisation
+    
+    def __str__(self):
+        return f"{self.user.full_name} → {self.organization.name} ({self.get_requested_role_display()})"
+    
+    def approve(self, processed_by_user, response_message=None):
+        """Approuve la demande d'adhésion"""
+        self.status = 'approved'
+        self.processed_by = processed_by_user
+        self.processed_at = timezone.now()
+        self.response_message = response_message
+        self.save()
+        
+        # Utiliser le code d'invitation pour ajouter l'utilisateur à l'organisation
+        self.invitation_code.use_code(self.user)
+    
+    def reject(self, processed_by_user, response_message=None):
+        """Rejette la demande d'adhésion"""
+        self.status = 'rejected'
+        self.processed_by = processed_by_user
+        self.processed_at = timezone.now()
+        self.response_message = response_message
+        self.save()
+        
+        # Désactiver le code d'invitation
+        self.invitation_code.is_active = False
+        self.invitation_code.save()
+    
+    def cancel(self):
+        """Annule la demande d'adhésion"""
+        self.status = 'cancelled'
+        self.processed_at = timezone.now()
+        self.save()
+        
+        # Désactiver le code d'invitation
+        self.invitation_code.is_active = False
+        self.invitation_code.save()
+
+
 # Signal pour réactiver automatiquement les codes d'invitation quand un membre quitte l'organisation
 @receiver(post_delete, sender=OrganizationMember)
 def reactivate_invitation_codes(sender, instance, **kwargs):

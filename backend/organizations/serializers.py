@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Organization, OrganizationMember, InvitationCode, OrganizationCertificate
+from .models import Organization, OrganizationMember, InvitationCode, OrganizationCertificate, DemandeAdhesion
 from authentication.serializers import UserSerializer
 
 
@@ -100,6 +100,137 @@ class OrganizationSerializer(serializers.ModelSerializer):
         
         print(f"🔍 === FIN DE LA CRÉATION D'ORGANISATION ===")
         return organization
+
+
+class InvitationCodeSerializer(serializers.ModelSerializer):
+    """
+    Sérialiseur pour les codes d'invitation
+    """
+    created_by_name = serializers.CharField(source='created_by.full_name', read_only=True)
+    used_by_name = serializers.CharField(source='used_by.full_name', read_only=True)
+    organization_name = serializers.CharField(source='organization.name', read_only=True)
+    is_expired = serializers.ReadOnlyField()
+    is_valid = serializers.ReadOnlyField()
+    
+    class Meta:
+        model = InvitationCode
+        fields = [
+            'id', 'code', 'organization', 'organization_name', 'role',
+            'created_by', 'created_by_name', 'created_at', 'expires_at',
+            'used_by', 'used_by_name', 'used_at', 'is_active', 'is_used',
+            'is_expired', 'is_valid'
+        ]
+        read_only_fields = [
+            'id', 'code', 'created_by', 'created_at', 'expires_at',
+            'used_by', 'used_at', 'is_used', 'is_expired', 'is_valid'
+        ]
+
+
+class DemandeAdhesionSerializer(serializers.ModelSerializer):
+    """
+    Sérialiseur pour les demandes d'adhésion
+    """
+    user = UserSerializer(read_only=True)
+    organization = OrganizationSerializer(read_only=True)
+    invitation_code = InvitationCodeSerializer(read_only=True)
+    
+    class Meta:
+        model = DemandeAdhesion
+        fields = [
+            'id', 'user', 'organization', 'requested_role', 'invitation_code',
+            'status', 'created_at', 'updated_at', 'processed_at', 'processed_by',
+            'message', 'response_message'
+        ]
+        read_only_fields = [
+            'id', 'user', 'organization', 'invitation_code', 'status',
+            'created_at', 'updated_at', 'processed_at', 'processed_by', 'response_message'
+        ]
+
+
+class DemandeAdhesionCreateSerializer(serializers.Serializer):
+    """
+    Sérialiseur pour créer une demande d'adhésion
+    """
+    organization_id = serializers.IntegerField()
+    requested_role = serializers.ChoiceField(choices=[
+        ('secretaire', 'Secrétaire'),
+        ('chef', 'Chef'),
+        ('chef+1', 'Chef+1'),
+        ('chef+2', 'Chef+2'),
+        ('chef+n', 'Chef+n'),
+    ])
+    message = serializers.CharField(required=False, allow_blank=True)
+    
+    def validate_organization_id(self, value):
+        """Vérifier que l'organisation existe et est active"""
+        try:
+            from .models import Organization
+            organization = Organization.objects.get(id=value, is_active=True)
+            return value
+        except Organization.DoesNotExist:
+            raise serializers.ValidationError("Organisation introuvable ou inactive")
+    
+    def validate(self, data):
+        """Vérifications globales"""
+        user = self.context['request'].user
+        organization_id = data['organization_id']
+        
+        # Vérifier que l'utilisateur n'est pas déjà membre de cette organisation
+        from .models import OrganizationMember
+        if OrganizationMember.objects.filter(organization_id=organization_id, user=user).exists():
+            raise serializers.ValidationError("Vous êtes déjà membre de cette organisation")
+        
+        # Vérifier qu'il n'y a pas déjà une demande en attente
+        from .models import DemandeAdhesion
+        if DemandeAdhesion.objects.filter(organization_id=organization_id, user=user, status='pending').exists():
+            raise serializers.ValidationError("Vous avez déjà une demande en attente pour cette organisation")
+        
+        return data
+    
+    def create(self, validated_data):
+        """
+        Créer une demande d'adhésion avec génération automatique du code d'invitation
+        """
+        import time
+        import random
+        import string
+        
+        user = self.context['request'].user
+        organization_id = validated_data['organization_id']
+        requested_role = validated_data['requested_role']
+        message = validated_data.get('message', '')
+        
+        # Récupérer l'organisation
+        from .models import Organization
+        organization = Organization.objects.get(id=organization_id)
+        
+        # Générer un code d'invitation unique
+        timestamp = str(int(time.time()))
+        random_string = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+        role_upper = requested_role.upper()
+        
+        # Format: REQ-{orgId}-{role}-{timestamp}-{random}
+        code = f"REQ-{organization_id}-{role_upper}-{timestamp}-{random_string}"
+        
+        # Créer le code d'invitation
+        from .models import InvitationCode
+        invitation_code = InvitationCode.objects.create(
+            code=code,
+            organization=organization,
+            role=requested_role,
+            created_by=user
+        )
+        
+        # Créer la demande d'adhésion
+        demande = DemandeAdhesion.objects.create(
+            user=user,
+            organization=organization,
+            requested_role=requested_role,
+            invitation_code=invitation_code,
+            message=message
+        )
+        
+        return demande
 
 
 class OrganizationMemberSerializer(serializers.ModelSerializer):

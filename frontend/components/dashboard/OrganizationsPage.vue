@@ -409,41 +409,121 @@
                 </button>
               </div>
               
-              <!-- Loading state -->
-              <div v-if="isLoadingMembers" class="text-center py-4">
-                <div class="spinner-border text-primary" role="status">
-                  <span class="visually-hidden">Chargement...</span>
+              <!-- Onglets pour les membres -->
+              <div class="members-tabs">
+                <div class="members-tab-nav">
+                  <button 
+                    class="members-tab-btn" 
+                    :class="{ active: activeMembersTab === 'active' }"
+                    @click="setActiveMembersTab('active')"
+                  >
+                    <i class="bi bi-people-fill me-2"></i>
+                    Membres actifs
+                    <span class="tab-badge">{{ organizationMembers.length }}</span>
+                  </button>
+                  <button 
+                    class="members-tab-btn" 
+                    :class="{ active: activeMembersTab === 'pending' }"
+                    @click="setActiveMembersTab('pending')"
+                  >
+                    <i class="bi bi-clock-fill me-2"></i>
+                    Membres en attente
+                    <span class="tab-badge">{{ pendingMembers.length }}</span>
+                  </button>
                 </div>
-                <p class="text-muted mt-2">Chargement des membres...</p>
-              </div>
-              
-              <!-- Liste des membres -->
-              <div v-else-if="organizationMembers.length > 0" class="members-list">
-                <div v-for="member in organizationMembers" :key="member.id" class="member-item">
-                  <div class="member-info">
-                    <div class="member-avatar">
-                      <i class="bi bi-person-circle"></i>
+                
+                <!-- Contenu des onglets -->
+                <div class="members-tab-content">
+                  <!-- Onglet Membres actifs -->
+                  <div v-if="activeMembersTab === 'active'" class="members-tab-pane">
+                    <!-- Loading state -->
+                    <div v-if="isLoadingMembers" class="text-center py-4">
+                      <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Chargement...</span>
+                      </div>
+                      <p class="text-muted mt-2">Chargement des membres...</p>
                     </div>
-                    <div class="member-details">
-                      <h6>{{ member.user_name || member.user_email }}</h6>
-                      <p class="text-muted">{{ member.user_email }}</p>
-                      <small class="text-muted">
-                        Rejoint le {{ formatDate(member.joined_at) }}
-                      </small>
+                    
+                    <!-- Liste des membres actifs -->
+                    <div v-else-if="organizationMembers.length > 0" class="members-list">
+                      <div v-for="member in organizationMembers" :key="member.id" class="member-item">
+                        <div class="member-info">
+                          <div class="member-avatar">
+                            <i class="bi bi-person-circle"></i>
+                          </div>
+                          <div class="member-details">
+                            <h6>{{ member.user_name || member.user_email }}</h6>
+                            <p class="text-muted">{{ member.user_email }}</p>
+                            <small class="text-muted">
+                              Rejoint le {{ formatDate(member.joined_at) }}
+                            </small>
+                          </div>
+                        </div>
+                        <div class="member-actions">
+                          <span class="badge" :class="getRoleBadgeClass(member.role)">
+                            {{ getRoleDisplayName(member.role) }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <!-- Aucun membre actif -->
+                    <div v-else class="text-center py-4">
+                      <i class="bi bi-people text-muted" style="font-size: 2rem;"></i>
+                      <p class="text-muted mt-2">Aucun membre actif dans cette organisation</p>
                     </div>
                   </div>
-                  <div class="member-actions">
-                    <span class="badge" :class="getRoleBadgeClass(member.role)">
-                      {{ getRoleDisplayName(member.role) }}
-                    </span>
+                  
+                  <!-- Onglet Membres en attente -->
+                  <div v-if="activeMembersTab === 'pending'" class="members-tab-pane">
+                    <!-- Loading state -->
+                    <div v-if="isLoadingPendingMembers" class="text-center py-4">
+                      <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Chargement...</span>
+                      </div>
+                      <p class="text-muted mt-2">Chargement des demandes...</p>
+                    </div>
+                    
+                    <!-- Liste des membres en attente -->
+                    <div v-else-if="pendingMembers.length > 0" class="members-list">
+                      <div v-for="request in pendingMembers" :key="request.id" class="member-item pending-member">
+                        <div class="member-info">
+                          <div class="member-avatar pending">
+                            <i class="bi bi-person-plus"></i>
+                          </div>
+                          <div class="member-details">
+                            <h6>{{ request.user_name || request.user_email }}</h6>
+                            <p class="text-muted">{{ request.user_email }}</p>
+                            <small class="text-muted">
+                              Demande du {{ formatDate(request.created_at) }}
+                            </small>
+                            <div class="request-role">
+                              <span class="badge bg-info">
+                                Rôle demandé: {{ getRoleDisplayName(request.requested_role) }}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="member-actions">
+                          <button class="btn btn-success btn-sm me-2" @click="approveMembershipRequest(request)">
+                            <i class="bi bi-check"></i>
+                            Approuver
+                          </button>
+                          <button class="btn btn-danger btn-sm" @click="rejectMembershipRequest(request)">
+                            <i class="bi bi-x"></i>
+                            Rejeter
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <!-- Aucune demande en attente -->
+                    <div v-else class="text-center py-4">
+                      <i class="bi bi-clock text-muted" style="font-size: 2rem;"></i>
+                      <p class="text-muted mt-2">Aucune demande d'adhésion en attente</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-              
-              <!-- Aucun membre -->
-              <div v-else class="text-center py-4">
-                <i class="bi bi-people text-muted" style="font-size: 3rem;"></i>
-                <p class="text-muted mt-2">Aucun membre trouvé</p>
               </div>
             </div>
             
@@ -1037,6 +1117,11 @@ const isCertificateImportModalOpen = ref(false)
 const selectedCertificateFile = ref(null)
 const certificatePassword = ref('')
 const showCertificatePassword = ref(false)
+
+// État des onglets membres
+const activeMembersTab = ref('active')
+const pendingMembers = ref([])
+const isLoadingPendingMembers = ref(false)
 const isDraggingCertificate = ref(false)
 const certificateFileInput = ref(null)
 const certificateError = ref(null)
@@ -1606,6 +1691,142 @@ const closeOrganizationSettingsModal = () => {
 
 const setActiveOrganizationTab = (tab) => {
   activeOrganizationTab.value = tab
+}
+
+// Fonction pour changer l'onglet des membres
+const setActiveMembersTab = (tab) => {
+  activeMembersTab.value = tab
+  if (tab === 'pending') {
+    loadPendingMembers()
+  }
+}
+
+// Charger les demandes d'adhésion en attente
+const loadPendingMembers = async () => {
+  if (!userOrganization.value?.organization?.id) return
+  
+  isLoadingPendingMembers.value = true
+  try {
+    const response = await fetch(`http://127.0.0.1:8000/api/organizations/${userOrganization.value.organization.id}/pending-membership-requests/`, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+    
+    if (response.ok) {
+      const data = await response.json()
+      if (data.success) {
+        pendingMembers.value = data.requests || []
+        console.log('✅ Demandes d\'adhésion en attente chargées:', pendingMembers.value)
+      } else {
+        console.error('❌ Erreur lors du chargement des demandes:', data.message)
+        pendingMembers.value = []
+      }
+    } else {
+      console.error('❌ Erreur HTTP lors du chargement des demandes')
+      pendingMembers.value = []
+    }
+  } catch (error) {
+    console.error('❌ Erreur lors du chargement des demandes:', error)
+    pendingMembers.value = []
+  } finally {
+    isLoadingPendingMembers.value = false
+  }
+}
+
+// Approuver une demande d'adhésion
+const approveMembershipRequest = async (request) => {
+  try {
+    // Récupérer le token CSRF
+    const getCookie = (name) => {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+      return null;
+    };
+    
+    const csrfToken = getCookie('csrftoken');
+    
+    const response = await fetch(`http://127.0.0.1:8000/api/organizations/membership-requests/${request.id}/approve/`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken || '',
+      },
+    })
+    
+    if (response.ok) {
+      const data = await response.json()
+      if (data.success) {
+        console.log('✅ Demande d\'adhésion approuvée')
+        // Recharger les listes
+        await loadPendingMembers()
+        await loadOrganizationMembers()
+        // Notification de succès
+        alert('Demande d\'adhésion approuvée avec succès !')
+      } else {
+        console.error('❌ Erreur lors de l\'approbation:', data.message)
+        alert('Erreur lors de l\'approbation: ' + data.message)
+      }
+    } else {
+      console.error('❌ Erreur HTTP lors de l\'approbation')
+      alert('Erreur lors de l\'approbation')
+    }
+  } catch (error) {
+    console.error('❌ Erreur lors de l\'approbation:', error)
+    alert('Erreur lors de l\'approbation')
+  }
+}
+
+// Rejeter une demande d'adhésion
+const rejectMembershipRequest = async (request) => {
+  if (!confirm('Êtes-vous sûr de vouloir rejeter cette demande d\'adhésion ?')) {
+    return
+  }
+  
+  try {
+    // Récupérer le token CSRF
+    const getCookie = (name) => {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+      return null;
+    };
+    
+    const csrfToken = getCookie('csrftoken');
+    
+    const response = await fetch(`http://127.0.0.1:8000/api/organizations/membership-requests/${request.id}/reject/`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken || '',
+      },
+    })
+    
+    if (response.ok) {
+      const data = await response.json()
+      if (data.success) {
+        console.log('✅ Demande d\'adhésion rejetée')
+        // Recharger la liste
+        await loadPendingMembers()
+        // Notification de succès
+        alert('Demande d\'adhésion rejetée')
+      } else {
+        console.error('❌ Erreur lors du rejet:', data.message)
+        alert('Erreur lors du rejet: ' + data.message)
+      }
+    } else {
+      console.error('❌ Erreur HTTP lors du rejet')
+      alert('Erreur lors du rejet')
+    }
+  } catch (error) {
+    console.error('❌ Erreur lors du rejet:', error)
+    alert('Erreur lors du rejet')
+  }
 }
 
 const getOrganizationTabIcon = () => {
@@ -2838,6 +3059,87 @@ onUnmounted(() => {
   margin: 0;
   font-size: 0.8rem;
   color: #666;
+}
+
+/* STYLES POUR LES ONGLETS DES MEMBRES */
+.members-tabs {
+  margin-top: 1rem;
+}
+
+.members-tab-nav {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.members-tab-btn {
+  background: transparent;
+  border: none;
+  color: #2c3e50;
+  padding: 0.75rem 1rem;
+  border-radius: 8px 8px 0 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  position: relative;
+}
+
+.members-tab-btn:hover {
+  color: #1a252f;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.members-tab-btn.active {
+  color: var(--primary-blue);
+  background: rgba(13, 110, 253, 0.1);
+  border-bottom: 2px solid var(--primary-blue);
+}
+
+.tab-badge {
+  background: rgba(44, 62, 80, 0.1);
+  color: #2c3e50;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  min-width: 20px;
+  text-align: center;
+}
+
+.members-tab-btn.active .tab-badge {
+  background: var(--primary-blue);
+  color: white;
+}
+
+.members-tab-content {
+  min-height: 200px;
+}
+
+.members-tab-pane {
+  animation: fadeIn 0.3s ease;
+}
+
+.member-item.pending-member {
+  border-color: rgba(255, 193, 7, 0.3);
+  background: rgba(255, 193, 7, 0.05);
+}
+
+.member-item.pending-member:hover {
+  border-color: rgba(255, 193, 7, 0.5);
+  background: rgba(255, 193, 7, 0.1);
+}
+
+.member-avatar.pending {
+  background: linear-gradient(135deg, #ffc107 0%, #ffb300 100%);
+  color: white;
+}
+
+.request-role {
+  margin-top: 0.5rem;
 }
 
 .permission-item {
