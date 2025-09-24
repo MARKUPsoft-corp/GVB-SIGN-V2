@@ -116,6 +116,85 @@ def get_user_organization(request):
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
+def list_all_organizations(request):
+    """
+    Lister toutes les organisations publiques (pour tous les utilisateurs authentifiés)
+    """
+    print(f"🔍 Liste de toutes les organisations - Utilisateur: {request.user}")
+    
+    # Récupérer toutes les organisations actives avec le nombre de membres (optimisé)
+    from django.db.models import Count
+    
+    organizations_data = Organization.objects.filter(is_active=True).annotate(
+        member_count=Count('members')
+    ).values(
+        'id', 'name', 'description', 'email', 'phone', 'address', 
+        'website', 'organization_type', 'sector', 'is_active', 
+        'created_at', 'updated_at', 'member_count'
+    ).order_by('-created_at')
+    
+    # Convertir en liste pour la réponse
+    organizations_list = list(organizations_data)
+    
+    print(f"✅ Organisations trouvées: {len(organizations_list)}")
+    
+    return Response({
+        'success': True,
+        'organizations': organizations_list
+    })
+
+
+@api_view(['POST'])
+@permission_classes([permissions.IsAuthenticated])
+def request_to_join_organization(request, organization_id):
+    """
+    Demander à rejoindre une organisation
+    """
+    print(f"🔍 Demande de rejoindre l'organisation {organization_id} - Utilisateur: {request.user}")
+    
+    try:
+        organization = get_object_or_404(Organization, id=organization_id)
+        
+        # Vérifier si l'utilisateur n'est pas déjà membre
+        if OrganizationMember.objects.filter(organization=organization, user=request.user).exists():
+            return Response({
+                'success': False,
+                'message': 'Vous êtes déjà membre de cette organisation'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Vérifier si l'organisation est active
+        if not organization.is_active:
+            return Response({
+                'success': False,
+                'message': 'Cette organisation n\'est pas active'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Pour l'instant, on ajoute directement l'utilisateur comme membre
+        # Dans une version future, on pourrait créer un système de demandes d'adhésion
+        OrganizationMember.objects.create(
+            organization=organization,
+            user=request.user,
+            role='member',
+            joined_at=timezone.now()
+        )
+        
+        print(f"✅ Utilisateur {request.user} ajouté à l'organisation {organization.name}")
+        
+        return Response({
+            'success': True,
+            'message': f'Vous avez rejoint l\'organisation "{organization.name}" avec succès'
+        })
+        
+    except Exception as e:
+        print(f"❌ Erreur lors de la demande de rejoindre: {str(e)}")
+        return Response({
+            'success': False,
+            'message': 'Erreur lors de la demande de rejoindre l\'organisation'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
 def list_organizations(request):
     """
     Lister toutes les organisations (pour les superusers ou admins)

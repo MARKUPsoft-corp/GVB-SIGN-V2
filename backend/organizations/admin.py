@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Organization, OrganizationMember, InvitationCode
+from .models import Organization, OrganizationMember, InvitationCode, OrganizationCertificate
 
 
 @admin.register(Organization)
@@ -62,4 +62,39 @@ class InvitationCodeAdmin(admin.ModelAdmin):
         """Optimiser les requêtes avec select_related"""
         return super().get_queryset(request).select_related(
             'organization', 'created_by', 'used_by'
+        )
+
+
+@admin.register(OrganizationCertificate)
+class OrganizationCertificateAdmin(admin.ModelAdmin):
+    list_display = ['name', 'organization', 'subject_common_name', 'subject_organization', 'imported_by', 'imported_at', 'is_valid', 'is_active']
+    list_filter = ['is_valid', 'is_active', 'imported_at', 'organization', 'signature_algorithm']
+    search_fields = ['name', 'subject_common_name', 'subject_organization', 'organization__name', 'imported_by__first_name', 'imported_by__last_name']
+    readonly_fields = ['fingerprint', 'serial_number', 'imported_at', 'is_expired', 'days_until_expiry']
+    fieldsets = (
+        ('Informations générales', {
+            'fields': ('name', 'organization', 'imported_by', 'imported_at', 'is_active')
+        }),
+        ('Sujet du certificat', {
+            'fields': ('subject_common_name', 'subject_organization', 'subject_organizational_unit', 'subject_country', 'subject_email')
+        }),
+        ('Émetteur du certificat', {
+            'fields': ('issuer_common_name', 'issuer_organization', 'issuer_country')
+        }),
+        ('Détails techniques', {
+            'fields': ('serial_number', 'fingerprint', 'signature_algorithm', 'key_usage')
+        }),
+        ('Validité', {
+            'fields': ('not_before', 'not_after', 'is_valid', 'is_expired', 'days_until_expiry')
+        }),
+        ('Clés et certificat', {
+            'fields': ('private_key_pem', 'public_key_pem', 'certificate_pem'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def get_queryset(self, request):
+        """Optimiser les requêtes avec select_related"""
+        return super().get_queryset(request).select_related(
+            'organization', 'imported_by'
         )

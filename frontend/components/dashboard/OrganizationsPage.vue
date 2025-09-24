@@ -557,7 +557,9 @@
                     <div class="certificate-buttons mt-2">
                       <button 
                         class="btn btn-outline-info btn-sm me-1" 
-                        @click="viewCertificateDetails(certificate)"
+                        @click="viewCertificateDetails(certificate, $event)"
+                        @mouseenter="viewCertificateDetails(certificate, $event)"
+                        @mouseleave="closeCertificateDetails"
                         title="Voir les détails"
                       >
                         <i class="bi bi-eye"></i>
@@ -853,6 +855,148 @@
       </div>
     </div>
 
+    <!-- Bulle de détails du certificat (à l'intérieur de la modale) -->
+    <div v-if="showCertificateDetailsModal" class="certificate-details-tooltip" :style="{ top: certificateDetailsPosition.top + 'px', left: certificateDetailsPosition.left + 'px' }" @click.stop @mouseenter="cancelCloseCertificateDetails" @mouseleave="closeCertificateDetails">
+      <div class="tooltip-arrow" :class="'arrow-' + certificateDetailsDirection"></div>
+      <div class="tooltip-content">
+        <div class="tooltip-header">
+          <h4 class="tooltip-title">
+            <i class="bi bi-shield-fill-check me-2"></i>
+            {{ currentCertificateDetails?.name }}
+          </h4>
+          <button class="tooltip-close" @click="closeCertificateDetails">
+            <i class="bi bi-x"></i>
+          </button>
+        </div>
+        
+        <div class="tooltip-body">
+          <div class="certificate-info-list">
+            <!-- Informations générales -->
+            <div class="info-section">
+              <h6 class="info-section-title">
+                <i class="bi bi-info-circle me-2"></i>
+                Informations générales
+              </h6>
+              <div class="info-item">
+                <i class="bi bi-tag me-2"></i>
+                <span class="info-label">Nom:</span>
+                <span class="info-value">{{ currentCertificateDetails?.name || 'Non renseigné' }}</span>
+              </div>
+              <div class="info-item">
+                <i class="bi bi-calendar me-2"></i>
+                <span class="info-label">Importé le:</span>
+                <span class="info-value">{{ formatDate(currentCertificateDetails?.imported_at) || 'Non renseigné' }}</span>
+              </div>
+              <div class="info-item">
+                <i class="bi bi-person me-2"></i>
+                <span class="info-label">Importé par:</span>
+                <span class="info-value">{{ currentCertificateDetails?.imported_by_name || 'Non renseigné' }}</span>
+              </div>
+            </div>
+
+            <!-- Sujet du certificat -->
+            <div class="info-section">
+              <h6 class="info-section-title">
+                <i class="bi bi-person-badge me-2"></i>
+                Sujet du certificat
+              </h6>
+              <div class="info-item">
+                <i class="bi bi-person me-2"></i>
+                <span class="info-label">Nom commun:</span>
+                <span class="info-value">{{ currentCertificateDetails?.subject_common_name || 'Non renseigné' }}</span>
+              </div>
+              <div class="info-item">
+                <i class="bi bi-building me-2"></i>
+                <span class="info-label">Organisation:</span>
+                <span class="info-value">{{ currentCertificateDetails?.subject_organization || 'Non renseigné' }}</span>
+              </div>
+              <div class="info-item">
+                <i class="bi bi-geo-alt me-2"></i>
+                <span class="info-label">Pays:</span>
+                <span class="info-value">{{ currentCertificateDetails?.subject_country || 'Non renseigné' }}</span>
+              </div>
+              <div class="info-item">
+                <i class="bi bi-envelope me-2"></i>
+                <span class="info-label">Email:</span>
+                <span class="info-value">{{ currentCertificateDetails?.subject_email || 'Non renseigné' }}</span>
+              </div>
+            </div>
+
+            <!-- Émetteur du certificat -->
+            <div class="info-section">
+              <h6 class="info-section-title">
+                <i class="bi bi-shield me-2"></i>
+                Émetteur du certificat
+              </h6>
+              <div class="info-item">
+                <i class="bi bi-person me-2"></i>
+                <span class="info-label">Nom commun:</span>
+                <span class="info-value">{{ currentCertificateDetails?.issuer_common_name || 'Non renseigné' }}</span>
+              </div>
+              <div class="info-item">
+                <i class="bi bi-building me-2"></i>
+                <span class="info-label">Organisation:</span>
+                <span class="info-value">{{ currentCertificateDetails?.issuer_organization || 'Non renseigné' }}</span>
+              </div>
+              <div class="info-item">
+                <i class="bi bi-geo-alt me-2"></i>
+                <span class="info-label">Pays:</span>
+                <span class="info-value">{{ currentCertificateDetails?.issuer_country || 'Non renseigné' }}</span>
+              </div>
+            </div>
+
+            <!-- Validité -->
+            <div class="info-section">
+              <h6 class="info-section-title">
+                <i class="bi bi-clock me-2"></i>
+                Validité
+              </h6>
+              <div class="info-item">
+                <i class="bi bi-calendar-check me-2"></i>
+                <span class="info-label">Valide du:</span>
+                <span class="info-value">{{ formatDate(currentCertificateDetails?.not_before) || 'Non renseigné' }}</span>
+              </div>
+              <div class="info-item">
+                <i class="bi bi-calendar-x me-2"></i>
+                <span class="info-label">Valide jusqu'au:</span>
+                <span class="info-value">{{ formatDate(currentCertificateDetails?.not_after) || 'Non renseigné' }}</span>
+              </div>
+              <div class="info-item">
+                <i class="bi bi-shield-check me-2"></i>
+                <span class="info-label">Statut:</span>
+                <span class="info-value" :class="getCertificateStatusClass(currentCertificateDetails)">
+                  {{ getCertificateStatusText(currentCertificateDetails) }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Détails techniques -->
+            <div class="info-section">
+              <h6 class="info-section-title">
+                <i class="bi bi-gear me-2"></i>
+                Détails techniques
+              </h6>
+              <div class="info-item">
+                <i class="bi bi-hash me-2"></i>
+                <span class="info-label">Numéro de série:</span>
+                <span class="info-value">{{ currentCertificateDetails?.serial_number || 'Non renseigné' }}</span>
+              </div>
+              <div class="info-item">
+                <i class="bi bi-fingerprint me-2"></i>
+                <span class="info-label">Empreinte:</span>
+                <span class="info-value">{{ currentCertificateDetails?.fingerprint || 'Non renseigné' }}</span>
+              </div>
+              <div class="info-item">
+                <i class="bi bi-shield-lock me-2"></i>
+                <span class="info-label">Algorithme:</span>
+                <span class="info-value">{{ currentCertificateDetails?.signature_algorithm || 'Non renseigné' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -901,6 +1045,13 @@ const certificateError = ref(null)
 const isOrganizationSettingsModalOpen = ref(false)
 const activeOrganizationTab = ref('edit')
 const isSavingOrganization = ref(false)
+
+// Variables pour la bulle de détails du certificat
+const showCertificateDetailsModal = ref(false)
+const currentCertificateDetails = ref(null)
+const certificateDetailsPosition = ref({ top: 0, left: 0 })
+const certificateDetailsDirection = ref('left')
+const closeCertificateDetailsTimeout = ref(null)
 const deleteConfirmation = ref('')
 
 // État pour les notifications
@@ -1987,9 +2138,79 @@ const importCertificate = async () => {
   }
 }
 
-const viewCertificateDetails = (certificate) => {
-  // TODO: Implémenter l'affichage des détails du certificat
+const viewCertificateDetails = (certificate, event) => {
   console.log('🔄 Affichage des détails du certificat:', certificate.name)
+  
+  // Annuler le délai de fermeture si la souris revient
+  if (closeCertificateDetailsTimeout.value) {
+    clearTimeout(closeCertificateDetailsTimeout.value)
+    closeCertificateDetailsTimeout.value = null
+  }
+  
+  if (event && event.target) {
+    const rect = event.target.getBoundingClientRect()
+    
+    // Trouver la modale parente
+    const modal = event.target.closest('.organization-settings-modal')
+    if (!modal) return
+    
+    const modalRect = modal.getBoundingClientRect()
+    
+    const tooltipWidth = 500 // Largeur approximative de la bulle
+    const tooltipHeight = 400 // Hauteur approximative de la bulle
+    
+    // Position relative à la modale
+    let top, left, direction
+    
+    // Positionner à droite du bouton, à l'intérieur de la modale
+    left = rect.right - modalRect.left + 15
+    top = rect.top - modalRect.top - 50
+    direction = 'left'
+    
+    certificateDetailsDirection.value = direction
+    
+    // Ajustements pour rester dans la modale
+    const margin = 20
+    
+    // Ajustement horizontal - s'assurer que la bulle reste dans la modale
+    if (left < margin) {
+      left = margin
+    } else if (left + tooltipWidth > modalRect.width - margin) {
+      left = modalRect.width - tooltipWidth - margin
+    }
+    
+    // Ajustement vertical - s'assurer que la bulle reste dans la modale
+    if (top < margin) {
+      top = margin
+    } else if (top + tooltipHeight > modalRect.height - margin) {
+      top = modalRect.height - tooltipHeight - margin
+      
+      // Si même en haut elle ne rentre pas, la centrer verticalement dans la modale
+      if (top < margin) {
+        top = (modalRect.height - tooltipHeight) / 2
+      }
+    }
+    
+    // Position finale relative à la modale
+    certificateDetailsPosition.value = { top: top, left: left }
+  }
+  
+  currentCertificateDetails.value = certificate
+  showCertificateDetailsModal.value = true
+}
+
+const closeCertificateDetails = () => {
+  closeCertificateDetailsTimeout.value = setTimeout(() => {
+    showCertificateDetailsModal.value = false
+    currentCertificateDetails.value = null
+  }, 150)
+}
+
+const cancelCloseCertificateDetails = () => {
+  if (closeCertificateDetailsTimeout.value) {
+    clearTimeout(closeCertificateDetailsTimeout.value)
+    closeCertificateDetailsTimeout.value = null
+  }
 }
 
 const deleteCertificate = async (certificateId) => {
@@ -2327,24 +2548,26 @@ onUnmounted(() => {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.3);
   z-index: 10000;
-  backdrop-filter: blur(1px);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   animation: fadeInOverlay 0.3s ease-out;
 }
 
 .organization-settings-modal {
   position: fixed;
-  background: rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(15px) saturate(120%);
-  -webkit-backdrop-filter: blur(15px) saturate(120%);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   width: 800px;
   height: 500px;
-  border-radius: 16px;
+  border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 
-    0 20px 60px rgba(0, 0, 0, 0.1),
-    inset 1px 0 0 rgba(255, 255, 255, 0.1);
+    0 8px 32px rgba(0, 102, 204, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
   display: flex;
   overflow: hidden;
   z-index: 10001;
@@ -4176,6 +4399,218 @@ onUnmounted(() => {
   
   .drop-zone {
     padding: 1rem;
+  }
+}
+
+/* BULLE DE DÉTAILS DU CERTIFICAT */
+.certificate-details-tooltip {
+  position: absolute;
+  z-index: 10001; /* Au-dessus de la modale */
+  max-width: 500px;
+  max-height: 400px;
+  animation: tooltipFadeIn 0.3s ease-out;
+}
+
+.certificate-details-tooltip .tooltip-content {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 8px 32px rgba(0, 102, 204, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+  max-width: 500px;
+  width: 90vw;
+  max-height: 400px;
+  overflow: hidden;
+}
+
+.certificate-details-tooltip .tooltip-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 20px 20px 0 0;
+}
+
+.certificate-details-tooltip .tooltip-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+.certificate-details-tooltip .tooltip-close {
+  background: none;
+  border: none;
+  color: var(--dark-gray);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.certificate-details-tooltip .tooltip-close:hover {
+  background: rgba(0, 102, 204, 0.1);
+  color: var(--primary-blue);
+}
+
+.certificate-details-tooltip .tooltip-body {
+  padding: 1rem 1.5rem;
+  max-height: 300px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 102, 204, 0.3) transparent;
+}
+
+.certificate-details-tooltip .tooltip-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.certificate-details-tooltip .tooltip-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.certificate-details-tooltip .tooltip-body::-webkit-scrollbar-thumb {
+  background: rgba(0, 102, 204, 0.3);
+  border-radius: 3px;
+}
+
+.certificate-details-tooltip .tooltip-body::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 102, 204, 0.5);
+}
+
+.certificate-info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.info-section {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+  transition: all 0.3s ease;
+}
+
+.info-section:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 4px 16px rgba(0, 102, 204, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.info-section-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--primary-blue);
+  margin: 0 0 0.75rem 0;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid rgba(0, 102, 204, 0.2);
+  padding-bottom: 0.5rem;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-weight: 600;
+  color: var(--dark-gray);
+  min-width: 120px;
+  font-size: 0.85rem;
+}
+
+.info-value {
+  color: var(--text-dark);
+  font-size: 0.85rem;
+  word-break: break-word;
+}
+
+.info-value.badge {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+}
+
+/* Animation pour la bulle */
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Responsive pour la bulle de certificat */
+@media (max-width: 768px) {
+  .certificate-details-tooltip {
+    max-width: 95vw;
+    max-height: 80vh;
+  }
+  
+  .certificate-details-tooltip .tooltip-content {
+    max-width: 95vw;
+    max-height: 80vh;
+  }
+  
+  .certificate-details-tooltip .tooltip-header {
+    padding: 0.75rem 1rem;
+  }
+  
+  .certificate-details-tooltip .tooltip-body {
+    padding: 0.75rem 1rem;
+    max-height: 60vh;
+  }
+  
+  .info-section {
+    padding: 0.75rem;
+  }
+  
+  .info-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+  
+  .info-label {
+    min-width: auto;
+    font-size: 0.8rem;
+  }
+  
+  .info-value {
+    font-size: 0.8rem;
   }
 }
 </style>

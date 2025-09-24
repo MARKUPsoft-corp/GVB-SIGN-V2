@@ -74,7 +74,7 @@
       </div>
     </div>
 
-    <!-- Section des organisations -->
+    <!-- Section des organisations avec onglets -->
     <div class="organizations-section">
       <div class="row mb-5">
         <div class="col-12">
@@ -84,85 +84,226 @@
               <span class="text-primary-blue"> Organisations</span>
             </h2>
             <p class="lead mb-0 text-dark sections-subtitle">
-              Sélectionnez l'organisation pour accéder à votre tableau de bord personnalisé.
+              Gérez vos organisations et découvrez de nouvelles opportunités.
             </p>
           </div>
         </div>
       </div>
 
-      <!-- Grille des organisations -->
-      <div class="organizations-grid" v-if="userOrganizations.length > 0">
-        <div 
-          class="organization-card" 
-          v-for="(org, index) in userOrganizations" 
-          :key="org.id"
-          @click="selectOrganization(org)"
-          :style="{ animationDelay: `${index * 0.1}s` }"
-        >
-          <div class="card-header">
-            <div class="organization-icon">
-              <i class="bi bi-building"></i>
-            </div>
-            <div class="organization-header-content">
-              <h3 class="organization-name">{{ org.name }}</h3>
-              <p class="organization-subtitle">{{ org.role || 'Membre' }}</p>
-            </div>
-            <div class="organization-status" :class="org.status">
-              <i class="bi bi-circle-fill"></i>
+      <!-- Onglets -->
+      <div class="tabs-container">
+        <div class="tabs-header">
+          <button 
+            class="tab-button" 
+            :class="{ active: activeTab === 'my-organizations' }"
+            @click="setActiveTab('my-organizations')"
+          >
+            <i class="bi bi-building me-2"></i>
+            Mes Organisations
+          </button>
+          <button 
+            class="tab-button" 
+            :class="{ active: activeTab === 'search' }"
+            @click="setActiveTab('search')"
+          >
+            <i class="bi bi-search me-2"></i>
+            Rechercher
+          </button>
+        </div>
+
+        <!-- Contenu de l'onglet "Mes Organisations" -->
+        <div v-if="activeTab === 'my-organizations'" class="tab-content">
+          <!-- Grille des organisations de l'utilisateur -->
+          <div class="organizations-grid" v-if="userOrganizations.length > 0">
+            <div 
+              class="organization-card" 
+              v-for="(org, index) in userOrganizations" 
+              :key="org.id"
+              @click="selectOrganization(org)"
+              :style="{ animationDelay: `${index * 0.1}s` }"
+            >
+              <div class="card-header">
+                <div class="organization-icon">
+                  <i class="bi bi-building"></i>
+                </div>
+                <div class="organization-header-content">
+                  <h3 class="organization-name">{{ org.name }}</h3>
+                  <p class="organization-subtitle">{{ org.role || 'Membre' }}</p>
+                </div>
+                <div class="organization-status" :class="org.status">
+                  <i class="bi bi-circle-fill"></i>
+                </div>
+              </div>
+              
+              <div class="card-content">
+                <p class="organization-description">{{ org.description || 'Aucune description' }}</p>
+                
+                <div class="organization-meta">
+                  <div class="meta-item" @mouseenter="showOrganizationMembers(org, $event)" @mouseleave="closeMembersModal" @click="showOrganizationMembers(org, $event)" style="cursor: pointer;" title="Voir les membres">
+                    <i class="bi bi-people"></i>
+                    <span>{{ org.member_count || 0 }} membres</span>
+                  </div>
+                  <div class="meta-item">
+                    <i class="bi bi-file-earmark-text"></i>
+                    <span>{{ org.documentCount || 0 }} documents</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="card-footer">
+                <div class="user-role">
+                  <span class="role-badge" :class="org.role">{{ getRoleDisplayName(org.role) }}</span>
+                </div>
+                <div class="organization-actions">
+                  <button class="btn btn-sm btn-outline-primary" @click.stop="viewOrganizationDetails(org)" @mouseenter="showOrganizationInfo(org, $event)" @mouseleave="closeOrganizationInfo" title="Détails">
+                    <i class="bi bi-eye"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-danger" @click.stop="leaveOrganization(org)" title="Quitter l'organisation">
+                    <i class="bi bi-box-arrow-right"></i>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-          
-          <div class="card-content">
-            <p class="organization-description">{{ org.description || 'Aucune description' }}</p>
-            
-            <div class="organization-meta">
-              <div class="meta-item" @mouseenter="showOrganizationMembers(org, $event)" @mouseleave="closeMembersModal" @click="showOrganizationMembers(org, $event)" style="cursor: pointer;" title="Voir les membres">
-                <i class="bi bi-people"></i>
-                <span>{{ org.member_count || 0 }} membres</span>
+
+          <!-- Message si aucune organisation -->
+          <div v-else class="no-organizations">
+            <div class="no-org-content">
+              <div class="no-org-icon">
+                <i class="bi bi-building"></i>
               </div>
-              <div class="meta-item">
-                <i class="bi bi-file-earmark-text"></i>
-                <span>{{ org.documentCount || 0 }} documents</span>
+              <h3 class="no-org-title">Aucune organisation trouvée</h3>
+              <p class="no-org-description">
+                Vous n'appartenez à aucune organisation pour le moment. 
+                Créez-en une ou rejoignez une organisation existante.
+              </p>
+              <div class="no-org-actions">
+                <button class="btn btn-primary" @click="toggleCreateOrganizationModal">
+                  <i class="bi bi-plus-circle me-2"></i>
+                  Créer une organisation
+                </button>
+                <button class="btn btn-outline-primary" @click="toggleJoinOrganizationModal">
+                  <i class="bi bi-people me-2"></i>
+                  Rejoindre une organisation
+                </button>
               </div>
-            </div>
-          </div>
-          
-          <div class="card-footer">
-            <div class="user-role">
-              <span class="role-badge" :class="org.role">{{ getRoleDisplayName(org.role) }}</span>
-            </div>
-            <div class="organization-actions">
-              <button class="btn btn-sm btn-outline-primary" @click.stop="viewOrganizationDetails(org)" @mouseenter="showOrganizationInfo(org, $event)" @mouseleave="closeOrganizationInfo" title="Détails">
-                <i class="bi bi-eye"></i>
-              </button>
-              <button class="btn btn-sm btn-outline-danger" @click.stop="leaveOrganization(org)" title="Quitter l'organisation">
-                <i class="bi bi-box-arrow-right"></i>
-              </button>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Message si aucune organisation -->
-      <div v-else class="no-organizations">
-        <div class="no-org-content">
-          <div class="no-org-icon">
-            <i class="bi bi-building"></i>
+        <!-- Contenu de l'onglet "Rechercher" -->
+        <div v-if="activeTab === 'search'" class="tab-content">
+          <!-- Barre de recherche -->
+          <div class="search-section">
+            <div class="search-container">
+              <div class="search-input-wrapper">
+                <i class="bi bi-search search-icon"></i>
+                <input 
+                  type="text" 
+                  class="search-input" 
+                  placeholder="Rechercher une organisation..."
+                  v-model="searchQuery"
+                  @input="searchOrganizations"
+                >
+                <button 
+                  v-if="searchQuery" 
+                  class="clear-search-btn"
+                  @click="clearSearch"
+                >
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+            </div>
           </div>
-          <h3 class="no-org-title">Aucune organisation trouvée</h3>
-          <p class="no-org-description">
-            Vous n'appartenez à aucune organisation pour le moment. 
-            Créez-en une ou rejoignez une organisation existante.
-          </p>
-          <div class="no-org-actions">
-            <button class="btn btn-primary" @click="toggleCreateOrganizationModal">
-              <i class="bi bi-plus-circle me-2"></i>
-              Créer une organisation
-            </button>
-            <button class="btn btn-outline-primary" @click="toggleJoinOrganizationModal">
-              <i class="bi bi-people me-2"></i>
-              Rejoindre une organisation
-            </button>
+
+          <!-- Liste des organisations disponibles -->
+          <div class="available-organizations">
+            <div class="organizations-grid" v-if="filteredOrganizations.length > 0">
+              <div 
+                class="organization-card search-card" 
+                v-for="(org, index) in filteredOrganizations" 
+                :key="org.id"
+                :style="{ animationDelay: `${index * 0.1}s` }"
+              >
+                <div class="card-header">
+                  <div class="organization-icon">
+                    <i class="bi bi-building"></i>
+                  </div>
+                  <div class="organization-header-content">
+                    <h3 class="organization-name">{{ org.name }}</h3>
+                    <p class="organization-subtitle">{{ org.organization_type || 'Organisation' }}</p>
+                  </div>
+                  <div class="organization-status" :class="org.is_active ? 'active' : 'inactive'">
+                    <i class="bi bi-circle-fill"></i>
+                  </div>
+                </div>
+                
+                <div class="card-content">
+                  <p class="organization-description">{{ org.description || 'Aucune description' }}</p>
+                  
+                  <div class="organization-meta">
+                    <div class="meta-item">
+                      <i class="bi bi-people"></i>
+                      <span>{{ org.member_count || 0 }} membres</span>
+                    </div>
+                    <div class="meta-item">
+                      <i class="bi bi-calendar"></i>
+                      <span>{{ formatDate(org.created_at) }}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="card-footer">
+                  <div class="organization-info">
+                    <span class="organization-sector">{{ org.sector || 'Secteur non renseigné' }}</span>
+                  </div>
+                  <div class="organization-actions">
+                    <button class="btn btn-sm btn-outline-primary" @click="viewOrganizationDetails(org)" @mouseenter="showOrganizationInfo(org, $event)" @mouseleave="closeOrganizationInfo" title="Détails">
+                      <i class="bi bi-eye"></i>
+                    </button>
+                    <button class="btn btn-sm btn-primary" @click="requestToJoin(org)" title="Demander à rejoindre">
+                      <i class="bi bi-person-plus"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Message si aucune organisation trouvée -->
+            <div v-else-if="searchQuery && !isLoading" class="no-results">
+              <div class="no-results-content">
+                <div class="no-results-icon">
+                  <i class="bi bi-search"></i>
+                </div>
+                <h3 class="no-results-title">Aucune organisation trouvée</h3>
+                <p class="no-results-description">
+                  Aucune organisation ne correspond à votre recherche "{{ searchQuery }}".
+                </p>
+                <button class="btn btn-outline-primary" @click="clearSearch">
+                  <i class="bi bi-arrow-left me-2"></i>
+                  Effacer la recherche
+                </button>
+              </div>
+            </div>
+
+            <!-- Message d'accueil pour la recherche -->
+            <div v-else-if="!searchQuery" class="search-welcome">
+              <div class="search-welcome-content">
+                <div class="search-welcome-icon">
+                  <i class="bi bi-search"></i>
+                </div>
+                <h3 class="search-welcome-title">Découvrez de nouvelles organisations</h3>
+                <p class="search-welcome-description">
+                  Utilisez la barre de recherche ci-dessus pour trouver des organisations qui vous intéressent.
+                </p>
+              </div>
+            </div>
+
+            <!-- Indicateur de chargement -->
+            <div v-if="isLoading" class="loading-indicator">
+              <div class="spinner"></div>
+              <p>Recherche en cours...</p>
+            </div>
           </div>
         </div>
       </div>
@@ -309,6 +450,15 @@ const currentOrganizationInfo = ref(null)
 const organizationInfoPosition = ref({ top: 0, left: 0 })
 const organizationInfoDirection = ref('bottom')
 const closeOrganizationInfoTimeout = ref(null)
+
+// Gestion des onglets
+const activeTab = ref('my-organizations')
+
+// Gestion de la recherche
+const searchQuery = ref('')
+const allOrganizations = ref([])
+const filteredOrganizations = ref([])
+const isLoading = ref(false)
 
 // Computed pour les statistiques
 const totalMembers = computed(() => {
@@ -666,6 +816,128 @@ const leaveOrganization = async (organization) => {
 
 
 
+// Gestion des onglets
+const setActiveTab = (tab) => {
+  activeTab.value = tab
+  if (tab === 'search' && allOrganizations.value.length === 0) {
+    loadAllOrganizations()
+  }
+}
+
+// Charger toutes les organisations disponibles
+const loadAllOrganizations = async () => {
+  try {
+    isLoading.value = true
+    const response = await fetch('http://127.0.0.1:8000/api/organizations/', {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+    
+    if (response.ok) {
+      const data = await response.json()
+      if (data.success && data.organizations) {
+        allOrganizations.value = data.organizations
+        filteredOrganizations.value = data.organizations
+        console.log('✅ Toutes les organisations chargées:', data.organizations.length)
+      } else {
+        console.log('ℹ️ Aucune organisation trouvée')
+        allOrganizations.value = []
+        filteredOrganizations.value = []
+      }
+    } else {
+      console.error('❌ Erreur lors du chargement des organisations')
+      allOrganizations.value = []
+      filteredOrganizations.value = []
+    }
+  } catch (error) {
+    console.error('❌ Erreur lors du chargement des organisations:', error)
+    allOrganizations.value = []
+    filteredOrganizations.value = []
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// Recherche d'organisations
+const searchOrganizations = () => {
+  if (!searchQuery.value.trim()) {
+    filteredOrganizations.value = allOrganizations.value
+    return
+  }
+  
+  const query = searchQuery.value.toLowerCase().trim()
+  filteredOrganizations.value = allOrganizations.value.filter(org => 
+    org.name.toLowerCase().includes(query) ||
+    (org.description && org.description.toLowerCase().includes(query)) ||
+    (org.sector && org.sector.toLowerCase().includes(query)) ||
+    (org.organization_type && org.organization_type.toLowerCase().includes(query))
+  )
+}
+
+// Effacer la recherche
+const clearSearch = () => {
+  searchQuery.value = ''
+  filteredOrganizations.value = allOrganizations.value
+}
+
+// Formater la date
+const formatDate = (dateString) => {
+  if (!dateString) return 'Date inconnue'
+  const date = new Date(dateString)
+  return date.toLocaleDateString('fr-FR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
+}
+
+// Demander à rejoindre une organisation
+const requestToJoin = async (organization) => {
+  if (confirm(`Êtes-vous sûr de vouloir demander à rejoindre l'organisation "${organization.name}" ?`)) {
+    try {
+      // Récupérer le token CSRF depuis les cookies
+      const getCookie = (name) => {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return null;
+      };
+      
+      const csrfToken = getCookie('csrftoken');
+      
+      const response = await fetch(`http://127.0.0.1:8000/api/organizations/${organization.id}/request-join/`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken || '',
+        },
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          console.log('✅ Demande de rejoindre l\'organisation envoyée')
+          alert('Votre demande a été envoyée avec succès !')
+        } else {
+          console.error('❌ Erreur lors de la demande:', data.message)
+          alert('Erreur lors de la demande: ' + data.message)
+        }
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        console.error('❌ Erreur lors de la demande:', errorData)
+        alert('Erreur lors de la demande: ' + (errorData.message || 'Erreur inconnue'))
+      }
+    } catch (error) {
+      console.error('❌ Erreur lors de la demande:', error)
+      alert('Erreur lors de la demande')
+    }
+  }
+}
+
 // Initialisation
 onMounted(async () => {
   await loadUserOrganizations()
@@ -837,6 +1109,250 @@ onMounted(async () => {
 }
 
 /* SECTIONS DES ORGANISATIONS */
+/* ONGLETS */
+.tabs-container {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 8px 32px rgba(0, 102, 204, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+
+.tabs-header {
+  display: flex;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tab-button {
+  flex: 1;
+  padding: 1rem 2rem;
+  background: none;
+  border: none;
+  color: var(--dark-gray);
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tab-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--primary-blue);
+}
+
+.tab-button.active {
+  background: rgba(0, 102, 204, 0.1);
+  color: var(--primary-blue);
+  border-bottom: 2px solid var(--primary-blue);
+}
+
+.tab-button.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--primary-blue);
+}
+
+.tab-content {
+  padding: 2rem;
+  min-height: 400px;
+}
+
+/* BARRE DE RECHERCHE */
+.search-section {
+  margin-bottom: 2rem;
+}
+
+.search-container {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-input {
+  width: 100%;
+  padding: 1rem 1rem 1rem 3rem;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 15px;
+  color: var(--text-dark);
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  box-shadow: 
+    0 4px 16px rgba(0, 102, 204, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: 
+    0 0 0 3px rgba(0, 102, 204, 0.1),
+    0 4px 16px rgba(0, 102, 204, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.search-input::placeholder {
+  color: var(--dark-gray);
+  opacity: 0.7;
+}
+
+.search-icon {
+  position: absolute;
+  left: 1rem;
+  color: var(--primary-blue);
+  font-size: 1.1rem;
+  z-index: 2;
+}
+
+.clear-search-btn {
+  position: absolute;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: var(--dark-gray);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clear-search-btn:hover {
+  background: rgba(0, 102, 204, 0.1);
+  color: var(--primary-blue);
+}
+
+/* CARTES DE RECHERCHE */
+.search-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 8px 32px rgba(0, 102, 204, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.search-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 
+    0 20px 40px rgba(0, 102, 204, 0.15),
+    0 10px 25px rgba(0, 102, 204, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  border-color: rgba(0, 102, 204, 0.3);
+}
+
+.organization-info {
+  flex: 1;
+}
+
+.organization-sector {
+  font-size: 0.85rem;
+  color: var(--dark-gray);
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* MESSAGES D'ÉTAT */
+.no-results, .search-welcome, .loading-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  padding: 2rem;
+}
+
+.no-results-content, .search-welcome-content {
+  text-align: center;
+  max-width: 400px;
+}
+
+.no-results-icon, .search-welcome-icon {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, rgba(0, 102, 204, 0.1) 0%, rgba(0, 123, 255, 0.15) 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  font-size: 2rem;
+  color: var(--primary-blue);
+}
+
+.no-results-title, .search-welcome-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 1rem;
+  font-family: 'Raleway', sans-serif;
+}
+
+.no-results-description, .search-welcome-description {
+  font-size: 1rem;
+  color: var(--dark-gray);
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+/* INDICATEUR DE CHARGEMENT */
+.loading-indicator {
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(0, 102, 204, 0.1);
+  border-top: 3px solid var(--primary-blue);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-indicator p {
+  color: var(--dark-gray);
+  font-size: 1rem;
+  margin: 0;
+}
+
 /* STATISTIQUES */
 .stats-section {
   margin-bottom: 3rem;
@@ -1710,6 +2226,67 @@ onMounted(async () => {
     text-align: center;
     gap: 0.5rem;
     padding: 0.5rem;
+  }
+
+  /* Responsive pour les onglets */
+  .tabs-container {
+    margin: 0 1rem 2rem 1rem;
+  }
+  
+  .tabs-header {
+    flex-direction: column;
+  }
+  
+  .tab-button {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+  }
+  
+  .tab-content {
+    padding: 1rem;
+  }
+  
+  /* Responsive pour la barre de recherche */
+  .search-container {
+    margin: 0 1rem;
+  }
+  
+  .search-input {
+    padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+    font-size: 0.9rem;
+  }
+  
+  .search-icon {
+    left: 0.75rem;
+    font-size: 1rem;
+  }
+  
+  .clear-search-btn {
+    right: 0.75rem;
+    width: 25px;
+    height: 25px;
+    font-size: 1rem;
+  }
+  
+  /* Responsive pour les messages d'état */
+  .no-results, .search-welcome, .loading-indicator {
+    min-height: 250px;
+    padding: 1rem;
+  }
+  
+  .no-results-icon, .search-welcome-icon {
+    width: 60px;
+    height: 60px;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .no-results-title, .search-welcome-title {
+    font-size: 1.25rem;
+  }
+  
+  .no-results-description, .search-welcome-description {
+    font-size: 0.9rem;
   }
 }
 

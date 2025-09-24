@@ -6,6 +6,7 @@ urlpatterns = [
     path('create/', views.create_organization, name='create_organization'),
     
     # Récupération d'organisation
+    path('', views.list_all_organizations, name='list_all_organizations'),
     path('my-organization/', views.get_user_organization, name='get_user_organization'),
     path('user-organizations/', views.get_user_organizations, name='get_user_organizations'),
     path('<int:organization_id>/leave/', views.leave_organization, name='leave_organization'),
@@ -19,6 +20,7 @@ urlpatterns = [
     
     # Rejoindre une organisation (utilise maintenant validate_invitation_code)
     path('join/', views.validate_invitation_code, name='join_organization'),
+    path('<int:organization_id>/request-join/', views.request_to_join_organization, name='request_to_join_organization'),
     
     # Codes d'invitation
     path('invitations/create/', views.create_invitation_code, name='create_invitation_code'),
