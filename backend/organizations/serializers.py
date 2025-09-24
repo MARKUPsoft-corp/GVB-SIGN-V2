@@ -165,7 +165,8 @@ class OrganizationCertificateCreateSerializer(serializers.ModelSerializer):
             'issuer_common_name', 'issuer_organization', 'issuer_country',
             'serial_number', 'fingerprint', 'signature_algorithm',
             'not_before', 'not_after', 'is_valid', 'key_usage',
-            'private_key_pem', 'public_key_pem', 'certificate_pem'
+            'private_key_pem', 'public_key_pem', 'certificate_pem',
+            'organization', 'imported_by'
         ]
 
 

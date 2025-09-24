@@ -240,10 +240,22 @@ class OrganizationApiService {
    */
   static async deactivateInvitationCode(codeId) {
     try {
+      // Récupérer le token CSRF
+      const csrfResponse = await fetch(`${API_BASE_URL}/auth/csrf/`, {
+        method: 'GET',
+        credentials: 'include'
+      })
+      const csrfData = await csrfResponse.json()
+      const csrfToken = csrfData.csrfToken
+
+      console.log('🔍 Désactivation code d\'invitation:', codeId)
+      console.log('🔍 Token CSRF:', csrfToken)
+
       const response = await fetch(`${API_BASE_URL}/organizations/invitations/${codeId}/deactivate/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
         },
         credentials: 'include'
       })
@@ -265,10 +277,22 @@ class OrganizationApiService {
    */
   static async reactivateInvitationCode(codeId) {
     try {
+      // Récupérer le token CSRF
+      const csrfResponse = await fetch(`${API_BASE_URL}/auth/csrf/`, {
+        method: 'GET',
+        credentials: 'include'
+      })
+      const csrfData = await csrfResponse.json()
+      const csrfToken = csrfData.csrfToken
+
+      console.log('🔍 Réactivation code d\'invitation:', codeId)
+      console.log('🔍 Token CSRF:', csrfToken)
+
       const response = await fetch(`${API_BASE_URL}/organizations/invitations/${codeId}/reactivate/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
         },
         credentials: 'include'
       })
@@ -290,10 +314,22 @@ class OrganizationApiService {
    */
   static async deleteInvitationCode(codeId) {
     try {
+      // Récupérer le token CSRF
+      const csrfResponse = await fetch(`${API_BASE_URL}/auth/csrf/`, {
+        method: 'GET',
+        credentials: 'include'
+      })
+      const csrfData = await csrfResponse.json()
+      const csrfToken = csrfData.csrfToken
+
+      console.log('🔍 Suppression code d\'invitation:', codeId)
+      console.log('🔍 Token CSRF:', csrfToken)
+
       const response = await fetch(`${API_BASE_URL}/organizations/invitations/${codeId}/delete/`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
         },
         credentials: 'include'
       })
@@ -340,10 +376,19 @@ class OrganizationApiService {
    */
   static async createOrganizationCertificate(organizationId, certificateData) {
     try {
+      // Récupérer le token CSRF
+      const csrfResponse = await fetch(`${API_BASE_URL}/auth/csrf/`, {
+        method: 'GET',
+        credentials: 'include'
+      })
+      const csrfData = await csrfResponse.json()
+      const csrfToken = csrfData.csrfToken
+
       const response = await fetch(`${API_BASE_URL}/organizations/${organizationId}/certificates/create/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
         },
         credentials: 'include',
         body: JSON.stringify(certificateData)
@@ -366,10 +411,19 @@ class OrganizationApiService {
    */
   static async deleteOrganizationCertificate(organizationId, certificateId) {
     try {
+      // Récupérer le token CSRF
+      const csrfResponse = await fetch(`${API_BASE_URL}/auth/csrf/`, {
+        method: 'GET',
+        credentials: 'include'
+      })
+      const csrfData = await csrfResponse.json()
+      const csrfToken = csrfData.csrfToken
+
       const response = await fetch(`${API_BASE_URL}/organizations/${organizationId}/certificates/${certificateId}/delete/`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
         },
         credentials: 'include'
       })

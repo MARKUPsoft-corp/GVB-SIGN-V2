@@ -622,7 +622,13 @@ def deactivate_invitation_code(request, code_id):
     Désactiver un code d'invitation
     """
     try:
+        print(f"🔍 Désactivation code d'invitation - Code ID: {code_id}")
+        print(f"🔍 Utilisateur: {request.user.email}")
+        print(f"🔍 Utilisateur authentifié: {request.user.is_authenticated}")
+        
         invitation_code = get_object_or_404(InvitationCode, id=code_id)
+        print(f"🔍 Code trouvé: {invitation_code.code}")
+        print(f"🔍 Organisation: {invitation_code.organization.name}")
         
         # Vérifier que l'utilisateur appartient à cette organisation
         user_membership = OrganizationMember.objects.filter(
@@ -630,11 +636,29 @@ def deactivate_invitation_code(request, code_id):
             organization=invitation_code.organization
         ).first()
         
+        print(f"🔍 Adhésion trouvée: {user_membership}")
+        if user_membership:
+            print(f"🔍 Rôle de l'utilisateur: {user_membership.role}")
+        
         if not user_membership:
-            return Response({
-                'success': False,
-                'message': 'Accès non autorisé à cette organisation'
-            }, status=status.HTTP_403_FORBIDDEN)
+            print(f"❌ Utilisateur {request.user.email} n'appartient pas à l'organisation {invitation_code.organization.name}")
+            
+            # Vérifier si l'utilisateur est l'admin de l'organisation (ancien système)
+            if hasattr(request.user, 'organization') and request.user.organization == invitation_code.organization:
+                print(f"🔍 Utilisateur admin de l'organisation (ancien système)")
+                # Créer un enregistrement OrganizationMember pour l'admin
+                user_membership = OrganizationMember.objects.create(
+                    user=request.user,
+                    organization=invitation_code.organization,
+                    role='admin',
+                    joined_at=timezone.now()
+                )
+                print(f"✅ Enregistrement OrganizationMember créé pour l'admin")
+            else:
+                return Response({
+                    'success': False,
+                    'message': 'Accès non autorisé à cette organisation'
+                }, status=status.HTTP_403_FORBIDDEN)
         
         # Désactiver le code
         invitation_code.is_active = False
@@ -671,10 +695,20 @@ def reactivate_invitation_code(request, code_id):
         ).first()
         
         if not user_membership:
-            return Response({
-                'success': False,
-                'message': 'Accès non autorisé à cette organisation'
-            }, status=status.HTTP_403_FORBIDDEN)
+            # Vérifier si l'utilisateur est l'admin de l'organisation (ancien système)
+            if hasattr(request.user, 'organization') and request.user.organization == invitation_code.organization:
+                # Créer un enregistrement OrganizationMember pour l'admin
+                user_membership = OrganizationMember.objects.create(
+                    user=request.user,
+                    organization=invitation_code.organization,
+                    role='admin',
+                    joined_at=timezone.now()
+                )
+            else:
+                return Response({
+                    'success': False,
+                    'message': 'Accès non autorisé à cette organisation'
+                }, status=status.HTTP_403_FORBIDDEN)
         
         # Réactiver le code
         invitation_code.is_active = True
@@ -711,10 +745,20 @@ def delete_invitation_code(request, code_id):
         ).first()
         
         if not user_membership:
-            return Response({
-                'success': False,
-                'message': 'Accès non autorisé à cette organisation'
-            }, status=status.HTTP_403_FORBIDDEN)
+            # Vérifier si l'utilisateur est l'admin de l'organisation (ancien système)
+            if hasattr(request.user, 'organization') and request.user.organization == invitation_code.organization:
+                # Créer un enregistrement OrganizationMember pour l'admin
+                user_membership = OrganizationMember.objects.create(
+                    user=request.user,
+                    organization=invitation_code.organization,
+                    role='admin',
+                    joined_at=timezone.now()
+                )
+            else:
+                return Response({
+                    'success': False,
+                    'message': 'Accès non autorisé à cette organisation'
+                }, status=status.HTTP_403_FORBIDDEN)
         
         # Supprimer le code
         code_value = invitation_code.code
@@ -803,6 +847,10 @@ def create_organization_certificate(request, organization_id):
         certificate_data['organization'] = organization.id
         certificate_data['imported_by'] = request.user.id
         
+        print(f"🔍 Données du certificat: {certificate_data}")
+        print(f"🔍 Organisation ID: {organization.id}")
+        print(f"🔍 Utilisateur ID: {request.user.id}")
+        
         serializer = OrganizationCertificateCreateSerializer(data=certificate_data)
         
         if serializer.is_valid():
@@ -818,6 +866,7 @@ def create_organization_certificate(request, organization_id):
                 'certificate': response_serializer.data
             }, status=status.HTTP_201_CREATED)
         else:
+            print(f"❌ Erreurs de validation: {serializer.errors}")
             return Response({
                 'success': False,
                 'message': 'Erreur de validation',
