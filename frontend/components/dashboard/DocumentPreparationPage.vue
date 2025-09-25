@@ -990,11 +990,8 @@ const handleFiles = async (files) => {
         name: file.name,
         size: file.size,
         url: URL.createObjectURL(file),
-        pages: null // Sera calculé plus tard
+        pages: null // Sera détecté automatiquement par SignBase
       }
-      
-      // Calculer le nombre de pages (simulation)
-      fileObj.pages = Math.floor(Math.random() * 10) + 1
       
       uploadedFiles.value.push(fileObj)
     }
@@ -1561,6 +1558,46 @@ const processDocument = async (fileData, index, currentOrganization) => {
     // Créer la configuration simplifiée des éléments
     const elementsConfig = {}
     
+    // Récupérer le mode de page depuis les données de position
+    let pageMode = 'all' // valeur par défaut
+    
+    // Option 1: Si c'est le document actif, utiliser positionData global
+    if (index === activeSignBaseTabIndex.value && positionData.value?.mode) {
+      pageMode = positionData.value.mode
+      console.log(`📋 Mode de page détecté depuis positionData global: ${pageMode}`)
+    } 
+    // Option 2: Récupérer depuis documentsConfiguration
+    else {
+      const docKey = index.toString()
+      if (documentsConfiguration.value[docKey]?.positionData?.mode) {
+        pageMode = documentsConfiguration.value[docKey].positionData.mode
+        console.log(`📋 Mode de page détecté depuis documentsConfiguration: ${pageMode}`)
+      } else {
+        console.log(`⚠️ Mode de page non trouvé, utilisation du défaut: ${pageMode}`)
+      }
+    }
+    
+    // Ajouter le mode de page à la configuration
+    elementsConfig.page_mode = pageMode
+    
+    // Extraire les pages appliquées selon le mode
+    let appliedPages = []
+    if (pageMode === 'current' && positionData.value?.qr?.pages) {
+      appliedPages = Array.isArray(positionData.value.qr.pages) ? positionData.value.qr.pages : [positionData.value.qr.pages]
+    } else if (pageMode === 'custom' && positionData.value?.qr?.pages) {
+      appliedPages = Array.isArray(positionData.value.qr.pages) ? positionData.value.qr.pages : []
+    } else if (pageMode === 'individual') {
+      // En mode individual, les pages sont les clés des positions
+      const qrPages = positionData.value?.qr?.pages || []
+      const sigPages = positionData.value?.signature?.pages || []
+      appliedPages = [...new Set([...qrPages, ...sigPages])] // Unique pages
+    } else if (pageMode === 'all') {
+      appliedPages = [] // Toutes les pages, pas besoin de liste
+    }
+    
+    elementsConfig.applied_pages = appliedPages
+    console.log(`📋 Pages appliquées pour le mode ${pageMode}:`, appliedPages)
+    
     // Ajouter la configuration de signature si elle existe
     if (Object.keys(signaturePositions).length > 0) {
       const firstSignaturePos = Object.values(signaturePositions)[0]
@@ -1696,75 +1733,122 @@ const extractDocumentPositions = async (documentIndex) => {
     console.log(`📍 Données signature:`, positionData.value.signature)
     console.log(`📍 Données QR:`, positionData.value.qr)
     
-    // Vérifier le mode "current" aussi (pas seulement "signature" et "all")
-    if (positionData.value.mode === 'signature' || positionData.value.mode === 'all' || positionData.value.mode === 'current') {
+    // Traiter les positions de signature selon le mode
+    if (positionData.value.mode === 'signature' || positionData.value.mode === 'all' || positionData.value.mode === 'current' || positionData.value.mode === 'custom' || positionData.value.mode === 'individual') {
       // Essayer plusieurs structures possibles pour les positions de signature
       let signatureX, signatureY, signaturePage, signatureWidth, signatureHeight
       
       if (positionData.value.signature) {
-        // Structure directe: data.signature.x
-        if (positionData.value.signature.x !== undefined && positionData.value.signature.y !== undefined) {
-          signatureX = positionData.value.signature.x
-          signatureY = positionData.value.signature.y
-          signaturePage = positionData.value.signature.page || 1
-          signatureWidth = positionData.value.signature.width || 150
-          signatureHeight = positionData.value.signature.height || 50
+        // Mode individual : positions par page
+        if (positionData.value.mode === 'individual' && positionData.value.signature.positions) {
+          console.log(`🔍 Mode individual détecté, extraction des positions par page:`, positionData.value.signature.positions)
+          
+          // Parcourir toutes les pages avec positions
+          Object.entries(positionData.value.signature.positions).forEach(([page, pos]) => {
+            if (pos.x !== undefined && pos.y !== undefined) {
+              const pageKey = `${docKey}_page_${page}`
+              signaturePositions[pageKey] = {
+                x: pos.x,
+                y: pos.y,
+                page: parseInt(page),
+                width: pos.width || 150,
+                height: pos.height || 50
+              }
+              console.log(`✅ Position signature page ${page}:`, signaturePositions[pageKey])
+            }
+          })
         }
-        // Structure imbriquée: data.signature.positions.default.x (comme dans SignImmediatelyPage)
-        else if (positionData.value.signature.positions?.default) {
-          signatureX = positionData.value.signature.positions.default.x
-          signatureY = positionData.value.signature.positions.default.y
-          signaturePage = positionData.value.signature.positions.default.page || 1
-          signatureWidth = positionData.value.signature.positions.default.width || 150
-          signatureHeight = positionData.value.signature.positions.default.height || 50
-        }
-        
-        if (signatureX !== undefined && signatureY !== undefined) {
-          signaturePositions[docKey] = {
-            x: signatureX,
-            y: signatureY,
-            page: signaturePage,
-            width: signatureWidth,
-            height: signatureHeight
+        // Autres modes : position unique
+        else {
+          // Structure directe: data.signature.x
+          if (positionData.value.signature.x !== undefined && positionData.value.signature.y !== undefined) {
+            signatureX = positionData.value.signature.x
+            signatureY = positionData.value.signature.y
+            signaturePage = positionData.value.signature.page || 1
+            signatureWidth = positionData.value.signature.width || 150
+            signatureHeight = positionData.value.signature.height || 50
           }
-          console.log(`✅ Position signature temps réel trouvée:`, signaturePositions[docKey])
-        } else {
-          console.log(`❌ Position signature manquante ou incomplète:`, positionData.value.signature)
+          // Structure imbriquée: data.signature.positions.default.x (comme dans SignImmediatelyPage)
+          else if (positionData.value.signature.positions?.default) {
+            signatureX = positionData.value.signature.positions.default.x
+            signatureY = positionData.value.signature.positions.default.y
+            signaturePage = positionData.value.signature.positions.default.page || 1
+            signatureWidth = positionData.value.signature.positions.default.width || 150
+            signatureHeight = positionData.value.signature.positions.default.height || 50
+          }
+          
+          if (signatureX !== undefined && signatureY !== undefined) {
+            signaturePositions[docKey] = {
+              x: signatureX,
+              y: signatureY,
+              page: signaturePage,
+              width: signatureWidth,
+              height: signatureHeight
+            }
+            console.log(`✅ Position signature temps réel trouvée:`, signaturePositions[docKey])
+          } else {
+            console.log(`❌ Position signature manquante ou incomplète:`, positionData.value.signature)
+          }
         }
+      } else {
+        console.log(`❌ Aucune donnée de signature dans positionData`)
       }
     }
     
-    if (positionData.value.mode === 'qr' || positionData.value.mode === 'all' || positionData.value.mode === 'current') {
+    if (positionData.value.mode === 'qr' || positionData.value.mode === 'all' || positionData.value.mode === 'current' || positionData.value.mode === 'custom' || positionData.value.mode === 'individual') {
       // Essayer plusieurs structures possibles pour les positions QR
       let qrX, qrY, qrPage, qrSize
       
       if (positionData.value.qr) {
-        // Structure directe: data.qr.x
-        if (positionData.value.qr.x !== undefined && positionData.value.qr.y !== undefined) {
-          qrX = positionData.value.qr.x
-          qrY = positionData.value.qr.y
-          qrPage = positionData.value.qr.page || 1
-          qrSize = positionData.value.qr.size || 100
+        // Mode individual : positions par page
+        if (positionData.value.mode === 'individual' && positionData.value.qr.positions) {
+          console.log(`🔍 Mode individual QR détecté, extraction des positions par page:`, positionData.value.qr.positions)
+          
+          // Parcourir toutes les pages avec positions QR
+          Object.entries(positionData.value.qr.positions).forEach(([page, pos]) => {
+            if (pos.x !== undefined && pos.y !== undefined) {
+              const pageKey = `${docKey}_page_${page}`
+              qrCodePositions[pageKey] = {
+                x: pos.x,
+                y: pos.y,
+                page: parseInt(page),
+                size: pos.size || positionData.value.qr.size || 100
+              }
+              console.log(`✅ Position QR page ${page}:`, qrCodePositions[pageKey])
+            }
+          })
         }
-        // Structure imbriquée: data.qr.positions.default.x (comme dans SignImmediatelyPage)
-        else if (positionData.value.qr.positions?.default) {
-          qrX = positionData.value.qr.positions.default.x
-          qrY = positionData.value.qr.positions.default.y
-          qrPage = positionData.value.qr.positions.default.page || 1
-          qrSize = positionData.value.qr.positions.default.size || 100
-        }
-        
-        if (qrX !== undefined && qrY !== undefined) {
-          qrCodePositions[docKey] = {
-            x: qrX,
-            y: qrY,
-            page: qrPage,
-            size: qrSize
+        // Autres modes : position unique
+        else {
+          // Structure directe: data.qr.x
+          if (positionData.value.qr.x !== undefined && positionData.value.qr.y !== undefined) {
+            qrX = positionData.value.qr.x
+            qrY = positionData.value.qr.y
+            qrPage = positionData.value.qr.page || 1
+            qrSize = positionData.value.qr.size || 100
           }
-          console.log(`✅ Position QR temps réel trouvée:`, qrCodePositions[docKey])
-        } else {
-          console.log(`❌ Position QR manquante ou incomplète:`, positionData.value.qr)
+          // Structure imbriquée: data.qr.positions.default.x (comme dans SignImmediatelyPage)
+          else if (positionData.value.qr.positions?.default) {
+            qrX = positionData.value.qr.positions.default.x
+            qrY = positionData.value.qr.positions.default.y
+            qrPage = positionData.value.qr.positions.default.page || 1
+            qrSize = positionData.value.qr.positions.default.size || 100
+          }
+          
+          if (qrX !== undefined && qrY !== undefined) {
+            qrCodePositions[docKey] = {
+              x: qrX,
+              y: qrY,
+              page: qrPage,
+              size: qrSize
+            }
+            console.log(`✅ Position QR temps réel trouvée:`, qrCodePositions[docKey])
+          } else {
+            console.log(`❌ Position QR manquante ou incomplète:`, positionData.value.qr)
+          }
         }
+      } else {
+        console.log(`❌ Aucune donnée QR dans positionData`)
       }
     }
     

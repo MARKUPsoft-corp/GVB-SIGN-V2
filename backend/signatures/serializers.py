@@ -21,8 +21,9 @@ class DocumentPreparationSerializer(serializers.ModelSerializer):
             'id', 'document_id', 'organization', 'prepared_by', 'current_signer',
             'original_filename', 'document_title', 'document_description',
             'original_document', 'current_document', 'final_document', 'generated_pdf',
-            'qr_code_x', 'qr_code_y', 'qr_code_size', 'qr_code_page',
-            'signature_x', 'signature_y', 'signature_width', 'signature_height', 'signature_page',
+            'page_mode', 'applied_pages',
+            'qr_code_x', 'qr_code_y', 'qr_code_size',
+            'signature_x', 'signature_y', 'signature_width', 'signature_height',
             'elements_configuration', 'secretary_signature_image',
             'signature_workflow', 'current_step', 'total_steps',
             'status', 'created_at', 'updated_at', 'prepared_at', 'completed_at',
@@ -211,12 +212,15 @@ class DocumentPreparationCreateSerializer(serializers.Serializer):
         # Extraire les données de configuration des éléments
         elements_config = validated_data.get('elements_configuration', {})
         
+        # Extraire le mode de page et les pages appliquées
+        page_mode = elements_config.get('page_mode', 'all')
+        applied_pages = elements_config.get('applied_pages', [])
+        
         # Extraire les données QR Code
         qr_config = elements_config.get('qr_code', {})
         qr_x = qr_config.get('x')
         qr_y = qr_config.get('y')
         qr_size = qr_config.get('size', 'medium')
-        qr_page = qr_config.get('page', 1)
         
         # Extraire les données Signature
         sig_config = elements_config.get('signature', {})
@@ -224,7 +228,6 @@ class DocumentPreparationCreateSerializer(serializers.Serializer):
         sig_y = sig_config.get('y')
         sig_width = sig_config.get('width')
         sig_height = sig_config.get('height')
-        sig_page = sig_config.get('page', 1)
         
         # Préparer les données pour le DocumentPreparationSerializer
         preparation_data = {
@@ -238,17 +241,17 @@ class DocumentPreparationCreateSerializer(serializers.Serializer):
             'file_size_original': validated_data['file_size_original'],
             'preparation_notes': validated_data.get('preparation_notes', ''),
             'elements_configuration': elements_config,
+            'page_mode': page_mode,
+            'applied_pages': applied_pages,
             # QR Code fields
             'qr_code_x': qr_x,
             'qr_code_y': qr_y,
             'qr_code_size': qr_size,
-            'qr_code_page': qr_page,
             # Signature fields
             'signature_x': sig_x,
             'signature_y': sig_y,
             'signature_width': sig_width,
             'signature_height': sig_height,
-            'signature_page': sig_page,
             'status': 'prepared',
             'prepared_at': timezone.now()
         }

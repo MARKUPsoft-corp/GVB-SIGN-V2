@@ -613,23 +613,31 @@ function onPdfLoaded(event) {
   console.log('onPdfLoaded appelé, event:', event);
   pdfLoaded.value = true;
   
+  let detectedPages = null;
+  
   // Extraire le nombre de pages de l'objet PDF
-  if (event && event._pdfInfo && event._pdfInfo.numPages) {
-    actualTotalPages.value = event._pdfInfo.numPages;
+  if (event && event._pdfInfo && typeof event._pdfInfo.numPages === 'number') {
+    detectedPages = event._pdfInfo.numPages;
+    console.log(`Nombre de pages détecté depuis _pdfInfo: ${detectedPages}`);
+  } else if (event && typeof event.numPages === 'number') {
+    detectedPages = event.numPages;
+    console.log(`Nombre de pages détecté depuis numPages: ${detectedPages}`);
+  } else if (typeof event === 'number' && event > 0) {
+    detectedPages = event;
+    console.log(`Nombre de pages détecté directement: ${detectedPages}`);
+  }
+  
+  // Accepter toute valeur positive, y compris 1 page
+  if (detectedPages && detectedPages >= 1) {
+    actualTotalPages.value = detectedPages;
     pdfInitialized.value = true;
-    console.log(`Nombre de pages détecté depuis _pdfInfo: ${event._pdfInfo.numPages}`);
-  } else if (event && event.numPages) {
-    actualTotalPages.value = event.numPages;
-    pdfInitialized.value = true;
-    console.log(`Nombre de pages détecté depuis numPages: ${event.numPages}`);
-  } else if (event && typeof event === 'number' && event > 0) {
-    actualTotalPages.value = event;
-    pdfInitialized.value = true;
-    console.log(`Nombre de pages détecté directement: ${event}`);
+    console.log(`✅ PDF analysé: ${detectedPages} page(s) détectée(s)`);
   } else {
-    console.log('PDF chargé, mais nombre de pages non détecté depuis l\'event');
-    // Utiliser la prop comme fallback
-    actualTotalPages.value = props.totalPages || 1;
+    console.log('⚠️ PDF chargé, mais nombre de pages non détecté depuis l\'event');
+    console.log('Utilisation de la prop comme fallback:', props.totalPages || 1);
+    // Garder la valeur par défaut et marquer comme non initialisé
+    actualTotalPages.value = 1;
+    pdfInitialized.value = false;
   }
 }
 
@@ -1329,13 +1337,20 @@ onUnmounted(() => {
   }
 });
 
-// Propriété calculée pour le nombre total de pages (utilise la valeur détectée si disponible)
+// Propriété calculée pour le nombre total de pages (privilégie la valeur détectée)
 const totalPages = computed(() => {
   const detectedPages = actualTotalPages.value;
   const propPages = props.totalPages || 1;
-  const finalPages = detectedPages > 1 ? detectedPages : propPages;
-  console.log(`Total pages calculé: detected=${detectedPages}, prop=${propPages}, final=${finalPages}`);
-  return finalPages;
+  
+  // Si le PDF a été chargé et analysé, utiliser la valeur détectée
+  if (pdfInitialized.value && detectedPages >= 1) {
+    console.log(`Total pages calculé: utilisation de la valeur détectée = ${detectedPages}`);
+    return detectedPages;
+  }
+  
+  // Sinon, utiliser la prop comme fallback
+  console.log(`Total pages calculé: utilisation de la prop = ${propPages} (PDF pas encore analysé)`);
+  return propPages;
 });
 
 // Gestion du drag & drop pour l'arrière-plan

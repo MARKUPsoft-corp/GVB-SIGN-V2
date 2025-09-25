@@ -108,18 +108,26 @@ class DocumentPreparation(models.Model):
     # Image de signature
     secretary_signature_image = models.ImageField(upload_to='signatures/secretary/', null=True, blank=True, help_text="Image de signature du secrétaire")
     
+    # Mode d'application des éléments
+    PAGE_MODE_CHOICES = [
+        ('all', 'Toutes les pages'),
+        ('current', 'Page actuelle'),
+        ('custom', 'Pages personnalisées'),
+        ('individual', 'Positions individuelles'),
+    ]
+    page_mode = models.CharField(max_length=20, choices=PAGE_MODE_CHOICES, default='all', help_text="Mode d'application des éléments")
+    applied_pages = models.JSONField(default=list, help_text="Pages où les éléments sont appliqués (selon le mode)")
+    
     # Configuration des éléments - QR Code
     qr_code_x = models.FloatField(null=True, blank=True, help_text="Position X du QR code")
     qr_code_y = models.FloatField(null=True, blank=True, help_text="Position Y du QR code")
     qr_code_size = models.CharField(max_length=10, choices=[('small', 'Small'), ('medium', 'Medium'), ('large', 'Large')], null=True, blank=True, help_text="Taille du QR code")
-    qr_code_page = models.PositiveIntegerField(default=1, help_text="Page du QR code")
     
     # Configuration des éléments - Signature
     signature_x = models.FloatField(null=True, blank=True, help_text="Position X de la signature")
     signature_y = models.FloatField(null=True, blank=True, help_text="Position Y de la signature")
     signature_width = models.FloatField(null=True, blank=True, help_text="Largeur de la signature")
     signature_height = models.FloatField(null=True, blank=True, help_text="Hauteur de la signature")
-    signature_page = models.PositiveIntegerField(default=1, help_text="Page de la signature")
     
     # Configuration complète (pour compatibilité)
     elements_configuration = models.JSONField(default=dict, help_text="Configuration complète des éléments (JSON)")

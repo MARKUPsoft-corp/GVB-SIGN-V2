@@ -46,7 +46,7 @@ class DocumentSignatureAdmin(admin.ModelAdmin):
 
 @admin.register(DocumentPreparation)
 class DocumentPreparationAdmin(admin.ModelAdmin):
-    list_display = ['document_title', 'organization', 'prepared_by', 'current_signer', 'status', 'progress_display', 'has_qr_config', 'has_signature_config', 'has_signature_image', 'has_generated_pdf', 'created_at']
+    list_display = ['document_title', 'organization', 'prepared_by', 'current_signer', 'status', 'page_mode', 'progress_display', 'has_qr_config', 'has_signature_config', 'has_signature_image', 'has_generated_pdf', 'created_at']
     list_filter = ['status', 'organization', 'created_at', 'prepared_at']
     search_fields = ['document_title', 'document_id', 'original_filename', 'prepared_by__first_name', 'prepared_by__last_name']
     readonly_fields = ['id', 'progress_percentage', 'elements_config_display', 'created_at', 'updated_at']
@@ -64,12 +64,16 @@ class DocumentPreparationAdmin(admin.ModelAdmin):
         ('Fichiers', {
             'fields': ('original_document', 'current_document', 'final_document', 'generated_pdf')
         }),
+        ('Mode d\'application', {
+            'fields': ('page_mode', 'applied_pages'),
+            'description': 'Mode d\'application des éléments et pages concernées'
+        }),
         ('Configuration QR Code', {
-            'fields': ('qr_code_x', 'qr_code_y', 'qr_code_size', 'qr_code_page'),
+            'fields': ('qr_code_x', 'qr_code_y', 'qr_code_size'),
             'classes': ('collapse',)
         }),
         ('Configuration Signature', {
-            'fields': ('signature_x', 'signature_y', 'signature_width', 'signature_height', 'signature_page', 'secretary_signature_image'),
+            'fields': ('signature_x', 'signature_y', 'signature_width', 'signature_height', 'secretary_signature_image'),
             'classes': ('collapse',)
         }),
         ('Configuration complète (JSON)', {
@@ -133,12 +137,32 @@ class DocumentPreparationAdmin(admin.ModelAdmin):
         """Affiche la configuration des éléments de manière lisible"""
         html_parts = []
         
+        # Afficher le mode d'application et les pages
+        mode_display = {
+            'all': 'Toutes les pages',
+            'current': 'Page actuelle',
+            'custom': 'Pages personnalisées',
+            'individual': 'Positions individuelles'
+        }
+        pages_info = ""
+        if obj.applied_pages:
+            if isinstance(obj.applied_pages, list) and obj.applied_pages:
+                pages_info = f" | Pages: {', '.join(map(str, obj.applied_pages))}"
+        
+        mode_html = (
+            '<div style="margin-bottom: 10px; padding: 8px; background: #fff3cd; border-radius: 4px; border-left: 4px solid #ffc107;">'
+            '<strong>📋 Mode d\'application</strong><br>'
+            f'{mode_display.get(obj.page_mode, obj.page_mode)}{pages_info}'
+            '</div>'
+        )
+        html_parts.append(mark_safe(mode_html))
+        
         # Afficher la configuration QR Code (depuis les champs séparés)
         if obj.qr_code_x is not None and obj.qr_code_y is not None:
             qr_html = (
                 '<div style="margin-bottom: 10px; padding: 8px; background: #e8f4fd; border-radius: 4px; border-left: 4px solid #007bff;">'
                 '<strong>📱 QR Code</strong><br>'
-                f'Position: X={obj.qr_code_x}, Y={obj.qr_code_y} | Page: {obj.qr_code_page} | Taille: {obj.qr_code_size or "medium"}'
+                f'Position: X={obj.qr_code_x}, Y={obj.qr_code_y} | Taille: {obj.qr_code_size or "medium"}'
                 '</div>'
             )
             html_parts.append(mark_safe(qr_html))
@@ -148,7 +172,7 @@ class DocumentPreparationAdmin(admin.ModelAdmin):
             sig_html = (
                 '<div style="margin-bottom: 10px; padding: 8px; background: #e8f5e8; border-radius: 4px; border-left: 4px solid #28a745;">'
                 '<strong>🖊️ Signature manuscrite</strong><br>'
-                f'Position: X={obj.signature_x}, Y={obj.signature_y} | Page: {obj.signature_page} | Taille: {obj.signature_width or "N/A"}x{obj.signature_height or "N/A"}'
+                f'Position: X={obj.signature_x}, Y={obj.signature_y} | Taille: {obj.signature_width or "N/A"}x{obj.signature_height or "N/A"}'
                 '</div>'
             )
             html_parts.append(mark_safe(sig_html))
