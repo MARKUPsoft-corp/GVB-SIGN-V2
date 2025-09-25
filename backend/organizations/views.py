@@ -65,8 +65,9 @@ def create_organization(request):
             
             return Response({
                 'success': True,
-                'message': 'Organisation créée avec succès !',
-                'organization': response_serializer.data
+                'message': 'Organisation créée avec succès ! Elle est maintenant en attente d\'approbation par l\'administrateur.',
+                'organization': response_serializer.data,
+                'status': 'pending_approval'
             }, status=status.HTTP_201_CREATED)
             
         except Exception as e:
@@ -132,11 +133,22 @@ def list_all_organizations(request):
     ).values(
         'id', 'name', 'description', 'email', 'phone', 'address', 
         'website', 'organization_type', 'sector', 'is_active', 
-        'created_at', 'updated_at', 'member_count'
+        'is_approved', 'approval_date', 'created_at', 'updated_at', 'member_count'
     ).order_by('-created_at')
     
-    # Convertir en liste pour la réponse
-    organizations_list = list(organizations_data)
+    # Convertir en liste et ajouter le statut d'approbation
+    organizations_list = []
+    for org in organizations_data:
+        org_dict = dict(org)
+        # Déterminer le statut d'approbation
+        if org['is_approved']:
+            org_dict['approval_status'] = 'approved'
+        elif not org['is_active']:
+            org_dict['approval_status'] = 'rejected'
+        else:
+            org_dict['approval_status'] = 'pending'
+        org_dict['approval_date'] = org['approval_date'].isoformat() if org['approval_date'] else None
+        organizations_list.append(org_dict)
     
     print(f"✅ Organisations trouvées: {len(organizations_list)}")
     
@@ -762,6 +774,9 @@ def get_user_organizations(request):
                 'organization_type': membership.organization.organization_type,
                 'sector': membership.organization.sector,
                 'is_active': membership.organization.is_active,
+                'is_approved': membership.organization.is_approved,
+                'approval_status': 'approved' if membership.organization.is_approved else ('rejected' if not membership.organization.is_active else 'pending'),
+                'approval_date': membership.organization.approval_date.isoformat() if membership.organization.approval_date else None,
                 'member_count': membership.organization.member_count,
                 'role': membership.role,
                 'role_display': membership.get_role_display(),

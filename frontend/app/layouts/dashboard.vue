@@ -784,6 +784,13 @@ const handleOrganizationSelected = (event) => {
   const { organization, role } = event.detail
   console.log('🏢 Organisation sélectionnée:', organization.name, 'Rôle:', role)
   
+  // Vérifier si l'organisation est approuvée
+  if (organization.approval_status !== 'approved') {
+    console.log('⚠️ Organisation non approuvée, redirection vers la page de sélection')
+    setActivePage('organization-selection')
+    return
+  }
+  
   // Rediriger vers la page appropriée selon le rôle
   switch (role) {
     case 'admin':

@@ -129,6 +129,7 @@
       <div class="organizations-grid" v-if="userOrganizations.length > 0">
         <div 
           class="organization-card" 
+          :class="{ 'disabled': org.approval_status !== 'approved' }"
           v-for="(org, index) in userOrganizations" 
           :key="org.id"
           @click="selectOrganization(org)"
@@ -142,8 +143,15 @@
               <h3 class="organization-name">{{ org.name }}</h3>
               <p class="organization-subtitle">{{ org.role || 'Membre' }}</p>
             </div>
-            <div class="organization-status" :class="org.status">
-              <i class="bi bi-circle-fill"></i>
+            <div class="organization-status-badges">
+              <!-- Badge de statut d'approbation subtil -->
+              <div class="approval-status-badge" :class="org.approval_status || 'pending'">
+                <span>{{ getApprovalStatusText(org.approval_status || 'pending') }}</span>
+              </div>
+              <!-- Point de statut coloré -->
+              <div class="organization-status" :class="getStatusClass(org)">
+                <i class="bi bi-circle-fill"></i>
+              </div>
             </div>
           </div>
           
@@ -235,8 +243,15 @@
                     <h3 class="organization-name">{{ org.name }}</h3>
                     <p class="organization-subtitle">{{ org.organization_type || 'Organisation' }}</p>
                   </div>
-                  <div class="organization-status" :class="org.is_active ? 'active' : 'inactive'">
-                    <i class="bi bi-circle-fill"></i>
+                  <div class="organization-status-badges">
+                    <!-- Badge de statut d'approbation subtil -->
+                    <div class="approval-status-badge" :class="org.approval_status">
+                      <span>{{ getApprovalStatusText(org.approval_status) }}</span>
+                    </div>
+                    <!-- Point de statut coloré -->
+                    <div class="organization-status" :class="getStatusClass(org)">
+                      <i class="bi bi-circle-fill"></i>
+                    </div>
                   </div>
                 </div>
                 
@@ -841,6 +856,12 @@ const loadUserOrganizations = async () => {
 const selectOrganization = (organization) => {
   console.log('Organisation sélectionnée:', organization)
   
+  // Vérifier si l'organisation est approuvée
+  if (organization.approval_status !== 'approved') {
+    displayNotification('warning', 'Accès restreint', 'Cette organisation est en attente d\'approbation. Vous ne pouvez pas y accéder pour le moment.')
+    return
+  }
+  
   // Sauvegarder l'organisation sélectionnée
   localStorage.setItem('selectedOrganization', JSON.stringify(organization))
   
@@ -865,7 +886,28 @@ const getRoleDisplayName = (role) => {
     'secretaire': 'Secrétaire',
     'member': 'Membre'
   }
-  return roleNames[role] || 'Membre'
+  return roleNames[role] || role
+}
+
+// Obtenir la classe CSS pour le statut (point coloré)
+const getStatusClass = (org) => {
+  if (org.approval_status === 'approved') {
+    return 'active'
+  } else if (org.approval_status === 'rejected') {
+    return 'rejected'
+  } else {
+    return 'pending'
+  }
+}
+
+// Obtenir le texte du statut d'approbation
+const getApprovalStatusText = (approvalStatus) => {
+  const statusTexts = {
+    'approved': 'Approuvée',
+    'pending': 'En attente',
+    'rejected': 'Rejetée'
+  }
+  return statusTexts[approvalStatus] || 'En attente'
 }
 
 // Actions sur les organisations
@@ -1701,14 +1743,14 @@ const createOrganization = async () => {
     
     console.log('Organisation créée avec succès!', response)
     
-    // Marquer que l'utilisateur a maintenant une organisation
-    localStorage.setItem('user_has_organization', 'true')
+    // Afficher un message de confirmation avec le statut
+    displayNotification('success', 'Organisation créée', 'Votre organisation a été créée avec succès ! Elle est maintenant en attente d\'approbation par l\'administrateur.')
     
     // Fermer la modale
     closeCreateOrganizationModal()
     
-    // Rafraîchir la page et ouvrir directement la page d'organisation
-    window.location.href = '/dashboard?page=organization'
+    // Recharger les organisations pour afficher le nouveau statut
+    await loadAllOrganizations()
     
   } catch (error) {
     console.error('Erreur lors de la création de l\'organisation:', error)
@@ -2352,6 +2394,43 @@ const getCsrfToken = async () => {
   border-color: rgba(0, 102, 204, 0.2);
 }
 
+/* Cartes désactivées (organisations non approuvées) */
+.organization-card.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  position: relative;
+}
+
+.organization-card.disabled:hover {
+  transform: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.organization-card.disabled::after {
+  content: 'En attente d\'approbation';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 193, 7, 0.9);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  z-index: 10;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.organization-card.disabled:hover::after {
+  opacity: 1;
+}
+
 
 /* HEADER DE LA CARTE */
 .card-header {
@@ -2388,10 +2467,19 @@ const getCsrfToken = async () => {
   height: 12px;
   border-radius: 50%;
   font-size: 0.6rem;
+  transition: all 0.3s ease;
 }
 
 .organization-status.active {
-  color: var(--success);
+  color: #28a745; /* Vert pour approuvée */
+}
+
+.organization-status.pending {
+  color: #ffc107; /* Orange pour en attente */
+}
+
+.organization-status.rejected {
+  color: #dc3545; /* Rouge pour rejetée */
 }
 
 .organization-status.inactive {
@@ -3584,6 +3672,41 @@ const getCsrfToken = async () => {
     opacity: 1;
     transform: scale(1) translateY(0);
   }
+}
+
+/* Badges de statut d'approbation - Style subtil comme les badges de rôle */
+.organization-status-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.approval-status-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  transition: all 0.3s ease;
+}
+
+.approval-status-badge.approved {
+  background: rgba(40, 167, 69, 0.1);
+  color: #28a745;
+  border: 1px solid rgba(40, 167, 69, 0.2);
+}
+
+.approval-status-badge.pending {
+  background: rgba(255, 193, 7, 0.1);
+  color: #ffc107;
+  border: 1px solid rgba(255, 193, 7, 0.2);
+}
+
+.approval-status-badge.rejected {
+  background: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+  border: 1px solid rgba(220, 53, 69, 0.2);
 }
 
 /* Responsive pour le pop-up */

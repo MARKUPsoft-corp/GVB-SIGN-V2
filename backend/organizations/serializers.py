@@ -54,9 +54,11 @@ class OrganizationSerializer(serializers.ModelSerializer):
         # Ajouter l'utilisateur aux données validées
         validated_data['created_by'] = user
         
-        # S'assurer que is_approved est défini (par défaut False)
+        # S'assurer que is_approved est défini (par défaut False - en attente d'approbation)
         if 'is_approved' not in validated_data:
             validated_data['is_approved'] = False
+        
+        print(f"🔍 Organisation créée en attente d'approbation (is_approved=False)")
         
         print(f"🔍 Données validées AVANT création: {validated_data}")
         print(f"🔍 Clés des données validées: {list(validated_data.keys())}")

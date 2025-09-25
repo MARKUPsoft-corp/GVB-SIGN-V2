@@ -1,13 +1,14 @@
 from django.contrib import admin
+from django.utils.html import format_html
 from .models import Organization, OrganizationMember, InvitationCode, OrganizationCertificate, DemandeAdhesion
 
 
 @admin.register(Organization)
 class OrganizationAdmin(admin.ModelAdmin):
-    list_display = ['name', 'organization_type', 'email', 'created_by', 'created_at', 'is_active']
-    list_filter = ['organization_type', 'is_active', 'created_at']
+    list_display = ['name', 'organization_type', 'email', 'created_by', 'created_at', 'is_active', 'is_approved', 'approval_status']
+    list_filter = ['organization_type', 'is_active', 'is_approved', 'created_at', 'approval_date']
     search_fields = ['name', 'email', 'description']
-    readonly_fields = ['created_at', 'updated_at']
+    readonly_fields = ['created_at', 'updated_at', 'approval_status']
     fieldsets = (
         ('Informations générales', {
             'fields': ('name', 'description', 'organization_type', 'sector')
@@ -15,10 +16,49 @@ class OrganizationAdmin(admin.ModelAdmin):
         ('Contact', {
             'fields': ('email', 'phone', 'address', 'website')
         }),
+        ('Statut d\'approbation', {
+            'fields': ('is_approved', 'approval_date', 'approved_by', 'approval_status'),
+            'classes': ('collapse',)
+        }),
         ('Métadonnées', {
             'fields': ('created_by', 'created_at', 'updated_at', 'is_active')
         }),
     )
+    
+    actions = ['approve_organizations', 'reject_organizations']
+    
+    def approval_status(self, obj):
+        """Afficher le statut d'approbation avec des couleurs"""
+        if obj.is_approved:
+            return format_html('<span style="color: green; font-weight: bold;">✓ Approuvée</span>')
+        else:
+            return format_html('<span style="color: orange; font-weight: bold;">⏳ En attente</span>')
+    approval_status.short_description = 'Statut'
+    
+    def approve_organizations(self, request, queryset):
+        """Action pour approuver les organisations sélectionnées"""
+        from django.utils import timezone
+        count = 0
+        for org in queryset.filter(is_approved=False):
+            org.is_approved = True
+            org.approval_date = timezone.now()
+            org.approved_by = request.user
+            org.save()
+            count += 1
+        
+        self.message_user(request, f"{count} organisation(s) approuvée(s) avec succès.")
+    approve_organizations.short_description = "Approuver les organisations sélectionnées"
+    
+    def reject_organizations(self, request, queryset):
+        """Action pour rejeter les organisations sélectionnées"""
+        count = 0
+        for org in queryset.filter(is_approved=False):
+            org.is_active = False  # Désactiver au lieu de supprimer
+            org.save()
+            count += 1
+        
+        self.message_user(request, f"{count} organisation(s) rejetée(s) avec succès.")
+    reject_organizations.short_description = "Rejeter les organisations sélectionnées"
 
 
 @admin.register(OrganizationMember)
