@@ -1469,6 +1469,70 @@ watch(() => props.preloadedPositions, (newVal) => {
     initializeFromPreloadedPositions();
   }
 }, { immediate: true, deep: true });
+
+// Exposer les méthodes pour le composant parent
+defineExpose({
+  generatePreviewPdf: async () => {
+    console.log('🎯 generatePreviewPdf appelée depuis le parent')
+    try {
+      await generateModifiedPdf()
+      console.log('✅ PDF généré, blob disponible:', !!generatedPdfBlob.value)
+      return generatedPdfBlob.value
+    } catch (error) {
+      console.error('❌ Erreur génération PDF:', error)
+      return null
+    }
+  },
+  generateFinalPdf: async () => {
+    console.log('🎯 generateFinalPdf appelée depuis le parent')
+    try {
+      await generateModifiedPdf()
+      console.log('✅ PDF final généré, blob disponible:', !!generatedPdfBlob.value)
+      return generatedPdfBlob.value
+    } catch (error) {
+      console.error('❌ Erreur génération PDF final:', error)
+      return null
+    }
+  },
+  getGeneratedPdfBlob: () => {
+    console.log('🎯 getGeneratedPdfBlob appelée, blob disponible:', !!generatedPdfBlob.value)
+    return generatedPdfBlob.value
+  },
+  getGeneratedPdfDataUrl: () => {
+    console.log('🎯 getGeneratedPdfDataUrl appelée, URL disponible:', !!generatedPdfDataUrl.value)
+    return generatedPdfDataUrl.value
+  },
+  forceGeneratePdf: async () => {
+    console.log('🎯 forceGeneratePdf appelée - génération forcée')
+    try {
+      await generateModifiedPdf()
+      
+      if (generatedPdfBlob.value) {
+        // Émettre automatiquement l'événement pdf-generated
+        let fileName = 'document_modifié.pdf'
+        if (props.pdfFile && props.pdfFile.name) {
+          const originalName = props.pdfFile.name.replace(/\.pdf$/i, '')
+          fileName = `${originalName}_modifié.pdf`
+        }
+        
+        const pdfFile = new File([generatedPdfBlob.value], fileName, { type: 'application/pdf' })
+        
+        emit('pdf-generated', {
+          file: pdfFile,
+          dataUrl: generatedPdfDataUrl.value,
+          blob: generatedPdfBlob.value
+        })
+        
+        console.log('✅ PDF forcé généré et événement émis')
+        return generatedPdfBlob.value
+      }
+      return null
+    } catch (error) {
+      console.error('❌ Erreur génération PDF forcée:', error)
+      return null
+    }
+  }
+});
 </script>
 
 <style scoped>

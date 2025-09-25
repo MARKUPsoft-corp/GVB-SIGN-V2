@@ -1272,7 +1272,11 @@ const handlePdfGenerated = (data) => {
     positionMode: data.positionMode || documentsConfiguration.value[docKey].positionMode,
     qrCode: data.qrCode,
     signature: data.signature,
-    generatedPdf: data.generatedPdf
+    generatedPdf: {
+      file: data.file,
+      dataUrl: data.dataUrl,
+      blob: data.blob
+    }
   }
   
   console.log(`✅ Configuration complète sauvegardée pour le document ${docKey}:`, documentsConfiguration.value[docKey])
@@ -1498,12 +1502,13 @@ const processDocument = async (fileData, index, currentOrganization) => {
   try {
     // Extraire les positions pour ce document spécifique
     documentProgress.value[index] = 10
-    const { signaturePositions, qrCodePositions, signatureImage } = await extractDocumentPositions(index)
+    const { signaturePositions, qrCodePositions, signatureImage, generatedPdf } = await extractDocumentPositions(index)
     
     console.log(`Positions extraites pour ${fileData.name}:`, {
       signaturePositions,
       qrCodePositions,
-      hasSignatureImage: !!signatureImage
+      hasSignatureImage: !!signatureImage,
+      hasGeneratedPdf: !!generatedPdf
     })
     
     // Convertir le fichier en base64
@@ -1520,33 +1525,30 @@ const processDocument = async (fileData, index, currentOrganization) => {
     
     if (hasElements) {
       try {
-        // Option 1: Si c'est le document actuellement affiché dans SignBase
-        if (index === activeSignBaseTabIndex.value && signBaseRef.value) {
+        // Utiliser le PDF généré extrait directement
+        if (generatedPdf && generatedPdf.blob) {
+          console.log(`🔍 PDF généré trouvé pour ${fileData.name}`)
+          finalPdfBase64 = await blobToBase64(generatedPdf.blob)
+          currentDocumentBase64 = finalPdfBase64
+          console.log(`✅ PDF récupéré depuis extractDocumentPositions pour ${fileData.name}`)
+        } else if (generatedPdf && generatedPdf.dataUrl && generatedPdf.dataUrl.startsWith('data:application/pdf;base64,')) {
+          finalPdfBase64 = generatedPdf.dataUrl.split(',')[1]
+          currentDocumentBase64 = finalPdfBase64
+          console.log(`✅ PDF Base64 récupéré depuis extractDocumentPositions pour ${fileData.name}`)
+        } else if (index === activeSignBaseTabIndex.value && signBaseRef.value) {
+          // Fallback: Si pas de PDF extrait ET c'est le document actif, essayer de générer
+          console.log(`🔄 Fallback: Tentative de génération PDF pour le document actif ${fileData.name}`)
           const generatedPdfBlob = await generateDocumentPdf()
           if (generatedPdfBlob) {
             finalPdfBase64 = await blobToBase64(generatedPdfBlob)
             currentDocumentBase64 = finalPdfBase64
             console.log(`✅ PDF généré avec SignBase pour ${fileData.name}`)
+          } else {
+            console.log(`❌ Aucun PDF généré par SignBase pour ${fileData.name}`)
           }
         }
-        
-        // Option 2: Vérifier si on a un PDF généré dans la configuration
-        const docKey = index.toString()
-        if (!finalPdfBase64 && documentsConfiguration.value[docKey] && documentsConfiguration.value[docKey].generatedPdf) {
-          const generatedPdf = documentsConfiguration.value[docKey].generatedPdf
-          if (generatedPdf.blob) {
-            finalPdfBase64 = await blobToBase64(generatedPdf.blob)
-            currentDocumentBase64 = finalPdfBase64
-            console.log(`✅ PDF récupéré depuis la configuration pour ${fileData.name}`)
-          } else if (generatedPdf.dataUrl && generatedPdf.dataUrl.startsWith('data:application/pdf;base64,')) {
-            finalPdfBase64 = generatedPdf.dataUrl.split(',')[1]
-            currentDocumentBase64 = finalPdfBase64
-            console.log(`✅ PDF Base64 récupéré depuis la configuration pour ${fileData.name}`)
-          }
-        }
-        
       } catch (error) {
-        console.warn(`⚠️ Erreur génération PDF pour ${fileData.name}:`, error)
+        console.warn(`⚠️ Erreur récupération PDF pour ${fileData.name}:`, error)
         // Continuer avec le PDF original
       }
     }
@@ -1719,6 +1721,7 @@ const extractDocumentPositions = async (documentIndex) => {
   const signaturePositions = {}
   const qrCodePositions = {}
   let signatureImage = null
+  let generatedPdf = null
   const docKey = documentIndex.toString()
   
   console.log(`🔍 Extraction des positions pour le document ${documentIndex}`)
@@ -1918,9 +1921,19 @@ const extractDocumentPositions = async (documentIndex) => {
       signatureImage = docConfig.signatureImage
       console.log(`✅ Image signature depuis config trouvée`)
     }
+    
+    // Récupérer le PDF généré si disponible
+    if (docConfig.generatedPdf) {
+      generatedPdf = docConfig.generatedPdf
+      console.log(`✅ PDF généré depuis config trouvé:`, {
+        hasFile: !!generatedPdf.file,
+        hasBlob: !!generatedPdf.blob,
+        hasDataUrl: !!generatedPdf.dataUrl
+      })
+    }
   }
   
-  const result = { signaturePositions, qrCodePositions, signatureImage }
+  const result = { signaturePositions, qrCodePositions, signatureImage, generatedPdf }
   console.log(`🎯 Résultat final de l'extraction pour le document ${documentIndex}:`, result)
   
   return result
@@ -1928,11 +1941,49 @@ const extractDocumentPositions = async (documentIndex) => {
 
 // Générer le PDF avec SignBase
 const generateDocumentPdf = async () => {
-  if (signBaseRef.value && typeof signBaseRef.value.generatePreviewPdf === 'function') {
-    return await signBaseRef.value.generatePreviewPdf()
-  } else if (signBaseRef.value && typeof signBaseRef.value.generateFinalPdf === 'function') {
-    return await signBaseRef.value.generateFinalPdf()
+  console.log('🎯 Tentative de génération PDF via SignBase...')
+  
+  if (!signBaseRef.value) {
+    console.log('❌ SignBase ref non disponible')
+    return null
   }
+  
+  console.log('✅ SignBase ref disponible, méthodes:', Object.keys(signBaseRef.value))
+  
+  try {
+    // Essayer d'abord de récupérer un PDF déjà généré
+    if (typeof signBaseRef.value.getGeneratedPdfBlob === 'function') {
+      const existingBlob = signBaseRef.value.getGeneratedPdfBlob()
+      if (existingBlob) {
+        console.log('✅ PDF déjà généré récupéré')
+        return existingBlob
+      }
+    }
+    
+    // Sinon, générer un nouveau PDF
+    if (typeof signBaseRef.value.generatePreviewPdf === 'function') {
+      console.log('🔄 Génération via generatePreviewPdf...')
+      const result = await signBaseRef.value.generatePreviewPdf()
+      console.log('📄 Résultat generatePreviewPdf:', !!result)
+      return result
+    } else if (typeof signBaseRef.value.generateFinalPdf === 'function') {
+      console.log('🔄 Génération via generateFinalPdf...')
+      const result = await signBaseRef.value.generateFinalPdf()
+      console.log('📄 Résultat generateFinalPdf:', !!result)
+      return result
+    } else if (typeof signBaseRef.value.forceGeneratePdf === 'function') {
+      console.log('🔄 Génération via forceGeneratePdf...')
+      const result = await signBaseRef.value.forceGeneratePdf()
+      console.log('📄 Résultat forceGeneratePdf:', !!result)
+      return result
+    } else {
+      console.log('❌ Aucune méthode de génération PDF trouvée')
+      console.log('Méthodes disponibles:', Object.keys(signBaseRef.value).filter(key => typeof signBaseRef.value[key] === 'function'))
+    }
+  } catch (error) {
+    console.error('❌ Erreur lors de la génération PDF:', error)
+  }
+  
   return null
 }
 

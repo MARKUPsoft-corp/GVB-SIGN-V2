@@ -202,7 +202,7 @@ def advance_workflow(request, preparation_id):
     except Exception as e:
         return Response({
             'success': False,
-            'error': str(e)
+                        'error': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
