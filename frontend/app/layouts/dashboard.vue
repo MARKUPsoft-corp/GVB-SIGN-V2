@@ -651,10 +651,13 @@
           <OrganizationMemberPage />
         </div>
         <div v-else-if="activePage === 'organization-secretary'">
-          <OrganizationSecretaryPage />
+          <OrganizationSecretaryPage @navigate-to="setActivePage" />
         </div>
         <div v-else-if="activePage === 'organization-manager'">
           <OrganizationManagerPage />
+        </div>
+        <div v-else-if="activePage === 'document-preparation'">
+          <DocumentPreparationPage @go-back="setActivePage('organization-secretary')" />
         </div>
         <div v-else>
           <div class="page-placeholder">
@@ -681,6 +684,7 @@ import OrganizationSelectionPage from '../../components/dashboard/OrganizationSe
 import OrganizationMemberPage from '../../components/dashboard/OrganizationMemberPage.vue'
 import OrganizationSecretaryPage from '../../components/dashboard/OrganizationSecretaryPage.vue'
 import OrganizationManagerPage from '../../components/dashboard/OrganizationManagerPage.vue'
+import DocumentPreparationPage from '../../components/dashboard/DocumentPreparationPage.vue'
 import { CertificateService } from '../../services/CertificateService'
 
 // Store d'authentification (côté client seulement)

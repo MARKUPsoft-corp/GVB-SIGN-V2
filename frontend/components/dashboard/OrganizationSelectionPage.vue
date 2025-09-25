@@ -1214,9 +1214,12 @@ const loadAllOrganizations = async () => {
     if (response.ok) {
       const data = await response.json()
       if (data.success && data.organizations) {
-        allOrganizations.value = data.organizations
-        filteredOrganizations.value = data.organizations
-        console.log('✅ Toutes les organisations chargées:', data.organizations.length)
+        // Filtrer pour ne garder que les organisations approuvées
+        const approvedOrganizations = data.organizations.filter(org => org.approval_status === 'approved')
+        allOrganizations.value = approvedOrganizations
+        filteredOrganizations.value = approvedOrganizations
+        console.log('✅ Organisations approuvées chargées:', approvedOrganizations.length)
+        console.log('📋 Organisations filtrées (approuvées uniquement):', approvedOrganizations)
       } else {
         console.log('ℹ️ Aucune organisation trouvée')
         allOrganizations.value = []
@@ -1236,7 +1239,7 @@ const loadAllOrganizations = async () => {
   }
 }
 
-// Recherche d'organisations
+// Recherche d'organisations (uniquement les organisations approuvées)
 const searchOrganizations = () => {
   if (!searchQuery.value.trim()) {
     filteredOrganizations.value = allOrganizations.value
@@ -1244,17 +1247,21 @@ const searchOrganizations = () => {
   }
   
   const query = searchQuery.value.toLowerCase().trim()
+  // Rechercher uniquement dans les organisations approuvées
   filteredOrganizations.value = allOrganizations.value.filter(org => 
-    org.name.toLowerCase().includes(query) ||
-    (org.description && org.description.toLowerCase().includes(query)) ||
-    (org.sector && org.sector.toLowerCase().includes(query)) ||
-    (org.organization_type && org.organization_type.toLowerCase().includes(query))
+    org.approval_status === 'approved' && (
+      org.name.toLowerCase().includes(query) ||
+      (org.description && org.description.toLowerCase().includes(query)) ||
+      (org.sector && org.sector.toLowerCase().includes(query)) ||
+      (org.organization_type && org.organization_type.toLowerCase().includes(query))
+    )
   )
 }
 
 // Effacer la recherche
 const clearSearch = () => {
   searchQuery.value = ''
+  // Remettre toutes les organisations approuvées
   filteredOrganizations.value = allOrganizations.value
 }
 

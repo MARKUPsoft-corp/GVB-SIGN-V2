@@ -319,54 +319,38 @@
       </div>
     </div>
 
-    <!-- Modale de création de document -->
-    <div v-if="showCreateDocumentModal" class="modal-overlay" @click="closeCreateDocumentModal">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h5 class="modal-title">Créer un nouveau document</h5>
-          <button class="btn-close" @click="closeCreateDocumentModal">
-            <i class="bi bi-x"></i>
-              </button>
-            </div>
-        <div class="modal-body">
-          <form @submit.prevent="createDocument">
-            <div class="mb-3">
-              <label for="documentName" class="form-label">Nom du document</label>
-              <input type="text" class="form-control" id="documentName" v-model="newDocument.name" required>
-          </div>
-            <div class="mb-3">
-              <label for="documentType" class="form-label">Type de document</label>
-              <select class="form-select" id="documentType" v-model="newDocument.type" required>
-                <option value="">Sélectionner un type</option>
-                <option value="contract">Contrat</option>
-                <option value="agreement">Accord</option>
-                <option value="report">Rapport</option>
-                <option value="other">Autre</option>
-              </select>
+    <!-- Modale contextuelle de création de document -->
+    <div v-if="showCreateDocumentModal" class="signature-modal-overlay" @click="closeCreateDocumentModal">
+      <div class="signature-modal" @click.stop ref="createDocumentModal">
+        <div class="signature-modal-header">
+          <h5>
+            <i class="bi bi-file-earmark-plus"></i>
+            Créer un Document
+          </h5>
+          <button class="close-btn" @click="closeCreateDocumentModal">
+            <i class="bi bi-x-lg"></i>
+          </button>
         </div>
-            <div class="mb-3">
-              <label for="assignedTo" class="form-label">Assigner à</label>
-              <select class="form-select" id="assignedTo" v-model="newDocument.assignedTo" required>
-                <option value="">Sélectionner un membre</option>
-                <option v-for="member in organizationMembers" :key="member.id" :value="member.id">
-                  {{ member.name }}
-                </option>
-              </select>
-      </div>
-            <div class="mb-3">
-              <label for="documentDescription" class="form-label">Description</label>
-              <textarea class="form-control" id="documentDescription" v-model="newDocument.description" rows="3"></textarea>
+        <div class="signature-modal-content">
+          <div class="signature-option" @click="selectDocumentOption('immediate')">
+            <div class="option-icon">
+              <i class="bi bi-lightning-fill"></i>
             </div>
-            <div class="d-flex justify-content-end gap-2">
-              <button type="button" class="btn btn-outline-secondary" @click="closeCreateDocumentModal">
-                Annuler
-              </button>
-              <button type="submit" class="btn btn-primary" :disabled="isCreatingDocument">
-                <span v-if="isCreatingDocument" class="spinner-border spinner-border-sm me-2"></span>
-                Créer le document
-              </button>
+            <div class="option-content">
+              <span class="option-title">Créer immédiatement</span>
+              <span class="option-desc">Créez un nouveau document à partir de zéro</span>
             </div>
-          </form>
+          </div>
+          
+          <div class="signature-option" @click="selectDocumentOption('template')">
+            <div class="option-icon">
+              <i class="bi bi-file-earmark-text"></i>
+            </div>
+            <div class="option-content">
+              <span class="option-title">À partir d'un modèle</span>
+              <span class="option-desc">Choisissez parmi nos modèles de documents</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -374,7 +358,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useAuthStore } from '../../stores/auth'
 
 // Store d'authentification
@@ -386,6 +370,10 @@ const selectedOrganization = ref(null)
 const showAllDocuments = ref(false)
 const showCreateDocumentModal = ref(false)
 const isCreatingDocument = ref(false)
+
+// Références pour la modale
+const createDocBtn = ref(null)
+const createDocumentModal = ref(null)
 
 // Computed pour l'organisation
 const organizationName = computed(() => {
@@ -482,15 +470,107 @@ const toggleAllDocuments = () => {
 
 const toggleCreateDocumentModal = () => {
   showCreateDocumentModal.value = !showCreateDocumentModal.value
+  
+  if (showCreateDocumentModal.value) {
+    // Bloquer le défilement du contenu arrière
+    document.body.style.overflow = 'hidden'
+    
+    nextTick(() => {
+      if (createDocBtn.value && createDocumentModal.value && window.innerWidth > 768) {
+        const buttonRect = createDocBtn.value.getBoundingClientRect()
+        const modal = createDocumentModal.value
+        
+        // Dimensions de la modale
+        const modalWidth = 320
+        const modalHeight = 200
+        
+        // Marge de sécurité
+        const margin = 20
+        
+        // Calculer l'espace disponible dans chaque direction
+        const spaceRight = window.innerWidth - buttonRect.right
+        const spaceLeft = buttonRect.left
+        const spaceBelow = window.innerHeight - buttonRect.bottom
+        const spaceAbove = buttonRect.top
+        
+        let leftPosition, topPosition
+        
+        // Positionner horizontalement selon l'espace disponible
+        if (spaceRight >= modalWidth + margin) {
+          // Plus d'espace à droite
+          leftPosition = buttonRect.right + 10
+        } else if (spaceLeft >= modalWidth + margin) {
+          // Plus d'espace à gauche
+          leftPosition = buttonRect.left - modalWidth - 10
+        } else {
+          // Pas assez d'espace, centrer horizontalement
+          leftPosition = (window.innerWidth - modalWidth) / 2
+        }
+        
+        // Positionner verticalement selon l'espace disponible
+        if (spaceBelow >= modalHeight + margin) {
+          // Plus d'espace en bas
+          topPosition = buttonRect.bottom + 10
+        } else if (spaceAbove >= modalHeight + margin) {
+          // Plus d'espace en haut
+          topPosition = buttonRect.top - modalHeight - 10
+        } else {
+          // Pas assez d'espace, centrer verticalement
+          topPosition = (window.innerHeight - modalHeight) / 2
+        }
+        
+        // Appliquer les positions
+        modal.style.left = `${leftPosition}px`
+        modal.style.top = `${topPosition}px`
+        modal.style.transform = 'none'
+      } else {
+        // Sur mobile ou si les éléments ne sont pas trouvés, centrer la modale
+        const modal = createDocumentModal.value
+        if (modal) {
+          modal.style.left = '50%'
+          modal.style.top = '50%'
+          modal.style.transform = 'translate(-50%, -50%)'
+        }
+      }
+    })
+  } else {
+    // Restaurer le défilement du contenu arrière
+    document.body.style.overflow = ''
+  }
 }
 
 const closeCreateDocumentModal = () => {
   showCreateDocumentModal.value = false
+  // Restaurer le défilement du contenu arrière
+  document.body.style.overflow = ''
   newDocument.value = {
     name: '',
     type: '',
     assignedTo: '',
     description: ''
+  }
+}
+
+// Événements
+const emit = defineEmits(['navigate-to', 'open-settings'])
+
+// Fonction pour sélectionner une option de création de document
+const selectDocumentOption = (option) => {
+  console.log('Option de création sélectionnée:', option)
+  closeCreateDocumentModal()
+  
+  switch (option) {
+    case 'immediate':
+      // Créer un document immédiatement
+      console.log('Création immédiate de document')
+      // Rediriger vers la page de préparation de document
+      emit('navigate-to', 'document-preparation')
+      break
+    case 'template':
+      // Créer à partir d'un modèle
+      console.log('Création à partir d\'un modèle')
+      // TODO: Implémenter la logique de sélection de modèle
+      break
   }
 }
 
@@ -668,10 +748,11 @@ onMounted(async () => {
 // Nettoyage
 onUnmounted(() => {
   window.removeEventListener('organizationSelected', handleOrganizationSelected)
+  // S'assurer que le défilement est restauré si le composant est détruit
+  document.body.style.overflow = ''
 })
 
 // Émettre les événements
-const emit = defineEmits(['open-settings'])
 </script>
 
 <style scoped>
@@ -1588,6 +1669,155 @@ const emit = defineEmits(['open-settings'])
   100% {
     opacity: 1;
     transform: translateY(0) scale(1) rotateX(0deg);
+  }
+}
+
+/* MODALE CONTEXTUELLE DE CRÉATION DE DOCUMENT */
+.signature-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(1px);
+  animation: fadeInOverlay 0.3s ease-out;
+}
+
+.signature-modal {
+  position: fixed;
+  width: 320px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(0, 102, 204, 0.1);
+  z-index: 10000;
+  animation: modalSlideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-origin: center bottom;
+}
+
+.signature-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(0, 102, 204, 0.1);
+  background: rgba(0, 102, 204, 0.02);
+  border-radius: 16px 16px 0 0;
+}
+
+.signature-modal-header h5 {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.signature-modal-header h5 i {
+  color: var(--primary-blue);
+  font-size: 1rem;
+}
+
+.close-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #6c757d;
+}
+
+.close-btn:hover {
+  background: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+  transform: scale(1.1);
+}
+
+.signature-modal-content {
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.signature-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  background: rgba(248, 249, 250, 0.5);
+  border: 1px solid rgba(0, 102, 204, 0.05);
+  opacity: 0;
+  animation: fadeInOption 0.4s ease-out forwards;
+}
+
+.signature-option:nth-child(1) { animation-delay: 0.1s; }
+.signature-option:nth-child(2) { animation-delay: 0.2s; }
+
+.signature-option:hover {
+  background: rgba(0, 102, 204, 0.08);
+  border-color: rgba(0, 102, 204, 0.15);
+  transform: translateX(3px) scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.15);
+}
+
+.option-icon {
+  width: 36px;
+  height: 36px;
+  background: rgba(0, 102, 204, 0.1);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary-blue);
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.option-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.option-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  line-height: 1.2;
+}
+
+.option-desc {
+  font-size: 0.75rem;
+  color: #6c757d;
+  line-height: 1.3;
+}
+
+@keyframes fadeInOption {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 
