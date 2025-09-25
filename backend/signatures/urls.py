@@ -1,23 +1,15 @@
 from django.urls import path
-from .views import (
-    DocumentSignatureCreateView,
-    DocumentSignatureListView,
-    DocumentSignatureDetailView,
-    DocumentSignatureBulkCreateView
-)
+from . import views
 
 app_name = 'signatures'
 
 urlpatterns = [
-    # Créer une signature
-    path('create/', DocumentSignatureCreateView.as_view(), name='create'),
+    # Document preparation endpoints
+    path('document-preparation/create/', views.create_document_preparation, name='create_document_preparation'),
+    path('document-preparation/', views.get_document_preparations, name='get_document_preparations'),
+    path('document-preparation/<uuid:preparation_id>/', views.get_document_preparation, name='get_document_preparation'),
+    path('document-preparation/<uuid:preparation_id>/advance/', views.advance_workflow, name='advance_workflow'),
     
-    # Créer plusieurs signatures en une fois
-    path('bulk-create/', DocumentSignatureBulkCreateView.as_view(), name='bulk-create'),
-    
-    # Lister les signatures de l'utilisateur
-    path('list/', DocumentSignatureListView.as_view(), name='list'),
-    
-    # Détails d'une signature
-    path('<uuid:pk>/', DocumentSignatureDetailView.as_view(), name='detail'),
+    # Pending signatures
+    path('pending-signatures/', views.get_pending_signatures, name='get_pending_signatures'),
 ]

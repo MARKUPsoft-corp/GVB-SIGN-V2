@@ -150,7 +150,7 @@
               </div>
               <!-- Point de statut coloré -->
               <div class="organization-status" :class="getStatusClass(org)">
-                <i class="bi bi-circle-fill"></i>
+              <i class="bi bi-circle-fill"></i>
               </div>
             </div>
           </div>
