@@ -197,9 +197,6 @@ CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
-
-# Session settings
-SESSION_COOKIE_AGE = 86400 * 7  # 7 jours (en secondes)
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Ne pas expirer à la fermeture du navigateur
 SESSION_SAVE_EVERY_REQUEST = True  # Sauvegarder la session à chaque requête
 SESSION_COOKIE_SAMESITE = 'Lax'   # Lax pour HTTP en développement
@@ -207,4 +204,7 @@ CSRF_COOKIE_SAMESITE = 'Lax'      # Lax pour HTTP en développement
 SESSION_COOKIE_HTTPONLY = False   # Permet l'accès JavaScript
 CSRF_COOKIE_HTTPONLY = False
 SESSION_COOKIE_SECURE = False     # False pour HTTP en développement
-CSRF_COOKIE_SECURE = False        # False pour HTTP en développement
+CSRF_COOKIE_SECURE = False
+
+# X-Frame-Options settings pour permettre l'affichage des PDFs dans les iframes
+X_FRAME_OPTIONS = 'SAMEORIGIN'  # Permet l'affichage dans les iframes du même domaine

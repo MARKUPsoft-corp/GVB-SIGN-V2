@@ -12,4 +12,7 @@ urlpatterns = [
     
     # Pending signatures
     path('pending-signatures/', views.get_pending_signatures, name='get_pending_signatures'),
+    
+    # PDF preview endpoint (sans restrictions X-Frame-Options)
+    path('pdf-preview/<uuid:document_id>/<str:file_type>/', views.serve_pdf_for_preview, name='serve_pdf_for_preview'),
 ]

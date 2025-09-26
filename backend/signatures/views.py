@@ -6,6 +6,11 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils import timezone
+from django.http import FileResponse, Http404
+from django.views.decorators.clickjacking import xframe_options_exempt
+from django.views.decorators.http import require_http_methods
+from django.conf import settings
+import os
 from organizations.models import Organization, OrganizationMember
 from .models import DocumentPreparation, DocumentSignatureStep, DocumentSignature
 from .serializers import (
@@ -283,3 +288,72 @@ def get_pending_signatures(request):
             'success': False,
             'error': str(e)
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@xframe_options_exempt
+@require_http_methods(["GET"])
+def serve_pdf_for_preview(request, document_id, file_type):
+    """
+    Serve un PDF pour l'aperçu dans les iframes sans restrictions X-Frame-Options
+    """
+    try:
+        # Récupérer le document
+        document = get_object_or_404(DocumentPreparation, id=document_id)
+        
+        # Vérifier que l'utilisateur a accès à ce document
+        if not request.user.is_authenticated:
+            raise Http404("Accès non autorisé")
+        
+        # Déterminer le chemin du fichier selon le type
+        if file_type == 'current':
+            # Utiliser la nouvelle logique pour déterminer le document actuel
+            if document.status == 'draft':
+                # En brouillon, retourner le document original
+                if not document.original_document:
+                    raise Http404("Document original non trouvé")
+                file_path = document.original_document.path
+            elif document.status in ['prepared', 'pending_signature', 'in_progress']:
+                # En cours de workflow, retourner le document actuel (avec signatures partielles)
+                if document.current_document:
+                    file_path = document.current_document.path
+                elif document.original_document:
+                    file_path = document.original_document.path
+                else:
+                    raise Http404("Document actuel non trouvé")
+            elif document.status == 'completed':
+                # Workflow terminé, retourner le document final
+                if document.final_document:
+                    file_path = document.final_document.path
+                elif document.current_document:
+                    file_path = document.current_document.path
+                else:
+                    raise Http404("Document final non trouvé")
+            else:
+                # Par défaut, retourner le document original
+                if not document.original_document:
+                    raise Http404("Document original non trouvé")
+                file_path = document.original_document.path
+        elif file_type == 'generated' and document.generated_pdf:
+            file_path = document.generated_pdf.path
+        else:
+            raise Http404("Fichier non trouvé")
+        
+        # Vérifier que le fichier existe
+        if not os.path.exists(file_path):
+            raise Http404("Fichier non trouvé sur le serveur")
+        
+        # Servir le fichier avec les bons headers
+        response = FileResponse(
+            open(file_path, 'rb'),
+            content_type='application/pdf',
+            as_attachment=False
+        )
+        
+        # Ajouter des headers pour permettre l'affichage dans les iframes
+        response['Content-Disposition'] = f'inline; filename="{os.path.basename(file_path)}"'
+        response['X-Frame-Options'] = 'ALLOWALL'  # Permet l'affichage dans toutes les iframes
+        
+        return response
+        
+    except Exception as e:
+        raise Http404(f"Erreur lors du chargement du fichier: {str(e)}")

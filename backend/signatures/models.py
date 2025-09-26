@@ -197,6 +197,8 @@ class DocumentPreparation(models.Model):
             if self.current_step >= self.total_steps:
                 self.status = 'completed'
                 self.completed_at = timezone.now()
+                # À la fin, current_document devient final_document
+                self.final_document = self.current_document
             else:
                 # Définir le prochain signataire
                 next_signer_info = self.next_signer_info
@@ -206,6 +208,36 @@ class DocumentPreparation(models.Model):
                     except User.DoesNotExist:
                         pass
             self.save()
+    
+    def update_current_document(self, new_document_file):
+        """
+        Met à jour le document actuel avec une nouvelle version (après signature)
+        """
+        # Sauvegarder l'ancien current_document comme backup si nécessaire
+        if self.current_document:
+            # Optionnel: créer un backup de l'ancienne version
+            pass
+        
+        # Mettre à jour avec la nouvelle version
+        self.current_document = new_document_file
+        self.save()
+    
+    def get_current_document_url(self):
+        """
+        Retourne l'URL du document actuel selon l'état du workflow
+        """
+        if self.status == 'draft':
+            # En brouillon, retourner le document original
+            return self.original_document.url if self.original_document else None
+        elif self.status in ['prepared', 'pending_signature', 'in_progress']:
+            # En cours de workflow, retourner le document actuel (avec signatures partielles)
+            return self.current_document.url if self.current_document else self.original_document.url
+        elif self.status == 'completed':
+            # Workflow terminé, retourner le document final
+            return self.final_document.url if self.final_document else self.current_document.url
+        else:
+            # Par défaut, retourner le document original
+            return self.original_document.url if self.original_document else None
 
 
 class DocumentSignatureStep(models.Model):
