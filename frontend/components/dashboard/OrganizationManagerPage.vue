@@ -9,31 +9,17 @@
     <div class="organization-header">
       <div class="header-container">
         <div class="header-content">
-          <h1 class="section-title">
+          <h1 class="display-4 fw-bold mb-3 text-dark header-title">
             <span class="text-dark">Espace Direction de l'</span>
             <span class="text-primary-blue">organisation </span>
             <span class="text-primary-blue" v-if="userOrganization && userOrganization.organization"> {{ userOrganization.organization.name }}</span>
           </h1>
-          <p class="section-subtitle" v-if="userOrganization && userOrganization.organization">
+          <p class="lead mb-0 text-dark sections-subtitle" v-if="userOrganization && userOrganization.organization">
             Supervisez et gérez l'organisation {{ userOrganization.organization.name }} avec des outils de direction avancés.
           </p>
-          <p class="section-subtitle" v-else>
+          <p class="lead mb-0 text-dark sections-subtitle" v-else>
             Vous êtes directeur d'une organisation. Supervisez et gérez avec des outils avancés.
           </p>
-          <div class="header-actions">
-            <button class="btn btn-primary-custom analytics-btn" @click="toggleAnalyticsModal" ref="analyticsBtn">
-              <i class="bi bi-graph-up me-2"></i>
-              Tableau de bord
-            </button>
-            <button class="btn btn-outline-primary team-btn" @click="toggleTeamManagement">
-              <i class="bi bi-people me-2"></i>
-              Gérer l'équipe
-            </button>
-            <button class="btn btn-outline-secondary settings-btn" @click="openOrganizationSettings">
-              <i class="bi bi-gear me-2"></i>
-              Paramètres
-            </button>
-          </div>
         </div>
         <div class="header-image">
           <!-- Bulles décoratives -->
@@ -641,7 +627,7 @@ const emit = defineEmits(['open-organization-settings'])
 /* STYLES GÉNÉRAUX */
 .organization-manager-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background: transparent;
   padding: 2rem 0;
   position: relative;
 }
@@ -759,19 +745,21 @@ const emit = defineEmits(['open-organization-settings'])
   animation: slideInLeft 1s ease-out 0.3s forwards;
 }
 
-.section-title {
+.header-title {
+  font-family: 'Raleway', sans-serif;
   font-size: 3rem;
   font-weight: 800;
+  color: var(--text-dark);
   margin-bottom: 1rem;
   line-height: 1.2;
-  font-family: 'Raleway', sans-serif;
 }
 
-.section-subtitle {
+.sections-subtitle {
   font-size: 1.2rem;
+  font-weight: 400;
   color: var(--dark-gray);
   margin-bottom: 2rem;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 .header-actions {
@@ -785,8 +773,8 @@ const emit = defineEmits(['open-organization-settings'])
   opacity: 0;
   animation: slideInRight 1s ease-out 0.5s forwards;
   position: relative;
-  width: 400px;
-  height: 300px;
+  width: 320px;
+  height: 240px;
 }
 
 .organization-illustration {
@@ -885,15 +873,18 @@ const emit = defineEmits(['open-organization-settings'])
 
 /* STATISTIQUES */
 .docs-stats-section {
+  margin-top: 6rem;
   margin-bottom: 4rem;
 }
 
 .stat-card {
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 20px;
-  padding: 2rem;
-  text-align: center;
-  box-shadow: 0 8px 32px rgba(0, 102, 204, 0.1);
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 2px 10px rgba(0, 102, 204, 0.05);
   border: 1px solid rgba(0, 102, 204, 0.08);
   opacity: 0;
   animation: fadeInUp 0.8s ease-out forwards;
@@ -905,24 +896,27 @@ const emit = defineEmits(['open-organization-settings'])
 .stat-card:nth-child(4) { animation-delay: 1.2s; }
 
 .stat-icon {
-  width: 60px;
-  height: 60px;
-  background: linear-gradient(135deg, rgba(0, 102, 204, 0.1) 0%, rgba(0, 123, 255, 0.15) 100%);
-  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  background: rgba(0, 102, 204, 0.1);
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 1rem;
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   color: var(--primary-blue);
+  flex-shrink: 0;
+}
+
+.stat-content {
+  flex: 1;
 }
 
 .stat-number {
-  font-size: 2.5rem;
-  font-weight: 800;
+  font-size: 1.75rem;
+  font-weight: 700;
   color: var(--text-dark);
-  margin-bottom: 0.5rem;
-  font-family: 'Raleway', sans-serif;
+  margin-bottom: 0.25rem;
 }
 
 .stat-label {
@@ -1647,11 +1641,11 @@ const emit = defineEmits(['open-organization-settings'])
   }
   
   .header-image {
-    width: 300px;
-    height: 200px;
+    width: 280px;
+    height: 210px;
   }
   
-  .section-title {
+  .header-title {
     font-size: 2rem;
   }
   

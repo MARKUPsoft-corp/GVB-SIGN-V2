@@ -73,12 +73,36 @@ def create_document_preparation(request):
 @permission_classes([IsAuthenticated])
 def get_document_preparations(request):
     """
-    Récupère les préparations de documents de l'utilisateur
+    Récupère les préparations de documents de l'utilisateur pour l'organisation actuelle
     """
     try:
+        # Récupérer l'organisation depuis les paramètres de la requête
+        organization_id = request.GET.get('organization_id')
+        
+        if not organization_id:
+            return Response({
+                'success': False,
+                'error': 'ID de l\'organisation requis'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Vérifier que l'utilisateur est membre de cette organisation
+        try:
+            from organizations.models import OrganizationMember
+            membership = OrganizationMember.objects.get(
+                user=request.user,
+                organization_id=organization_id
+            )
+        except OrganizationMember.DoesNotExist:
+            return Response({
+                'success': False,
+                'error': 'Vous n\'êtes pas membre de cette organisation'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
         # Récupérer les préparations où l'utilisateur est soit le préparateur soit le signataire actuel
+        # ET qui appartiennent à l'organisation spécifiée
         preparations = DocumentPreparation.objects.filter(
-            models.Q(prepared_by=request.user) | models.Q(current_signer=request.user)
+            models.Q(prepared_by=request.user) | models.Q(current_signer=request.user),
+            organization_id=organization_id
         ).select_related('organization', 'prepared_by', 'current_signer').order_by('-created_at')
         
         serializer = DocumentPreparationSerializer(preparations, many=True)
@@ -349,9 +373,16 @@ def serve_pdf_for_preview(request, document_id, file_type):
             as_attachment=False
         )
         
-        # Ajouter des headers pour permettre l'affichage dans les iframes
-        response['Content-Disposition'] = f'inline; filename="{os.path.basename(file_path)}"'
-        response['X-Frame-Options'] = 'ALLOWALL'  # Permet l'affichage dans toutes les iframes
+        # Déterminer si c'est pour l'affichage (inline) ou le téléchargement (attachment)
+        is_download = request.GET.get('download', 'false').lower() == 'true'
+        
+        if is_download:
+            # Headers pour le téléchargement
+            response['Content-Disposition'] = f'attachment; filename="{os.path.basename(file_path)}"'
+        else:
+            # Headers pour l'affichage dans les iframes
+            response['Content-Disposition'] = f'inline; filename="{os.path.basename(file_path)}"'
+            response['X-Frame-Options'] = 'ALLOWALL'  # Permet l'affichage dans toutes les iframes
         
         return response
         

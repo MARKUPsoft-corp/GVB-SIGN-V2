@@ -981,18 +981,14 @@ const downloadDocument = (document) => {
   if (typeof window === 'undefined') return
   
   try {
+    // Utiliser l'endpoint spécial pour télécharger le document actuel selon l'état du workflow
+    const downloadUrl = `http://127.0.0.1:8000/api/signatures/pdf-preview/${document.id}/current/?download=true`
+    const filename = document.original_filename || document.document_title || 'document.pdf'
+    
+    console.log('📥 Téléchargement du document actuel via endpoint spécial:', downloadUrl)
+    
     // Créer un lien de téléchargement
     const link = window.document.createElement('a')
-    
-    // Toujours télécharger le document original (current_document)
-    let downloadUrl = document.current_document
-    let filename = document.original_filename || document.document_title || 'document.pdf'
-    
-    if (!downloadUrl) {
-      console.error('Document non disponible pour le téléchargement')
-      return
-    }
-    
     link.href = downloadUrl
     link.download = filename
     link.target = '_blank'
@@ -1112,7 +1108,15 @@ const fetchPreparedDocuments = async () => {
     
     const csrfToken = getCookie('csrftoken');
     
-    const response = await fetch('http://127.0.0.1:8000/api/signatures/document-preparation/', {
+    // Construire l'URL avec l'ID de l'organisation
+    const organizationId = userOrganization.value?.organization?.id
+    if (!organizationId) {
+      throw new Error('Organisation non trouvée')
+    }
+    
+    const url = `http://127.0.0.1:8000/api/signatures/document-preparation/?organization_id=${organizationId}`
+    
+    const response = await fetch(url, {
       method: 'GET',
       credentials: 'include',
       headers: {
