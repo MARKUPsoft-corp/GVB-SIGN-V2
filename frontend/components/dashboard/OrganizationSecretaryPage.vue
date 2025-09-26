@@ -1738,8 +1738,9 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--primary-blue);
   font-size: 1.25rem;
+  color: var(--primary-blue);
+  flex-shrink: 0;
 }
 
 .stat-content {
