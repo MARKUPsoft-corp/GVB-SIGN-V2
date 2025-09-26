@@ -1,11 +1,11 @@
 <template>
   <div class="organization-manager-page">
-    <!-- Bouton de fermeture -->
-    <button class="close-organization-btn" @click="closeOrganizationDashboard" title="Fermer et retourner à la sélection d'organisation">
-      <i class="bi bi-x"></i>
-    </button>
-    
-    <!-- Header avec titre de la section -->
+  <!-- Bouton de fermeture -->
+  <button class="close-organization-btn" @click="closeOrganizationDashboard" title="Fermer et retourner à la sélection d'organisation">
+    <i class="bi bi-x"></i>
+  </button>
+  
+  <!-- Header avec titre de la section -->
     <div class="organization-header">
       <div class="header-container">
         <div class="header-content">
@@ -134,7 +134,7 @@
             <i class="bi bi-file-earmark-pen me-2"></i>
             Documents signés
           </button>
-        </div>
+              </div>
 
         <!-- Contenu de l'onglet "Documents préparés immédiatement" -->
         <div v-if="activeDocumentTab === 'prepared-immediate'" class="tab-content">
@@ -158,35 +158,50 @@
                >
                  <i class="bi bi-x"></i>
                </button>
-             </div>
-           </div>
-           
+              </div>
+            </div>
+            
            <!-- Bouton Tout signer -->
-           <button 
-             class="btn btn-primary-blue sign-all-btn"
-             @click="signAllDocuments"
-             :disabled="filteredDocuments.length === 0"
-           >
-             <i class="bi bi-pen me-2"></i>
-             Tout signer
-           </button>
-         </div>
+           <div class="sign-all-btn-container" :class="{ 'has-tooltip': (filteredDocuments.length === 0 || !hasCertificates) }">
+             <button 
+               class="btn btn-primary-blue sign-all-btn"
+               @click="signAllDocuments"
+               :disabled="filteredDocuments.length === 0 || !hasCertificates"
+             >
+               <i class="bi bi-pen me-2"></i>
+               Tout signer
+             </button>
+             
+             <!-- Info-bulle pour bouton désactivé -->
+             <div v-if="filteredDocuments.length === 0 || !hasCertificates" class="info-tooltip">
+               <div class="tooltip-content">
+                 <i class="bi bi-info-circle me-2"></i>
+                 <div class="tooltip-text">
+                   <strong>Bouton désactivé</strong><br>
+                   <span v-if="filteredDocuments.length === 0">Aucun document à signer</span>
+                   <span v-else-if="!hasCertificates">Aucun certificat de signature disponible</span>
+                </div>
+               </div>
+               <div class="tooltip-arrow"></div>
+             </div>
+                </div>
+              </div>
 
           <!-- Loading state -->
           <div v-if="isLoadingDocuments" class="text-center py-5">
             <div class="spinner-border text-primary-blue" role="status">
               <span class="visually-hidden">Chargement...</span>
-            </div>
+                </div>
             <p class="text-muted mt-3">Chargement des documents...</p>
-          </div>
+              </div>
 
           <!-- Error state -->
           <div v-else-if="documentsError" class="text-center py-5">
             <div class="alert alert-danger" role="alert">
               <i class="bi bi-exclamation-triangle me-2"></i>
               {{ documentsError }}
-            </div>
-          </div>
+                </div>
+              </div>
 
           <!-- Documents grid -->
           <div v-else-if="filteredDocuments.length > 0" class="documents-grid">
@@ -205,10 +220,10 @@
                 <div class="document-header-content">
                   <div class="organization-badge">
                     <span>{{ document.organization_name }}</span>
-                  </div>
                 </div>
               </div>
-              
+            </div>
+
               <!-- Contenu de la carte -->
               <div class="card-content">
                 <p class="document-description">{{ document.document_description || 'Aucune description' }}</p>
@@ -224,38 +239,38 @@
                     <div class="signature-step completed" v-if="document.current_step > 1">
                       <div class="step-indicator">
                         <i class="bi bi-check-circle-fill"></i>
-                      </div>
+            </div>
                       <div class="step-content">
                         <span class="step-title">Préparé par</span>
                         <span class="step-person">{{ document.prepared_by_name }}</span>
-                      </div>
-                    </div>
-                    
+          </div>
+        </div>
+        
                     <!-- Étape actuelle -->
                     <div class="signature-step current">
                       <div class="step-indicator">
                         <i class="bi bi-clock"></i>
-                      </div>
+              </div>
                       <div class="step-content">
                         <span class="step-title">En attente de signature</span>
                         <span class="step-person">{{ document.current_signer_name || 'Non assigné' }}</span>
-                      </div>
-                    </div>
-                    
+              </div>
+            </div>
+            
                     <!-- Étapes restantes -->
                     <div class="signature-step pending" v-if="document.current_step < document.total_steps">
                       <div class="step-indicator">
                         <i class="bi bi-circle"></i>
-                      </div>
+                  </div>
                       <div class="step-content">
                         <span class="step-title">Étapes restantes</span>
                         <span class="step-person">{{ document.total_steps - document.current_step }} étape(s)</span>
-                      </div>
-                    </div>
+                  </div>
                   </div>
                 </div>
-                
               </div>
+
+                  </div>
               
               <!-- Footer de la carte -->
               <div class="card-footer">
@@ -264,14 +279,14 @@
                     <div class="meta-item">
                       <i class="bi bi-calendar"></i>
                       <span>{{ formatDate(document.created_at) }}</span>
-                    </div>
+                  </div>
                     <div class="meta-item">
                       <i class="bi bi-bar-chart"></i>
                       <span>{{ document.progress_percentage || 0 }}% complété</span>
-                    </div>
                   </div>
-                  <span class="document-step">Étape {{ document.current_step || 1 }}/{{ document.total_steps || 1 }}</span>
                 </div>
+                  <span class="document-step">Étape {{ document.current_step || 1 }}/{{ document.total_steps || 1 }}</span>
+              </div>
                <div class="document-actions">
                  <button 
                    class="btn btn-sm btn-outline-primary" 
@@ -288,6 +303,29 @@
                  >
                    <i class="bi bi-file-earmark-pdf"></i>
                  </button>
+                 <div class="sign-btn-container" :class="{ 'has-tooltip': !hasCertificates }">
+                   <button 
+                     class="btn btn-sm btn-primary-blue sign-btn" 
+                     :class="{ 'disabled': !hasCertificates }"
+                     :disabled="!hasCertificates"
+                     @click="signDocument(document)"
+                   >
+                     <i class="bi bi-pen me-1"></i>
+                     Signer
+                   </button>
+                   
+                   <!-- Info-bulle pour bouton désactivé -->
+                   <div v-if="!hasCertificates" class="info-tooltip">
+                     <div class="tooltip-content">
+                       <i class="bi bi-info-circle me-2"></i>
+                       <div class="tooltip-text">
+                         <strong>Bouton désactivé</strong><br>
+                         Aucun certificat de signature disponible
+                  </div>
+                  </div>
+                     <div class="tooltip-arrow"></div>
+                   </div>
+                 </div>
                  <button 
                    class="btn btn-sm btn-outline-success" 
                    title="Télécharger"
@@ -295,10 +333,10 @@
                  >
                    <i class="bi bi-download"></i>
                  </button>
-               </div>
+                  </div>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
 
           <!-- Empty state -->
           <div v-else-if="preparedDocuments.length === 0" class="text-center py-5">
@@ -306,8 +344,8 @@
               <i class="bi bi-file-earmark-arrow-up fs-1 text-primary-blue mb-3"></i>
               <h4 class="text-dark mb-3">Aucun document préparé</h4>
               <p class="text-muted mb-4">Aucun document n'est en attente de signature pour cette organisation</p>
-            </div>
-          </div>
+                  </div>
+                  </div>
 
           <!-- No search results state -->
           <div v-else-if="searchQuery && filteredDocuments.length === 0" class="text-center py-5">
@@ -319,9 +357,9 @@
                 <i class="bi bi-arrow-left me-2"></i>
                 Effacer la recherche
               </button>
-            </div>
-          </div>
-        </div>
+                  </div>
+                </div>
+              </div>
 
         <!-- Contenu de l'onglet "Documents préparés avec modèle" -->
         <div v-if="activeDocumentTab === 'prepared-with-model'" class="tab-content">
@@ -335,8 +373,8 @@
                 Voir les documents avec modèle
               </button>
             </div>
-          </div>
-        </div>
+              </div>
+            </div>
 
         <!-- Contenu de l'onglet "Documents signés" -->
         <div v-if="activeDocumentTab === 'signed-documents'" class="tab-content">
@@ -349,9 +387,9 @@
                 <i class="bi bi-eye me-2"></i>
                 Voir les documents signés
               </button>
-            </div>
           </div>
         </div>
+      </div>
       </div>
 
     </div>
@@ -605,10 +643,10 @@
                 </button>
               </div>
             </div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 </template>
 
 <script setup>
@@ -637,6 +675,10 @@ const currentPreviewDocument = ref(null)
 const closeTooltipTimeout = ref(null)
 const previewPdfSource = ref(null)
 const pdfLoadError = ref(false)
+
+// Variables pour les certificats
+const hasCertificates = ref(false)
+const isLoadingCertificates = ref(false)
 
 // État des données
 const userOrganization = ref(null)
@@ -840,7 +882,7 @@ const fetchPreparedDocuments = async () => {
       throw new Error(`Erreur ${response.status}: ${response.statusText}`)
     }
     
-    const data = await response.json()
+      const data = await response.json()
     console.log('🔄 Données reçues:', data)
     
     if (data.success) {
@@ -882,18 +924,30 @@ const clearSearch = () => {
 }
 
 // Fonction pour signer tous les documents
-const signAllDocuments = () => {
+const signAllDocuments = async () => {
   if (filteredDocuments.value.length === 0) return
   
-  // Confirmation avant de signer tous les documents
-  const confirmMessage = `Êtes-vous sûr de vouloir signer tous les ${filteredDocuments.value.length} document(s) affiché(s) ?`
-  
-  if (confirm(confirmMessage)) {
-    console.log('🖊️ Signature de tous les documents:', filteredDocuments.value.length)
+  try {
+    // Vérifier d'abord si l'organisation a des certificats
+    if (!hasCertificates.value) {
+      // Afficher une notification d'erreur
+      showNotification('error', 'Impossible de signer', 'Cette organisation n\'a pas importé de certificats de signature. Veuillez contacter l\'administrateur pour importer un certificat.')
+      return
+    }
     
-    // TODO: Implémenter la logique de signature en lot
-    // Pour l'instant, on affiche juste un message
-    alert(`Signature en cours de ${filteredDocuments.value.length} document(s)...`)
+    // Confirmation avant de signer tous les documents
+    const confirmMessage = `Êtes-vous sûr de vouloir signer tous les ${filteredDocuments.value.length} document(s) affiché(s) ?`
+    
+    if (confirm(confirmMessage)) {
+      console.log('🖊️ Signature de tous les documents:', filteredDocuments.value.length)
+      
+      // TODO: Implémenter la logique de signature en lot
+      // Pour l'instant, on affiche juste un message
+      alert(`Signature en cours de ${filteredDocuments.value.length} document(s)...`)
+    }
+  } catch (error) {
+    console.error('❌ Erreur lors de la signature en lot:', error)
+    showNotification('error', 'Erreur', 'Impossible de procéder à la signature en lot.')
   }
 }
 
@@ -1079,6 +1133,117 @@ const downloadDocument = (document) => {
   }
 }
 
+// Fonction pour signer un document
+const signDocument = async (document) => {
+  console.log('🖊️ Signature du document:', document)
+  
+  try {
+    // Vérifier d'abord si l'organisation a des certificats
+    const hasCertificates = await checkOrganizationCertificates()
+    
+    if (!hasCertificates) {
+      // Afficher une notification d'erreur
+      showNotification('error', 'Impossible de signer', 'Cette organisation n\'a pas importé de certificats de signature. Veuillez contacter l\'administrateur pour importer un certificat.')
+      return
+    }
+    
+    // Confirmation avant signature
+    const confirmMessage = `Êtes-vous sûr de vouloir signer le document "${document.document_title || document.original_filename}" ?`
+    
+    if (confirm(confirmMessage)) {
+      console.log('✅ Signature confirmée pour:', document.id)
+      
+      // TODO: Implémenter la logique de signature
+      // Pour l'instant, on affiche juste un message
+      alert(`Signature du document "${document.document_title || document.original_filename}" en cours...`)
+      
+      // TODO: Faire l'appel API pour signer le document
+      // TODO: Rafraîchir la liste des documents après signature
+    }
+  } catch (error) {
+    console.error('❌ Erreur lors de la vérification des certificats:', error)
+    showNotification('error', 'Erreur', 'Impossible de vérifier les certificats de l\'organisation.')
+  }
+}
+
+// Fonction pour vérifier si l'organisation a des certificats
+const checkOrganizationCertificates = async () => {
+  try {
+    isLoadingCertificates.value = true
+    
+    const getCookie = (name) => {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+      return null;
+    };
+    
+    const csrfToken = getCookie('csrftoken');
+    const organizationId = userOrganization.value?.organization?.id
+    
+    if (!organizationId) {
+      throw new Error('Organisation non trouvée')
+    }
+    
+    const url = `http://127.0.0.1:8000/api/organizations/${organizationId}/certificates/`
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken || '',
+      },
+    })
+    
+    if (!response.ok) {
+      throw new Error(`Erreur ${response.status}: ${response.statusText}`)
+    }
+    
+      const data = await response.json()
+    
+    // Vérifier s'il y a des certificats actifs
+    const activeCertificates = data.certificates?.filter(cert => cert.is_active && cert.is_valid) || []
+    
+    console.log('🔐 Certificats trouvés:', activeCertificates.length)
+    
+    // Mettre à jour l'état réactif
+    hasCertificates.value = activeCertificates.length > 0
+    
+    return activeCertificates.length > 0
+    
+  } catch (error) {
+    console.error('❌ Erreur lors de la vérification des certificats:', error)
+    hasCertificates.value = false
+    return false
+  } finally {
+    isLoadingCertificates.value = false
+  }
+}
+
+// Fonction pour afficher des notifications
+const showNotification = (type, title, message) => {
+  // Créer une notification toast
+  const notification = document.createElement('div')
+  notification.className = `alert alert-${type === 'error' ? 'danger' : 'success'} alert-dismissible fade show position-fixed`
+  notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;'
+  
+  notification.innerHTML = `
+    <strong>${title}</strong><br>
+    ${message}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  `
+  
+  document.body.appendChild(notification)
+  
+  // Auto-supprimer après 5 secondes
+  setTimeout(() => {
+    if (notification.parentNode) {
+      notification.parentNode.removeChild(notification)
+    }
+  }, 5000)
+}
+
 // Formater la date pour l'affichage
 const formatDate = (dateString) => {
   if (!dateString) return 'Date inconnue'
@@ -1216,6 +1381,11 @@ onMounted(async () => {
   // Charger les documents préparés au montage
   if (userOrganization.value?.organization?.id) {
     await fetchPreparedDocuments()
+  }
+  
+  // Vérifier les certificats de l'organisation
+  if (userOrganization.value?.organization?.id) {
+    await checkOrganizationCertificates()
   }
   
   // Ajouter les event listeners
@@ -2670,6 +2840,30 @@ const emit = defineEmits(['open-organization-settings'])
   box-shadow: 0 4px 12px rgba(0, 102, 204, 0.2);
 }
 
+.sign-btn {
+  background: var(--primary-blue);
+  color: white;
+  border: none;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  padding: 0.5rem 0.75rem;
+}
+
+.sign-btn:hover:not(:disabled) {
+  background: #0056b3;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+}
+
+.sign-btn:disabled {
+  background: #ccc;
+  color: #666;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  opacity: 0.6;
+}
+
 /* BARRE DE RECHERCHE */
 .search-container {
   flex: 1;
@@ -2702,6 +2896,139 @@ const emit = defineEmits(['open-organization-settings'])
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+  opacity: 0.6;
+}
+
+/* Conteneurs pour les info-bulles */
+.sign-all-btn-container,
+.sign-btn-container {
+  position: relative;
+  display: inline-block;
+}
+
+/* Info-bulles */
+.info-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 8px;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  pointer-events: none;
+}
+
+.has-tooltip:hover .info-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+.info-tooltip .tooltip-content {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.1) 0%, 
+    rgba(255, 255, 255, 0.05) 50%, 
+    rgba(0, 0, 0, 0.1) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+  padding: 12px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 200px;
+  max-width: 300px;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: var(--text-dark);
+}
+
+/* Effet de verre incurvé */
+.info-tooltip .tooltip-content::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.2) 0%, 
+    rgba(255, 255, 255, 0.1) 50%, 
+    transparent 100%);
+  border-radius: 20px 20px 0 0;
+  pointer-events: none;
+}
+
+.info-tooltip .tooltip-content::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 30%;
+  background: linear-gradient(180deg, 
+    transparent 0%, 
+    rgba(0, 0, 0, 0.05) 100%);
+  border-radius: 0 0 20px 20px;
+  pointer-events: none;
+}
+
+.info-tooltip .tooltip-content i {
+  color: var(--primary-blue);
+  font-size: 1rem;
+  margin-top: 2px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.info-tooltip .tooltip-text {
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+
+.info-tooltip .tooltip-text strong {
+  color: var(--text-dark);
+  font-weight: 600;
+}
+
+.info-tooltip .tooltip-arrow {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid rgba(0, 0, 0, 0.15);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+/* Animation d'apparition */
+.info-tooltip {
+  animation: tooltipFadeIn 0.3s ease-out;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
 }
 
 .search-input-wrapper {
@@ -2897,6 +3224,20 @@ const emit = defineEmits(['open-organization-settings'])
     padding: 0.4rem;
   }
   
+  .sign-btn {
+    background: var(--primary-blue);
+    color: white;
+    border: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+  
+  .sign-btn:hover {
+    background: #0056b3;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+  }
+  
   .search-container {
     max-width: 100%;
   }
@@ -2905,6 +3246,14 @@ const emit = defineEmits(['open-organization-settings'])
     padding: 0.6rem 1rem;
     font-size: 0.8rem;
     min-width: 120px;
+  }
+  
+  .info-tooltip .tooltip-content {
+    min-width: 180px;
+    max-width: 250px;
+    font-size: 0.8rem;
+    padding: 10px 12px;
+    border-radius: 16px;
   }
 }
 
