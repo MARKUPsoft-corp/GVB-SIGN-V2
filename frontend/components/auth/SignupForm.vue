@@ -46,7 +46,7 @@
                         id="firstName"
                         v-model="form.firstName"
                         class="floating-input"
-                        placeholder="Emmanuel"
+                        placeholder="John"
                         required
                         @input="validateFirstName"
                         @blur="validateFirstName"
@@ -64,7 +64,7 @@
                         id="lastName"
                         v-model="form.lastName"
                         class="floating-input"
-                        placeholder="YAKAM TCHAMEGNI"
+                        placeholder="Doe"
                         required
                         @input="validateLastName"
                         @blur="validateLastName"

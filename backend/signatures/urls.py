@@ -15,4 +15,7 @@ urlpatterns = [
     
     # PDF preview endpoint (sans restrictions X-Frame-Options)
     path('pdf-preview/<uuid:document_id>/<str:file_type>/', views.serve_pdf_for_preview, name='serve_pdf_for_preview'),
+    
+    # Bulk signatures endpoint
+    path('bulk-create/', views.bulk_create_signatures, name='bulk_create_signatures'),
 ]

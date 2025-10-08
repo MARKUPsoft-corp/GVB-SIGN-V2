@@ -4,13 +4,15 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 from django.http import FileResponse, Http404
 from django.views.decorators.clickjacking import xframe_options_exempt
 from django.views.decorators.http import require_http_methods
 from django.conf import settings
 import os
+import base64
+from django.core.files.base import ContentFile
 from organizations.models import Organization, OrganizationMember
 from .models import DocumentPreparation, DocumentSignatureStep, DocumentSignature
 from .serializers import (
@@ -388,3 +390,104 @@ def serve_pdf_for_preview(request, document_id, file_type):
         
     except Exception as e:
         raise Http404(f"Erreur lors du chargement du fichier: {str(e)}")
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def bulk_create_signatures(request):
+    """
+    Crée plusieurs signatures en une seule requête
+    """
+    try:
+        signatures_data = request.data.get('signatures', [])
+        
+        if not signatures_data:
+            return Response({
+                'success': False,
+                'message': 'Aucune signature fournie',
+                'total_processed': 0,
+                'total_created': 0,
+                'total_errors': 0,
+                'created_signatures': [],
+                'errors': []
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        created_signatures = []
+        errors = []
+        
+        with transaction.atomic():
+            for index, signature_data in enumerate(signatures_data):
+                try:
+                    # Décoder les fichiers base64
+                    original_document_data = base64.b64decode(signature_data['original_document_base64'])
+                    signed_document_data = base64.b64decode(signature_data['signed_document_base64'])
+                    
+                    # Créer les fichiers
+                    original_filename = signature_data['original_filename']
+                    document_id = signature_data['document_id']
+                    
+                    original_file = ContentFile(
+                        original_document_data, 
+                        name=f"{document_id}_original_{original_filename}"
+                    )
+                    signed_file = ContentFile(
+                        signed_document_data, 
+                        name=f"{document_id}_signed_{original_filename}"
+                    )
+                    
+                    # Créer l'enregistrement de signature
+                    signature = DocumentSignature.objects.create(
+                        document_id=document_id,
+                        user=request.user,
+                        signer_full_name=signature_data['signer_full_name'],
+                        original_document=original_file,
+                        signed_document=signed_file,
+                        original_filename=original_filename,
+                        document_hash=signature_data['document_hash'],
+                        public_key=signature_data['public_key'],
+                        signature=signature_data['signature'],
+                        signature_timestamp=timezone.now(),
+                        file_size_original=signature_data['file_size_original'],
+                        file_size_signed=signature_data['file_size_signed'],
+                        execution_time=signature_data['execution_time'],
+                        organization=request.user.organization if hasattr(request.user, 'organization') else None
+                    )
+                    
+                    created_signatures.append({
+                        'index': index,
+                        'signature_id': str(signature.id),
+                        'document_id': document_id,
+                        'status': 'created'
+                    })
+                    
+                except Exception as e:
+                    errors.append({
+                        'index': index,
+                        'document_id': signature_data.get('document_id', 'unknown'),
+                        'error': str(e)
+                    })
+        
+        total_processed = len(signatures_data)
+        total_created = len(created_signatures)
+        total_errors = len(errors)
+        
+        return Response({
+            'success': True,
+            'message': f'{total_created} signature(s) créée(s), {total_errors} erreur(s)',
+            'total_processed': total_processed,
+            'total_created': total_created,
+            'total_errors': total_errors,
+            'created_signatures': created_signatures,
+            'errors': errors
+        })
+        
+    except Exception as e:
+        return Response({
+            'success': False,
+            'message': f'Erreur lors de la création des signatures: {str(e)}',
+            'total_processed': 0,
+            'total_created': 0,
+            'total_errors': 1,
+            'created_signatures': [],
+            'errors': [{'index': 0, 'document_id': 'unknown', 'error': str(e)}]
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
