@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
 import 'package:google_fonts/google_fonts.dart';
+import 'qr_scan_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -469,7 +470,13 @@ class _HeroSectionState extends State<_HeroSection> with TickerProviderStateMixi
                                         ],
                                       ),
                                       child: ElevatedButton.icon(
-                                        onPressed: () {},
+                                        onPressed: () {
+                                          Navigator.of(context).push(
+                                            MaterialPageRoute(
+                                              builder: (context) => const QRScanScreen(),
+                                            ),
+                                          );
+                                        },
                                         icon: const Icon(
                                           Icons.qr_code_2_rounded,
                                           size: 20,
