@@ -121,50 +121,40 @@ export class SignatureService {
       console.log('🔐 Hash calculé pour signature:', hashHex.substring(0, 20) + '...')
       console.log('🔐 Hash complet:', hashHex)
       
-      // Créer la signature avec PKCS#1 v1.5 en utilisant les primitives RSA
-      // Approche alternative : utiliser directement les fonctions RSA de node-forge
-      try {
-        // Méthode 1: Essayer avec l'objet digest
-        const signature = privateKey.sign(digest)
-        const signatureBase64 = forge.util.encode64(signature)
-        console.log('✅ Signature créée avec l\'objet digest')
-        console.log('🔐 Signature (premiers 50 chars):', signatureBase64.substring(0, 50) + '...')
-        return signatureBase64
-      } catch (digestError) {
-        console.log('❌ Échec avec l\'objet digest, essai avec les bytes:', digestError.message)
-        
-        try {
-          // Méthode 2: Essayer avec les bytes du digest
-          const signature = privateKey.sign(digest.getBytes())
-          const signatureBase64 = forge.util.encode64(signature)
-          console.log('✅ Signature créée avec les bytes du digest')
-          console.log('🔐 Signature (premiers 50 chars):', signatureBase64.substring(0, 50) + '...')
-          return signatureBase64
-        } catch (bytesError) {
-          console.log('❌ Échec avec les bytes, essai avec signature manuelle:', bytesError.message)
-          
-          // Méthode 3: Signature RSA manuelle avec PKCS#1 v1.5
-          const hashBytes = digest.getBytes()
-          
-          // Créer le padding PKCS#1 v1.5 pour SHA-256
-          const algorithmIdentifier = forge.asn1.create(forge.asn1.Class.UNIVERSAL, forge.asn1.Type.SEQUENCE, true, [
-            forge.asn1.create(forge.asn1.Class.UNIVERSAL, forge.asn1.Type.SEQUENCE, true, [
-              forge.asn1.create(forge.asn1.Class.UNIVERSAL, forge.asn1.Type.OID, false, forge.asn1.oidToDer(forge.oids.sha256).getBytes()),
-              forge.asn1.create(forge.asn1.Class.UNIVERSAL, forge.asn1.Type.NULL, false, '')
-            ]),
-            forge.asn1.create(forge.asn1.Class.UNIVERSAL, forge.asn1.Type.OCTETSTRING, false, hashBytes)
-          ])
-          
-          const algorithmIdentifierBytes = forge.asn1.toDer(algorithmIdentifier).getBytes()
-          
-          // Utiliser les primitives RSA de forge
-          const signature = forge.pki.rsa.encrypt(algorithmIdentifierBytes, privateKey, 0x01)
-          const signatureBase64 = forge.util.encode64(signature)
-          console.log('✅ Signature créée avec RSA manuel')
-          console.log('🔐 Signature (premiers 50 chars):', signatureBase64.substring(0, 50) + '...')
-          return signatureBase64
-        }
-      }
+      // CORRECTION CRITIQUE: La signature doit être créée à partir du hash binaire du document
+      // et non d'une structure ASN.1 générique qui serait la même pour tous les documents
+      
+      // Obtenir les bytes du hash
+      const hashBytes = digest.getBytes()
+      
+      // Créer le DigestInfo PKCS#1 v1.5 pour SHA-256
+      // Structure: DigestInfo ::= SEQUENCE { digestAlgorithm AlgorithmIdentifier, digest OCTET STRING }
+      const digestInfo = forge.asn1.create(forge.asn1.Class.UNIVERSAL, forge.asn1.Type.SEQUENCE, true, [
+        // AlgorithmIdentifier pour SHA-256
+        forge.asn1.create(forge.asn1.Class.UNIVERSAL, forge.asn1.Type.SEQUENCE, true, [
+          forge.asn1.create(forge.asn1.Class.UNIVERSAL, forge.asn1.Type.OID, false, 
+            forge.asn1.oidToDer(forge.oids.sha256).getBytes()),
+          forge.asn1.create(forge.asn1.Class.UNIVERSAL, forge.asn1.Type.NULL, false, '')
+        ]),
+        // Le hash du document (partie variable qui rend chaque signature unique)
+        forge.asn1.create(forge.asn1.Class.UNIVERSAL, forge.asn1.Type.OCTETSTRING, false, hashBytes)
+      ])
+      
+      // Encoder le DigestInfo en DER
+      const digestInfoBytes = forge.asn1.toDer(digestInfo).getBytes()
+      
+      console.log('🔐 DigestInfo créé, taille:', digestInfoBytes.length, 'bytes')
+      console.log('🔐 Hash bytes utilisé:', forge.util.bytesToHex(hashBytes).substring(0, 20) + '...')
+      
+      // Signer avec la clé privée RSA en utilisant PKCS#1 v1.5 padding
+      const signature = forge.pki.rsa.encrypt(digestInfoBytes, privateKey, 0x01)
+      const signatureBase64 = forge.util.encode64(signature)
+      
+      console.log('✅ Signature RSA-SHA256 créée avec succès')
+      console.log('🔐 Signature (premiers 50 chars):', signatureBase64.substring(0, 50) + '...')
+      console.log('🔐 La signature est unique car elle dépend du hash du document')
+      
+      return signatureBase64
     } catch (error) {
       console.error('Erreur lors de la signature:', error)
       throw new Error(`Erreur lors de la signature: ${error.message}`)
@@ -542,6 +532,7 @@ export class SignatureService {
         signature: signature,
         publicKeyPem: this.getPublicKeyPEM(publicKey),
         signedDocument: processedPdf,
+        originalDocumentSize: documentData.length,
         executionTime: executionTime,
         timestamp: new Date().toISOString()
       }

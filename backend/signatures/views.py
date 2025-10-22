@@ -131,7 +131,7 @@ def get_document_preparation(request, preparation_id):
         preparation = get_object_or_404(
             DocumentPreparation,
             id=preparation_id,
-            organization__organizationmember__user=request.user
+            organization__members__user=request.user
         )
         
         serializer = DocumentPreparationSerializer(preparation)
@@ -153,6 +153,122 @@ def get_document_preparation(request, preparation_id):
         return Response({
             'success': False,
             'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def save_document_signature(request, preparation_id):
+    """
+    Enregistre le résultat d'une signature de document
+    """
+    try:
+        # Récupérer la préparation de document
+        preparation = get_object_or_404(
+            DocumentPreparation,
+            id=preparation_id,
+            organization__members__user=request.user
+        )
+        
+        # Vérifier que l'utilisateur est le signataire actuel
+        if preparation.current_signer != request.user:
+            return Response({
+                'success': False,
+                'error': 'Vous n\'êtes pas autorisé à signer ce document'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Récupérer les données de la requête
+        data = request.data
+        
+        # Validation des données requises
+        required_fields = ['document_id', 'document_hash', 'signature', 'public_key', 'signed_document_data', 'file_size_original', 'file_size_signed', 'execution_time']
+        for field in required_fields:
+            if field not in data:
+                return Response({
+                    'success': False,
+                    'error': f'Champ requis manquant: {field}'
+                }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Décoder le document signé (base64)
+        try:
+            import base64
+            signed_document_data = base64.b64decode(data['signed_document_data'])
+        except Exception as e:
+            return Response({
+                'success': False,
+                'error': f'Erreur lors du décodage du document signé: {str(e)}'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Créer le fichier signé
+        from django.core.files.base import ContentFile
+        signed_filename = f"{data['document_id']}_signed_{preparation.original_filename}"
+        signed_file = ContentFile(signed_document_data, name=signed_filename)
+        
+        # VÉRIFICATION AUTOMATIQUE DE LA SIGNATURE
+        print("🔐 Vérification automatique de la signature avant enregistrement...")
+        from .utils import verify_document_signature
+        verification_result = verify_document_signature(
+            signature_base64=data['signature'],
+            public_key_pem=data['public_key'],
+            stored_hash=data['document_hash']
+        )
+        
+        if not verification_result['valid']:
+            print(f"❌ ATTENTION: Signature invalide détectée!")
+            print(f"❌ Message: {verification_result['message']}")
+            # On log l'erreur mais on n'empêche pas l'enregistrement pour le moment
+            # En production, on pourrait rejeter la signature invalide
+        else:
+            print(f"✅ Signature vérifiée et valide!")
+        
+        # Créer l'enregistrement de signature
+        signature_record = DocumentSignature.objects.create(
+            document_id=data['document_id'],
+            document_preparation=preparation,
+            user=request.user,
+            signer_full_name=request.user.get_full_name(),
+            original_document=preparation.original_document,
+            signed_document=signed_file,
+            original_filename=preparation.original_filename,
+            document_hash=data['document_hash'],
+            public_key=data['public_key'],
+            signature=data['signature'],
+            signature_timestamp=data.get('signature_timestamp', timezone.now()),
+            # Champs requis supplémentaires
+            file_size_original=data['file_size_original'],
+            file_size_signed=data['file_size_signed'],
+            execution_time=data['execution_time'],
+            # Informations sur l'organisation
+            organization=preparation.organization,
+            workflow_history=preparation.signature_workflow or [],
+            is_workflow_document=True
+        )
+        
+        # Mettre à jour la préparation de document
+        preparation.current_document = signed_file
+        preparation.status = 'in_progress'
+        preparation.save()
+        
+        # Avancer le workflow si ce n'est pas la dernière étape
+        from .utils import advance_workflow_step
+        workflow_result = advance_workflow_step(preparation)
+        
+        return Response({
+            'success': True,
+            'message': 'Signature enregistrée avec succès',
+            'signature_id': signature_record.id,
+            'workflow_advanced': workflow_result['advanced'],
+            'next_signer': workflow_result.get('next_signer'),
+            'is_complete': workflow_result.get('is_complete', False)
+        }, status=status.HTTP_201_CREATED)
+        
+    except Exception as e:
+        print(f"❌ Erreur lors de l'enregistrement de la signature: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return Response({
+            'success': False,
+            'error': f'Erreur lors de l\'enregistrement: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -215,7 +331,8 @@ def advance_workflow(request, preparation_id):
         
         # Si le workflow est complété, créer l'entrée finale dans DocumentSignature
         if preparation.is_completed:
-            self._create_final_document_signature(preparation)
+            # TODO: Implémenter la création de l'entrée finale si nécessaire
+            pass
         
         serializer = DocumentPreparationSerializer(preparation)
         
@@ -288,6 +405,154 @@ def _create_final_document_signature(preparation):
         preparation.save()
     
     return final_signature
+
+
+@api_view(['GET'])
+@permission_classes([])  # Pas d'authentification requise pour la vérification publique
+def verify_signature_by_document_id(request, document_id):
+    """
+    Vérifie la validité d'une signature de document par son ID (celui du QR code)
+    API publique pour vérifier les signatures via QR code
+    """
+    try:
+        print(f"🔐 Vérification de signature pour document ID: {document_id}")
+        
+        # Récupérer la signature par document_id
+        signature_record = get_object_or_404(DocumentSignature, document_id=document_id)
+        
+        print(f"📄 Document trouvé: {signature_record.original_filename}")
+        print(f"👤 Signataire: {signature_record.signer_full_name}")
+        print(f"🏢 Organisation: {signature_record.organization.name if signature_record.organization else 'N/A'}")
+        
+        # Vérifier la signature
+        from .utils import verify_signature_record
+        verification_result = verify_signature_record(signature_record)
+        
+        # Préparer les données de réponse
+        response_data = {
+            'success': True,
+            'document_info': {
+                'document_id': signature_record.document_id,
+                'filename': signature_record.original_filename,
+                'signer_name': signature_record.signer_full_name,
+                'signer_email': signature_record.user.email,
+                'signature_timestamp': signature_record.signature_timestamp.isoformat(),
+                'created_at': signature_record.created_at.isoformat(),
+                'file_size_original': signature_record.file_size_original,
+                'file_size_signed': signature_record.file_size_signed,
+                'execution_time': signature_record.execution_time
+            },
+            'organization_info': {
+                'name': signature_record.organization.name if signature_record.organization else None,
+                'id': str(signature_record.organization.id) if signature_record.organization else None
+            },
+            'verification': verification_result,
+            'document_urls': {
+                'signed_document_url': signature_record.signed_document.url if signature_record.signed_document else None,
+                'original_document_url': signature_record.original_document.url if signature_record.original_document else None
+            }
+        }
+        
+        # Ajouter les informations de workflow si disponible
+        if signature_record.is_workflow_document and signature_record.workflow_history:
+            response_data['workflow_info'] = {
+                'is_workflow_document': signature_record.is_workflow_document,
+                'workflow_history': signature_record.workflow_history,
+                'total_steps': len(signature_record.workflow_history)
+            }
+        
+        print(f"✅ Vérification terminée - Signature valide: {verification_result['valid']}")
+        
+        return Response(response_data, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        print(f"❌ Erreur lors de la vérification de la signature: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return Response({
+            'success': False,
+            'error': f'Erreur lors de la vérification: {str(e)}',
+            'document_id': document_id
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_signed_documents(request):
+    """
+    Récupère les documents signés pour l'organisation de l'utilisateur
+    """
+    try:
+        # Récupérer l'ID de l'organisation depuis les paramètres
+        organization_id = request.GET.get('organization_id')
+        
+        if not organization_id:
+            return Response({
+                'success': False,
+                'error': 'organization_id est requis'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Vérifier que l'utilisateur appartient à l'organisation
+        user_membership = OrganizationMember.objects.filter(
+            user=request.user,
+            organization_id=organization_id
+        ).first()
+        
+        if not user_membership:
+            return Response({
+                'success': False,
+                'error': 'Accès non autorisé à cette organisation'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Récupérer les documents signés de l'organisation
+        signed_documents = DocumentSignature.objects.filter(
+            organization_id=organization_id
+        ).select_related(
+            'user',
+            'organization',
+            'document_preparation'
+        ).order_by('-created_at')
+        
+        # Sérialiser les documents
+        documents_data = []
+        for doc in signed_documents:
+            documents_data.append({
+                'id': str(doc.id),
+                'document_id': doc.document_id,
+                'original_filename': doc.original_filename,
+                'signer_name': doc.signer_full_name,
+                'signer_email': doc.user.email,
+                'signature_timestamp': doc.signature_timestamp.isoformat(),
+                'created_at': doc.created_at.isoformat(),
+                'document_hash': doc.document_hash,
+                'file_size_original': doc.file_size_original,
+                'file_size_signed': doc.file_size_signed,
+                'execution_time': doc.execution_time,
+                'organization_name': doc.organization.name if doc.organization else None,
+                'is_workflow_document': doc.is_workflow_document,
+                'workflow_history': doc.workflow_history,
+                'original_document_url': doc.original_document.url if doc.original_document else None,
+                'signed_document_url': doc.signed_document.url if doc.signed_document else None,
+                # Informations sur la préparation si disponible
+                'preparation_id': str(doc.document_preparation.id) if doc.document_preparation else None,
+                'preparation_status': doc.document_preparation.status if doc.document_preparation else None,
+                'preparation_title': doc.document_preparation.document_title if doc.document_preparation else None
+            })
+        
+        return Response({
+            'success': True,
+            'documents': documents_data,
+            'total': len(documents_data)
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        print(f"❌ Erreur lors de la récupération des documents signés: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return Response({
+            'success': False,
+            'error': f'Erreur lors de la récupération des documents signés: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['GET'])

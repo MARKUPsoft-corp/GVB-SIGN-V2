@@ -378,18 +378,182 @@
 
         <!-- Contenu de l'onglet "Documents signés" -->
         <div v-if="activeDocumentTab === 'signed-documents'" class="tab-content">
-          <div class="text-center py-5">
+          
+          <!-- Loading state -->
+          <div v-if="isLoadingSignedDocuments" class="text-center py-5">
+            <div class="spinner-border text-primary-blue" role="status">
+              <span class="visually-hidden">Chargement...</span>
+            </div>
+            <p class="text-muted mt-3">Chargement des documents signés...</p>
+          </div>
+
+          <!-- Error state -->
+          <div v-else-if="signedDocumentsError" class="text-center py-5">
+            <div class="alert alert-danger" role="alert">
+              <i class="bi bi-exclamation-triangle me-2"></i>
+              {{ signedDocumentsError }}
+            </div>
+          </div>
+
+          <!-- Empty state -->
+          <div v-else-if="signedDocuments.length === 0" class="text-center py-5">
             <div class="tab-placeholder">
               <i class="bi bi-file-earmark-pen fs-1 text-primary-blue mb-3"></i>
-              <h4 class="text-dark mb-3">Documents Signés</h4>
-              <p class="text-muted mb-4">Documents que vous avez signés et leur statut</p>
-              <button class="btn btn-primary-blue">
-                <i class="bi bi-eye me-2"></i>
-                Voir les documents signés
-              </button>
+              <h4 class="text-dark mb-3">Aucun Document Signé</h4>
+              <p class="text-muted mb-4">Aucun document n'a encore été signé dans cette organisation</p>
+            </div>
+          </div>
+
+          <!-- Documents list -->
+          <div v-else class="signed-documents-list">
+            <!-- Header avec barre de recherche -->
+            <div class="signed-docs-header mb-4">
+              <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">
+                  <i class="bi bi-file-earmark-pen me-2"></i>
+                  Documents Signés ({{ filteredSignedDocuments.length }})
+                </h4>
+                
+                <!-- Barre de recherche -->
+                <div class="search-container">
+                  <div class="search-input-wrapper">
+                    <i class="bi bi-search search-icon"></i>
+                    <input 
+                      type="text" 
+                      class="search-input" 
+                      placeholder="Rechercher dans les documents signés..."
+                      v-model="signedDocumentsSearchQuery"
+                      @input="searchSignedDocuments"
+                    >
+                    <button 
+                      v-if="signedDocumentsSearchQuery" 
+                      class="clear-search-btn"
+                      @click="clearSignedDocumentsSearch"
+                    >
+                      <i class="bi bi-x"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="signed-document-item" v-for="document in filteredSignedDocuments" :key="document.id">
+              <!-- En-tête du document -->
+              <div class="signed-doc-header">
+                <div class="doc-icon">
+                  <i class="bi bi-file-earmark-pdf-fill"></i>
+                </div>
+                <div class="doc-info">
+                  <h5 class="doc-title">{{ document.original_filename }}</h5>
+                  <div class="doc-meta">
+                    <span class="meta-item">
+                      <i class="bi bi-person-check me-1"></i>
+                      {{ document.signer_name }}
+                    </span>
+                    <span class="meta-item">
+                      <i class="bi bi-calendar-check me-1"></i>
+                      {{ formatDate(document.signature_timestamp) }}
+                    </span>
+                    <span class="meta-item">
+                      <i class="bi bi-building me-1"></i>
+                      {{ document.organization_name }}
+                    </span>
+                  </div>
+                </div>
+                <div class="doc-status">
+                  <span class="status-badge status-signed">
+                    <i class="bi bi-check-circle-fill me-1"></i>
+                    Signé
+                  </span>
+                </div>
+              </div>
+
+              <!-- Détails du document -->
+              <div class="signed-doc-details">
+                <div class="detail-row">
+                  <div class="detail-item">
+                    <span class="detail-label">
+                      <i class="bi bi-fingerprint me-1"></i>
+                      Hash SHA-256
+                    </span>
+                    <span class="detail-value hash-value" :title="document.document_hash">
+                      {{ document.document_hash.substring(0, 16) }}...
+                    </span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">
+                      <i class="bi bi-file-earmark-arrow-down me-1"></i>
+                      Taille originale
+                    </span>
+                    <span class="detail-value">
+                      {{ formatFileSize(document.file_size_original) }}
+                    </span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">
+                      <i class="bi bi-file-earmark-check me-1"></i>
+                      Taille signée
+                    </span>
+                    <span class="detail-value">
+                      {{ formatFileSize(document.file_size_signed) }}
+                    </span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">
+                      <i class="bi bi-clock-history me-1"></i>
+                      Temps d'exécution
+                    </span>
+                    <span class="detail-value">
+                      {{ document.execution_time.toFixed(3) }}s
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Workflow history si disponible -->
+                <div v-if="document.is_workflow_document && document.workflow_history.length > 0" class="workflow-info">
+                  <h6 class="workflow-title">
+                    <i class="bi bi-diagram-3 me-2"></i>
+                    Historique du workflow
+                  </h6>
+                  <div class="workflow-steps">
+                    <div 
+                      class="workflow-step-mini" 
+                      v-for="(step, index) in document.workflow_history" 
+                      :key="index"
+                    >
+                      <div class="step-number">{{ step.step }}</div>
+                      <div class="step-info-mini">
+                        <span class="step-name">{{ step.user_name }}</span>
+                        <span class="step-role">{{ step.role }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Actions -->
+              <div class="signed-doc-actions">
+                <a 
+                  :href="`http://127.0.0.1:8000${document.signed_document_url}`" 
+                  target="_blank"
+                  class="action-btn btn-download"
+                  download
+                >
+                  <i class="bi bi-download me-2"></i>
+                  Télécharger le document signé
+                </a>
+                <a 
+                  :href="`http://127.0.0.1:8000${document.original_document_url}`" 
+                  target="_blank"
+                  class="action-btn btn-view-original"
+                >
+                  <i class="bi bi-eye me-2"></i>
+                  Voir l'original
+                </a>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
       </div>
 
     </div>
@@ -652,9 +816,13 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../../stores/auth'
+import { DocumentSigningService } from '../../services/DocumentSigningService'
 
 // Store d'authentification
 const authStore = useAuthStore()
+
+// Service de signature de documents
+const documentSigningService = new DocumentSigningService()
 
 // Gestion des onglets de gestion documentaire
 const activeDocumentTab = ref('prepared-immediate')
@@ -665,6 +833,13 @@ const filteredDocuments = ref([])
 const isLoadingDocuments = ref(false)
 const documentsError = ref(null)
 const searchQuery = ref('')
+
+// Données pour les documents signés
+const signedDocuments = ref([])
+const filteredSignedDocuments = ref([])
+const isLoadingSignedDocuments = ref(false)
+const signedDocumentsError = ref(null)
+const signedDocumentsSearchQuery = ref('')
 
 // Variables pour les tooltips de prévisualisation
 const showPreviewTooltip = ref(false)
@@ -827,9 +1002,11 @@ const setActiveDocumentTab = (tab) => {
   activeDocumentTab.value = tab
   console.log('Onglet actif changé:', tab)
   
-  // Charger les documents préparés quand on clique sur l'onglet correspondant
+  // Charger les documents selon l'onglet sélectionné
   if (tab === 'prepared-immediate') {
     fetchPreparedDocuments()
+  } else if (tab === 'signed-documents') {
+    fetchSignedDocuments()
   }
 }
 
@@ -902,6 +1079,65 @@ const fetchPreparedDocuments = async () => {
   }
 }
 
+// Récupérer les documents signés depuis l'API
+const fetchSignedDocuments = async () => {
+  console.log('📄 Début de fetchSignedDocuments')
+  
+  isLoadingSignedDocuments.value = true
+  signedDocumentsError.value = null
+  
+  try {
+    // Récupérer le token CSRF depuis les cookies
+    const getCookie = (name) => {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+      return null;
+    };
+    
+    const csrfToken = getCookie('csrftoken');
+    
+    // Construire l'URL avec l'ID de l'organisation
+    const organizationId = userOrganization.value?.organization?.id || userOrganization.value?.id
+    
+    if (!organizationId) {
+      throw new Error('Organisation non trouvée')
+    }
+    
+    const url = `http://127.0.0.1:8000/api/signatures/signed-documents/?organization_id=${organizationId}`
+    console.log('📄 URL de la requête:', url)
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken || '',
+      },
+    })
+    
+    if (!response.ok) {
+      throw new Error(`Erreur ${response.status}: ${response.statusText}`)
+    }
+    
+    const data = await response.json()
+    
+    if (data.success) {
+      signedDocuments.value = data.documents || []
+      filteredSignedDocuments.value = data.documents || []
+      console.log('✅ Documents signés récupérés:', signedDocuments.value.length, 'documents')
+    } else {
+      throw new Error(data.error || 'Erreur lors de la récupération des documents signés')
+    }
+    
+  } catch (error) {
+    console.error('❌ Erreur lors de la récupération des documents signés:', error)
+    signedDocumentsError.value = error.message
+  } finally {
+    isLoadingSignedDocuments.value = false
+  }
+}
+
 // Fonctions de recherche
 const searchDocuments = () => {
   if (!searchQuery.value.trim()) {
@@ -921,6 +1157,28 @@ const searchDocuments = () => {
 const clearSearch = () => {
   searchQuery.value = ''
   filteredDocuments.value = preparedDocuments.value
+}
+
+// Fonctions de recherche pour les documents signés
+const searchSignedDocuments = () => {
+  if (!signedDocumentsSearchQuery.value.trim()) {
+    filteredSignedDocuments.value = signedDocuments.value
+    return
+  }
+  
+  const query = signedDocumentsSearchQuery.value.toLowerCase()
+  filteredSignedDocuments.value = signedDocuments.value.filter(doc => 
+    doc.original_filename?.toLowerCase().includes(query) ||
+    doc.signer_name?.toLowerCase().includes(query) ||
+    doc.signer_email?.toLowerCase().includes(query) ||
+    doc.organization_name?.toLowerCase().includes(query) ||
+    doc.document_hash?.toLowerCase().includes(query)
+  )
+}
+
+const clearSignedDocumentsSearch = () => {
+  signedDocumentsSearchQuery.value = ''
+  filteredSignedDocuments.value = signedDocuments.value
 }
 
 // Fonction pour signer tous les documents
@@ -1135,34 +1393,134 @@ const downloadDocument = (document) => {
 
 // Fonction pour signer un document
 const signDocument = async (document) => {
-  console.log('🖊️ Signature du document:', document)
+  console.log('🖊️ === DÉBUT DE LA SIGNATURE DU DOCUMENT ===')
+  console.log('🖊️ Document:', document.document_title || document.original_filename)
+  console.log('🖊️ Document ID:', document.id)
   
   try {
-    // Vérifier d'abord si l'organisation a des certificats
-    const hasCertificates = await checkOrganizationCertificates()
+    // ÉTAPE 1: Initialiser le service
+    documentSigningService.initialize()
     
-    if (!hasCertificates) {
-      // Afficher une notification d'erreur
-      showNotification('error', 'Impossible de signer', 'Cette organisation n\'a pas importé de certificats de signature. Veuillez contacter l\'administrateur pour importer un certificat.')
+    // ÉTAPE 2: Récupérer l'ID de l'organisation
+    const organizationId = userOrganization.value?.organization?.id || userOrganization.value?.id
+    
+    if (!organizationId) {
+      showNotification('error', 'Erreur', 'Organisation non trouvée')
       return
     }
     
-    // Confirmation avant signature
-    const confirmMessage = `Êtes-vous sûr de vouloir signer le document "${document.document_title || document.original_filename}" ?`
+    // ÉTAPE 3: Vérifier que l'organisation a un certificat valide dans la BDD
+    console.log('🔐 Vérification du certificat de l\'organisation...')
+    const hasCert = await documentSigningService.hasOrganizationCertificate(organizationId)
     
-    if (confirm(confirmMessage)) {
-      console.log('✅ Signature confirmée pour:', document.id)
-      
-      // TODO: Implémenter la logique de signature
-      // Pour l'instant, on affiche juste un message
-      alert(`Signature du document "${document.document_title || document.original_filename}" en cours...`)
-      
-      // TODO: Faire l'appel API pour signer le document
-      // TODO: Rafraîchir la liste des documents après signature
+    if (!hasCert) {
+      showNotification('error', 'Certificat requis', 
+        'Cette organisation n\'a pas de certificat de signature actif. Veuillez d\'abord importer un certificat dans les paramètres de l\'organisation.')
+      return
     }
+    
+    console.log('✅ Certificat de l\'organisation trouvé')
+    
+    // ÉTAPE 4: Récupérer les détails complets du document pour vérifier les permissions
+    console.log('📄 Récupération des détails du document pour vérification des permissions...')
+    const documentDetails = await documentSigningService.fetchDocumentPreparation(document.id)
+    
+    // ÉTAPE 5: Vérifier que l'utilisateur peut signer ce document
+    const canSign = documentSigningService.canUserSignDocument(documentDetails, authStore.user.id)
+    
+    if (!canSign) {
+      console.log('❌ Vérification des permissions échouée')
+      console.log('❌ Document current_signer:', documentDetails.current_signer)
+      console.log('❌ Utilisateur actuel:', authStore.user.id)
+      showNotification('error', 'Non autorisé', 
+        'Vous n\'êtes pas autorisé à signer ce document ou le document n\'est pas dans un état signable.')
+      return
+    }
+    
+    console.log('✅ Permissions vérifiées - utilisateur autorisé à signer')
+    
+    // ÉTAPE 6: Demander confirmation
+    const confirmMessage = `Êtes-vous sûr de vouloir signer le document "${document.document_title || document.original_filename}" ?
+    
+Cette action est irréversible et le document sera signé avec le certificat de l'organisation.`
+    
+    if (!confirm(confirmMessage)) {
+      console.log('❌ Signature annulée par l\'utilisateur')
+      return
+    }
+    
+    console.log('✅ Signature confirmée, début du processus...')
+    
+    // ÉTAPE 7: Afficher un indicateur de chargement
+    const loadingNotification = showLoadingNotification('Signature en cours', 
+      'Récupération des données et signature du document...')
+    
+    try {
+      // ÉTAPE 8: Préparer les informations de l'utilisateur
+      const userInfo = {
+        id: authStore.user.id,
+        full_name: authStore.user.full_name,
+        email: authStore.user.email,
+        role: userRole.value
+      }
+      
+      console.log('👤 Utilisateur:', userInfo)
+      
+      // ÉTAPE 9: SIGNER LE DOCUMENT avec le DocumentSigningService
+      console.log('✍️ Appel du service de signature...')
+      const signatureResult = await documentSigningService.signDocument(
+        document.id,
+        organizationId,
+        userInfo
+      )
+      
+      console.log('✅ === SIGNATURE RÉUSSIE ===')
+      console.log('✅ Résultat:', signatureResult)
+      
+      // Fermer la notification de chargement
+      closeLoadingNotification(loadingNotification)
+      
+      // ÉTAPE 8: Afficher un message de succès
+      showNotification('success', 'Document signé avec succès !', 
+        `Le document "${document.document_title || document.original_filename}" a été signé.
+        
+Document ID: ${signatureResult.signatureResult.documentId}
+Hash: ${signatureResult.signatureResult.originalHash.substring(0, 20)}...
+Temps: ${signatureResult.signatureResult.executionTime.toFixed(2)}s`)
+      
+      // ÉTAPE 9: Rafraîchir la liste des documents
+      console.log('🔄 Rafraîchissement de la liste des documents...')
+      await fetchPreparedDocuments()
+      
+      // ÉTAPE 10: Afficher les détails du workflow et de l'enregistrement
+      if (signatureResult.saveResult.is_complete) {
+        console.log('🎉 Workflow terminé - Document complètement signé!')
+        showNotification('success', 'Workflow terminé', 
+          'Ce document a été signé par tous les signataires requis et est maintenant finalisé.')
+      } else if (signatureResult.saveResult.next_signer) {
+        console.log('⏭️ Prochain signataire:', signatureResult.saveResult.next_signer)
+        showNotification('info', 'Prochaine étape', 
+          `Le document va maintenant être envoyé à ${signatureResult.saveResult.next_signer.name} (${signatureResult.saveResult.next_signer.role})`)
+      }
+      
+      // Afficher les détails de l'enregistrement
+      console.log('💾 Signature enregistrée avec ID:', signatureResult.saveResult.signature_id)
+      console.log('💾 Workflow avancé:', signatureResult.saveResult.workflow_advanced)
+      
+    } catch (signError) {
+      // Fermer la notification de chargement en cas d'erreur
+      closeLoadingNotification(loadingNotification)
+      throw signError
+    }
+    
   } catch (error) {
-    console.error('❌ Erreur lors de la vérification des certificats:', error)
-    showNotification('error', 'Erreur', 'Impossible de vérifier les certificats de l\'organisation.')
+    console.error('❌ === ERREUR LORS DE LA SIGNATURE ===')
+    console.error('❌ Message:', error.message)
+    console.error('❌ Stack:', error.stack)
+    
+    // Afficher l'erreur à l'utilisateur
+    showNotification('error', 'Erreur de signature', 
+      `Impossible de signer le document: ${error.message}`)
   }
 }
 
@@ -1225,8 +1583,9 @@ const checkOrganizationCertificates = async () => {
 const showNotification = (type, title, message) => {
   // Créer une notification toast
   const notification = document.createElement('div')
-  notification.className = `alert alert-${type === 'error' ? 'danger' : 'success'} alert-dismissible fade show position-fixed`
-  notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;'
+  const alertType = type === 'error' ? 'danger' : (type === 'info' ? 'info' : 'success')
+  notification.className = `alert alert-${alertType} alert-dismissible fade show position-fixed`
+  notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; max-width: 500px;'
   
   notification.innerHTML = `
     <strong>${title}</strong><br>
@@ -1244,6 +1603,37 @@ const showNotification = (type, title, message) => {
   }, 5000)
 }
 
+// Fonction pour afficher une notification de chargement
+const showLoadingNotification = (title, message) => {
+  const notification = document.createElement('div')
+  notification.className = 'alert alert-primary alert-dismissible fade show position-fixed'
+  notification.style.cssText = 'top: 20px; right: 20px; z-index: 10000; min-width: 300px; max-width: 500px;'
+  notification.id = `loading-notification-${Date.now()}`
+  
+  notification.innerHTML = `
+    <div class="d-flex align-items-center">
+      <div class="spinner-border spinner-border-sm me-2" role="status">
+        <span class="visually-hidden">Chargement...</span>
+      </div>
+      <div>
+        <strong>${title}</strong><br>
+        <small>${message}</small>
+      </div>
+    </div>
+  `
+  
+  document.body.appendChild(notification)
+  
+  return notification
+}
+
+// Fonction pour fermer une notification de chargement
+const closeLoadingNotification = (notification) => {
+  if (notification && notification.parentNode) {
+    notification.remove()
+  }
+}
+
 // Formater la date pour l'affichage
 const formatDate = (dateString) => {
   if (!dateString) return 'Date inconnue'
@@ -1255,6 +1645,15 @@ const formatDate = (dateString) => {
     hour: '2-digit',
     minute: '2-digit'
   })
+}
+
+// Formater la taille des fichiers
+const formatFileSize = (bytes) => {
+  if (!bytes || bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i]
 }
 
 // Actions du tableau de bord
@@ -3622,6 +4021,323 @@ const emit = defineEmits(['open-organization-settings'])
   .tab-btn {
     border-radius: 8px;
     margin-bottom: 0.5rem;
+  }
+}
+
+/* ===== STYLES POUR LES DOCUMENTS SIGNÉS ===== */
+.signed-documents-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.signed-docs-header {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(0, 102, 204, 0.1);
+  border-radius: 12px;
+  padding: 1.5rem;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.signed-docs-header h4 {
+  color: var(--dark-gray);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  margin: 0;
+}
+
+.list-header h4 {
+  color: var(--dark-gray);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+}
+
+.signed-document-item {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(0, 102, 204, 0.2);
+  border-radius: 15px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.signed-document-item:hover {
+  border-color: var(--primary-blue);
+  box-shadow: 0 8px 25px rgba(0, 102, 204, 0.15);
+  transform: translateY(-2px);
+}
+
+.signed-doc-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(0, 102, 204, 0.1);
+}
+
+.signed-doc-header .doc-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--primary-blue) 0%, #0056b3 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.signed-doc-header .doc-icon i {
+  font-size: 1.5rem;
+  color: white;
+}
+
+.doc-info {
+  flex: 1;
+}
+
+.doc-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--dark-gray);
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.doc-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  color: var(--dark-gray);
+  font-size: 0.9rem;
+}
+
+.meta-item i {
+  color: var(--primary-blue);
+}
+
+.doc-status {
+  display: flex;
+  align-items: center;
+}
+
+.status-badge {
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+}
+
+.status-signed {
+  background: rgba(40, 167, 69, 0.1);
+  color: #28a745;
+  border: 1px solid rgba(40, 167, 69, 0.3);
+}
+
+.signed-doc-details {
+  margin-bottom: 1.5rem;
+}
+
+.detail-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.detail-label {
+  font-size: 0.85rem;
+  color: var(--dark-gray);
+  opacity: 0.8;
+  font-weight: 600;
+}
+
+.detail-label i {
+  color: var(--primary-blue);
+}
+
+.detail-value {
+  font-size: 0.95rem;
+  color: var(--dark-gray);
+  font-weight: 600;
+}
+
+.hash-value {
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  color: var(--primary-blue);
+  cursor: pointer;
+}
+
+.hash-value:hover {
+  opacity: 0.8;
+}
+
+.workflow-info {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: rgba(0, 102, 204, 0.05);
+  border-radius: 10px;
+  border: 1px solid rgba(0, 102, 204, 0.1);
+}
+
+.workflow-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--dark-gray);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.workflow-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.workflow-step-mini {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 102, 204, 0.2);
+}
+
+.step-number {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--primary-blue);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.step-info-mini {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.step-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--dark-gray);
+}
+
+.step-role {
+  font-size: 0.75rem;
+  color: var(--dark-gray);
+  opacity: 0.7;
+  text-transform: capitalize;
+}
+
+.signed-doc-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  transition: all 0.3s ease;
+  border: 1px solid;
+}
+
+.btn-download {
+  background: linear-gradient(135deg, var(--primary-blue) 0%, #0056b3 100%);
+  color: white;
+  border-color: var(--primary-blue);
+}
+
+.btn-download:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 102, 204, 0.3);
+  color: white;
+}
+
+.btn-view-original {
+  background: rgba(108, 117, 125, 0.1);
+  color: var(--dark-gray);
+  border-color: rgba(108, 117, 125, 0.3);
+}
+
+.btn-view-original:hover {
+  background: rgba(108, 117, 125, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(108, 117, 125, 0.2);
+  color: var(--dark-gray);
+}
+
+/* Responsive pour les documents signés */
+@media (max-width: 768px) {
+  .signed-docs-header {
+    padding: 1rem;
+  }
+  
+  .signed-docs-header .d-flex {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .signed-docs-header .search-container {
+    max-width: 100%;
+  }
+  
+  .signed-doc-header {
+    flex-direction: column;
+  }
+  
+  .doc-meta {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .detail-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .workflow-steps {
+    flex-direction: column;
+  }
+  
+  .signed-doc-actions {
+    flex-direction: column;
+  }
+  
+  .action-btn {
+    width: 100%;
+    justify-content: center;
   }
 }
 </style>

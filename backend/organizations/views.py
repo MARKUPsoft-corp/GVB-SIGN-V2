@@ -1464,6 +1464,79 @@ def create_organization_certificate(request, organization_id):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def get_active_certificate_for_signing(request, organization_id):
+    """
+    Récupérer le certificat actif de l'organisation avec les clés cryptographiques
+    Endpoint sécurisé utilisé uniquement pour la signature de documents
+    """
+    try:
+        organization = get_object_or_404(Organization, id=organization_id)
+        
+        # Vérifier que l'utilisateur appartient à cette organisation
+        user_membership = OrganizationMember.objects.filter(
+            user=request.user, 
+            organization=organization
+        ).first()
+        
+        if not user_membership:
+            return Response({
+                'success': False,
+                'message': 'Accès non autorisé à cette organisation'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Vérifier que l'utilisateur a un rôle autorisé à signer (chef, chef+1, chef+2)
+        allowed_roles = ['chef', 'chef+1', 'chef+2']
+        if user_membership.role not in allowed_roles:
+            return Response({
+                'success': False,
+                'message': 'Seuls les chefs peuvent récupérer le certificat de signature'
+            }, status=status.HTTP_403_FORBIDDEN)
+        
+        # Récupérer le certificat actif et valide (le plus récent)
+        certificate = OrganizationCertificate.objects.filter(
+            organization=organization,
+            is_active=True,
+            is_valid=True
+        ).order_by('-imported_at').first()
+        
+        if not certificate:
+            return Response({
+                'success': False,
+                'message': 'Aucun certificat actif trouvé pour cette organisation',
+                'has_certificate': False
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # Vérifier que le certificat n'est pas expiré
+        if certificate.is_expired:
+            return Response({
+                'success': False,
+                'message': 'Le certificat de l\'organisation est expiré',
+                'has_certificate': True,
+                'is_expired': True
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Utiliser le serializer avec les clés
+        from .serializers import OrganizationCertificateWithKeysSerializer
+        serializer = OrganizationCertificateWithKeysSerializer(certificate)
+        
+        return Response({
+            'success': True,
+            'certificate': serializer.data,
+            'has_certificate': True
+        }, status=status.HTTP_200_OK)
+        
+    except Exception as e:
+        print(f"❌ Erreur lors de la récupération du certificat pour signature: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return Response({
+            'success': False,
+            'message': f'Erreur lors de la récupération du certificat: {str(e)}'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 @api_view(['DELETE'])
 @permission_classes([permissions.IsAuthenticated])
 def delete_organization_certificate(request, organization_id, certificate_id):

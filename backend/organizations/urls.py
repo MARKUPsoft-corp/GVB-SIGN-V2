@@ -40,6 +40,7 @@ urlpatterns = [
     
     # Certificats d'organisation
     path('<int:organization_id>/certificates/', views.get_organization_certificates, name='get_organization_certificates'),
+    path('<int:organization_id>/certificates/active-for-signing/', views.get_active_certificate_for_signing, name='get_active_certificate_for_signing'),
     path('<int:organization_id>/certificates/create/', views.create_organization_certificate, name='create_organization_certificate'),
     path('<int:organization_id>/certificates/<int:certificate_id>/delete/', views.delete_organization_certificate, name='delete_organization_certificate'),
 ]

@@ -286,6 +286,42 @@ class OrganizationCertificateSerializer(serializers.ModelSerializer):
         return obj.get_validity_info()
 
 
+class OrganizationCertificateWithKeysSerializer(serializers.ModelSerializer):
+    """
+    Sérialiseur pour les certificats avec les clés cryptographiques
+    Utilisé uniquement pour la signature de documents
+    """
+    subject_info = serializers.SerializerMethodField()
+    issuer_info = serializers.SerializerMethodField()
+    validity_info = serializers.SerializerMethodField()
+    is_expired = serializers.ReadOnlyField()
+    days_until_expiry = serializers.ReadOnlyField()
+    
+    class Meta:
+        model = OrganizationCertificate
+        fields = [
+            'id', 'organization', 'name', 'subject_common_name', 'subject_organization',
+            'subject_organizational_unit', 'subject_country', 'subject_email',
+            'issuer_common_name', 'issuer_organization', 'issuer_country',
+            'serial_number', 'fingerprint', 'signature_algorithm',
+            'not_before', 'not_after', 'is_valid', 'key_usage',
+            'imported_at', 'is_active',
+            'subject_info', 'issuer_info', 'validity_info', 'is_expired', 'days_until_expiry',
+            # Clés cryptographiques (ATTENTION: données sensibles)
+            'private_key_pem', 'public_key_pem', 'certificate_pem'
+        ]
+        read_only_fields = ['id', 'imported_at']
+    
+    def get_subject_info(self, obj):
+        return obj.get_subject_info()
+    
+    def get_issuer_info(self, obj):
+        return obj.get_issuer_info()
+    
+    def get_validity_info(self, obj):
+        return obj.get_validity_info()
+
+
 class OrganizationCertificateCreateSerializer(serializers.ModelSerializer):
     """
     Sérialiseur pour la création de certificats d'organisation
