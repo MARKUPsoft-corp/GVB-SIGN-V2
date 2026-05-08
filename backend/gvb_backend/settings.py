@@ -152,12 +152,7 @@ REST_FRAMEWORK = {
 }
 
 # CORS settings
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:3003",  # Port alternatif
-    "http://127.0.0.1:3003",
-]
+CORS_ALLOWED_ORIGINS = ['*']
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -193,10 +188,7 @@ CORS_EXPOSE_HEADERS = [
 ]
 
 # CSRF settings pour le développement
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
+CSRF_TRUSTED_ORIGINS = ['*']
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Ne pas expirer à la fermeture du navigateur
 SESSION_SAVE_EVERY_REQUEST = True  # Sauvegarder la session à chaque requête
 SESSION_COOKIE_SAMESITE = 'Lax'   # Lax pour HTTP en développement
