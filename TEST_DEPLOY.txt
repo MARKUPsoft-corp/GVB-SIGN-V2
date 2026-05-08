@@ -1,0 +1,3 @@
+Test déploiement automatique - 2026-05-08 13:00:00
+Ce fichier teste le système de déploiement automatique.
+Si vous voyez ce fichier sur le VPS, c'est que ça fonctionne !
