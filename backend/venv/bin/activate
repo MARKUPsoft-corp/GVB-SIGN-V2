@@ -38,7 +38,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV=/home/markup/Documents/GVB_Sign/backend/venv
+VIRTUAL_ENV=/home/GVB-Sign/backend/venv
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"

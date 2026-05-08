@@ -3,7 +3,7 @@
  */
 class AuthApiService {
   constructor() {
-    this.baseURL = 'http://127.0.0.1:8000/api/auth'
+    this.baseURL = 'http://92.112.184.194:8000/api/auth'
   }
 
   /**

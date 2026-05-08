@@ -22,7 +22,7 @@ export const useAuthStore = defineStore('auth', {
         if (savedUser && savedToken) {
           try {
             // Vérifier si la session Django est toujours valide
-            const response = await fetch('http://127.0.0.1:8000/api/auth/profile/', {
+            const response = await fetch('http://92.112.184.194:8000/api/auth/profile/', {
               method: 'GET',
               headers: {
                 'Content-Type': 'application/json',
@@ -56,7 +56,7 @@ export const useAuthStore = defineStore('auth', {
     async verifySessionInBackground() {
       if (process.client && this.isAuthenticated) {
         try {
-          const response = await fetch('http://127.0.0.1:8000/api/auth/profile/', {
+          const response = await fetch('http://:8000/api/auth/profile/', {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
@@ -85,7 +85,7 @@ export const useAuthStore = defineStore('auth', {
         console.log('🔄 Tentative de connexion avec:', credentials)
         
         // Récupérer le token CSRF
-        const csrfResponse = await fetch('http://127.0.0.1:8000/api/auth/csrf/', {
+        const csrfResponse = await fetch('http://92.112.184.194:8000/api/auth/csrf/', {
           method: 'GET',
           credentials: 'include'
         })
@@ -107,7 +107,7 @@ export const useAuthStore = defineStore('auth', {
           headers['X-CSRFToken'] = csrfToken
         }
         
-        const response = await fetch('http://127.0.0.1:8000/api/auth/login/', {
+        const response = await fetch('http://92.112.184.194:8000/api/auth/login/', {
           method: 'POST',
           headers,
           credentials: 'include',
@@ -160,7 +160,7 @@ export const useAuthStore = defineStore('auth', {
         console.log('🔄 Tentative d\'inscription avec:', userData)
         
         // Récupérer le token CSRF
-        const csrfResponse = await fetch('http://127.0.0.1:8000/api/auth/csrf/', {
+        const csrfResponse = await fetch('http://92.112.184.194:8000/api/auth/csrf/', {
           method: 'GET',
           credentials: 'include'
         })
@@ -182,7 +182,7 @@ export const useAuthStore = defineStore('auth', {
           headers['X-CSRFToken'] = csrfToken
         }
         
-        const response = await fetch('http://127.0.0.1:8000/api/auth/register/', {
+        const response = await fetch('http://92.112.184.194/api/auth/register/', {
           method: 'POST',
           headers,
           credentials: 'include',
@@ -259,7 +259,7 @@ export const useAuthStore = defineStore('auth', {
     async logout() {
       try {
         // Appel API de déconnexion
-        await fetch('http://127.0.0.1:8000/api/auth/logout/', {
+        await fetch('http://92.112.184.194:8000/api/auth/logout/', {
           method: 'POST',
           credentials: 'include'
         })
@@ -275,7 +275,7 @@ export const useAuthStore = defineStore('auth', {
     async refreshSession() {
       if (process.client && this.isAuthenticated) {
         try {
-          const response = await fetch('http://127.0.0.1:8000/api/auth/profile/', {
+          const response = await fetch('http://92.112.184.194:8000/api/auth/profile/', {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
