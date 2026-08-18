@@ -116,15 +116,7 @@
             @click="setActiveDocumentTab('prepared-immediate')"
           >
             <i class="bi bi-file-earmark-arrow-up me-2"></i>
-            Documents préparés immédiatement
-          </button>
-          <button 
-            class="tab-button" 
-            :class="{ active: activeDocumentTab === 'prepared-with-model' }"
-            @click="setActiveDocumentTab('prepared-with-model')"
-          >
-            <i class="bi bi-file-earmark-check me-2"></i>
-            Documents préparés avec modèle
+            Documents préparés
           </button>
           <button 
             class="tab-button" 
@@ -133,6 +125,14 @@
           >
             <i class="bi bi-file-earmark-pen me-2"></i>
             Documents signés
+          </button>
+          <button 
+            class="tab-button" 
+            :class="{ active: activeDocumentTab === 'org-management' }"
+            @click="setActiveDocumentTab('org-management')"
+          >
+            <i class="bi bi-gear me-2"></i>
+            Gestion de l'organisation
           </button>
               </div>
 
@@ -533,23 +533,20 @@
 
               <!-- Actions -->
               <div class="signed-doc-actions">
-                <a 
-                  :href="`http://127.0.0.1:8000${document.signed_document_url}`" 
-                  target="_blank"
+                <button 
+                  @click="downloadDocument(document)"
                   class="action-btn btn-download"
-                  download
                 >
                   <i class="bi bi-download me-2"></i>
                   Télécharger le document signé
-                </a>
-                <a 
-                  :href="`http://127.0.0.1:8000${document.original_document_url}`" 
-                  target="_blank"
+                </button>
+                <button 
+                  @click="showDocumentPreview(document, 'original', $event)"
                   class="action-btn btn-view-original"
                 >
                   <i class="bi bi-eye me-2"></i>
                   Voir l'original
-                </a>
+                </button>
               </div>
             </div>
           </div>
@@ -817,6 +814,8 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../../stores/auth'
 import { DocumentSigningService } from '../../services/DocumentSigningService'
+import OrganizationApiService from '../../services/OrganizationApiService'
+import { SignatureApiService } from '../../services/SignatureApiService'
 
 // Store d'authentification
 const authStore = useAuthStore()
@@ -873,6 +872,7 @@ const roleDisplayName = computed(() => {
   
   const roleMap = {
     'admin': 'Administrateur',
+    'chief': 'Chef (Directeur)',
     'secretaire': 'Secrétaire', 
     'chef': 'Chef',
     'chef+1': 'Chef +1',
@@ -1013,64 +1013,27 @@ const setActiveDocumentTab = (tab) => {
 // Récupérer les documents préparés depuis l'API
 const fetchPreparedDocuments = async () => {
   console.log('🔄 Début de fetchPreparedDocuments')
-  console.log('🔄 userOrganization.value:', userOrganization.value)
   
   isLoadingDocuments.value = true
   documentsError.value = null
   
   try {
-    // Récupérer le token CSRF depuis les cookies
-    const getCookie = (name) => {
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop().split(';').shift();
-      return null;
-    };
-    
-    const csrfToken = getCookie('csrftoken');
-    console.log('🔄 CSRF Token:', csrfToken ? 'Présent' : 'Absent')
-    
-    // Construire l'URL avec l'ID de l'organisation
     const organizationId = userOrganization.value?.organization?.id || userOrganization.value?.id
-    console.log('🔄 Organization ID:', organizationId)
     
     if (!organizationId) {
-      console.error('❌ Aucune organisation trouvée')
       throw new Error('Organisation non trouvée')
     }
     
-    const url = `http://127.0.0.1:8000/api/signatures/document-preparation/?organization_id=${organizationId}`
-    console.log('🔄 URL de la requête:', url)
-    
-    const response = await fetch(url, {
-      method: 'GET',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': csrfToken || '',
-      },
-    })
-    
-    console.log('🔄 Réponse status:', response.status)
-    
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('❌ Erreur de réponse:', errorText)
-      throw new Error(`Erreur ${response.status}: ${response.statusText}`)
-    }
-    
-      const data = await response.json()
-    console.log('🔄 Données reçues:', data)
+    const signatureApiService = new SignatureApiService()
+    const data = await signatureApiService.getDocumentPreparations(organizationId)
     
     if (data.success) {
       preparedDocuments.value = data.preparations || []
       filteredDocuments.value = data.preparations || []
       console.log('✅ Documents préparés récupérés:', preparedDocuments.value.length, 'documents')
     } else {
-      console.error('❌ Erreur dans la réponse:', data.error)
-      throw new Error(data.error || 'Erreur lors de la récupération des documents')
+      throw new Error('Erreur lors de la récupération des documents')
     }
-    
   } catch (error) {
     console.error('❌ Erreur lors de la récupération des documents préparés:', error)
     documentsError.value = error.message
@@ -1087,49 +1050,22 @@ const fetchSignedDocuments = async () => {
   signedDocumentsError.value = null
   
   try {
-    // Récupérer le token CSRF depuis les cookies
-    const getCookie = (name) => {
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop().split(';').shift();
-      return null;
-    };
-    
-    const csrfToken = getCookie('csrftoken');
-    
-    // Construire l'URL avec l'ID de l'organisation
     const organizationId = userOrganization.value?.organization?.id || userOrganization.value?.id
     
     if (!organizationId) {
       throw new Error('Organisation non trouvée')
     }
     
-    const url = `http://127.0.0.1:8000/api/signatures/signed-documents/?organization_id=${organizationId}`
-    console.log('📄 URL de la requête:', url)
-    
-    const response = await fetch(url, {
-      method: 'GET',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': csrfToken || '',
-      },
-    })
-    
-    if (!response.ok) {
-      throw new Error(`Erreur ${response.status}: ${response.statusText}`)
-    }
-    
-    const data = await response.json()
+    const signatureApiService = new SignatureApiService()
+    const data = await signatureApiService.getSignedDocuments(organizationId)
     
     if (data.success) {
       signedDocuments.value = data.documents || []
       filteredSignedDocuments.value = data.documents || []
       console.log('✅ Documents signés récupérés:', signedDocuments.value.length, 'documents')
     } else {
-      throw new Error(data.error || 'Erreur lors de la récupération des documents signés')
+      throw new Error('Erreur lors de la récupération des documents signés')
     }
-    
   } catch (error) {
     console.error('❌ Erreur lors de la récupération des documents signés:', error)
     signedDocumentsError.value = error.message
@@ -1297,22 +1233,32 @@ const showDocumentPreview = (document, type, event) => {
   previewType.value = type
   pdfLoadError.value = false // Réinitialiser l'erreur PDF
   
-  // Utiliser l'endpoint spécial pour l'aperçu PDF (sans restrictions X-Frame-Options)
+  // Utiliser les données du document Firestore au lieu de l'endpoint
   let pdfUrl = null
-  if (type === 'current' && document.current_document) {
-    // Document à l'état actuel du workflow (avec signatures partielles)
-    pdfUrl = `http://127.0.0.1:8000/api/signatures/pdf-preview/${document.id}/current/`
+  
+  if (type === 'current' && document.current_document_url) {
+    pdfUrl = document.current_document_url;
     console.log('📄 Aperçu du document actuel (état du workflow)')
-  } else if (type === 'generated' && document.generated_pdf) {
-    // PDF généré avec éléments positionnés (QR code, signature)
-    pdfUrl = `http://127.0.0.1:8000/api/signatures/pdf-preview/${document.id}/generated/`
+  } else if (type === 'generated' && document.final_document_url) {
+    pdfUrl = document.final_document_url;
     console.log('📄 Aperçu du PDF généré (avec éléments)')
+  } else {
+    // Fallback
+    pdfUrl = document.original_document_url || document.current_document_url || document.final_document_url;
+  }
+  
+  // Rétrocompatibilité Base64
+  if (!pdfUrl) {
+    const base64Data = document.current_document_data || document.final_document_data || document.original_document_data || document.original_document_base64 || document.signed_document_base64;
+    if (base64Data) {
+      pdfUrl = base64Data.startsWith('data:') ? base64Data : `data:application/pdf;base64,${base64Data}`;
+    }
   }
   
   previewPdfSource.value = pdfUrl
   showPreviewTooltip.value = true
   
-  console.log('🔄 Utilisation de l\'endpoint spécial pour l\'aperçu PDF:', pdfUrl)
+  console.log('🔄 Affichage du PDF via URL Cloudinary')
 }
 
 const closePreviewTooltip = () => {
@@ -1366,23 +1312,31 @@ const downloadCurrentPreviewDocument = () => {
 
 // Fonction pour télécharger le document
 const downloadDocument = (document) => {
-  // Vérifier que nous sommes dans un environnement client
   if (typeof window === 'undefined') return
   
   try {
-    // Utiliser l'endpoint spécial pour télécharger le document actuel selon l'état du workflow
-    const downloadUrl = `http://127.0.0.1:8000/api/signatures/pdf-preview/${document.id}/current/?download=true`
     const filename = document.original_filename || document.document_title || 'document.pdf'
     
-    console.log('📥 Téléchargement du document actuel via endpoint spécial:', downloadUrl)
+    // Essayer les URLs Cloudinary d'abord
+    let downloadUrl = document.current_document_url || document.final_document_url || document.original_document_url;
     
-    // Créer un lien de téléchargement
+    // Fallback sur le Base64
+    if (!downloadUrl) {
+      const base64Data = document.current_document_data || document.final_document_data || document.original_document_data || document.original_document_base64 || document.signed_document_base64;
+      if (base64Data) {
+        downloadUrl = base64Data.startsWith('data:') ? base64Data : `data:application/pdf;base64,${base64Data}`;
+      }
+    }
+    
+    if (!downloadUrl) {
+      showNotification('error', 'Erreur', 'Données du document introuvables');
+      return;
+    }
+    
     const link = window.document.createElement('a')
     link.href = downloadUrl
     link.download = filename
-    link.target = '_blank'
     
-    // Déclencher le téléchargement
     window.document.body.appendChild(link)
     link.click()
     window.document.body.removeChild(link)
@@ -1529,39 +1483,16 @@ const checkOrganizationCertificates = async () => {
   try {
     isLoadingCertificates.value = true
     
-    const getCookie = (name) => {
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop().split(';').shift();
-      return null;
-    };
-    
-    const csrfToken = getCookie('csrftoken');
-    const organizationId = userOrganization.value?.organization?.id
+    const organizationId = userOrganization.value?.organization?.id || userOrganization.value?.id
     
     if (!organizationId) {
       throw new Error('Organisation non trouvée')
     }
     
-    const url = `http://127.0.0.1:8000/api/organizations/${organizationId}/certificates/`
-    
-    const response = await fetch(url, {
-      method: 'GET',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': csrfToken || '',
-      },
-    })
-    
-    if (!response.ok) {
-      throw new Error(`Erreur ${response.status}: ${response.statusText}`)
-    }
-    
-      const data = await response.json()
+    const certificates = await OrganizationApiService.getOrganizationCertificates(organizationId)
     
     // Vérifier s'il y a des certificats actifs
-    const activeCertificates = data.certificates?.filter(cert => cert.is_active && cert.is_valid) || []
+    const activeCertificates = certificates?.filter(cert => cert.is_active && cert.is_valid) || []
     
     console.log('🔐 Certificats trouvés:', activeCertificates.length)
     
@@ -1693,68 +1624,25 @@ const loadManagerStats = async () => {
 }
 
 // Initialisation
-// Charger les données de l'organisation
-const loadOrganizationData = async () => {
-  try {
-    // Vérifier d'abord le localStorage pour une organisation sélectionnée
-    const storedOrganization = localStorage.getItem('selectedOrganization')
-    if (storedOrganization) {
-      const organization = JSON.parse(storedOrganization)
-      console.log('🏢 Organisation trouvée dans localStorage:', organization.name)
+// Charger les données de l'organisation (temps réel)
+let unsubOrg = null
+const loadOrganizationData = () => {
+  if (unsubOrg) unsubOrg()
+  unsubOrg = OrganizationApiService.listenUserOrganization((org) => {
+    if (org) {
       userOrganization.value = {
-        organization: organization,
-        role: organization.role || 'manager'
+        organization: org,
+        role: org.role || 'chef'
       }
-      userRole.value = organization.role || 'manager'
-      selectedOrganization.value = organization
-      return
-    }
-    
-    // Si une organisation est déjà sélectionnée en mémoire, l'utiliser
-    if (selectedOrganization.value) {
-      console.log('🏢 Organisation sélectionnée en mémoire:', selectedOrganization.value.name)
-      userOrganization.value = {
-        organization: selectedOrganization.value,
-        role: selectedOrganization.value.role || 'manager'
-      }
-      userRole.value = selectedOrganization.value.role || 'manager'
-      return
-    }
-    
-    // Sinon, charger l'organisation par défaut de l'utilisateur
-    const response = await fetch('http://127.0.0.1:8000/api/organizations/user-organization/', {
-      credentials: 'include'
-    })
-    
-    if (response.ok) {
-      const data = await response.json()
-      if (data.success && data.organization) {
-        userOrganization.value = data.organization
-        userRole.value = data.organization.role || 'member'
-        console.log('✅ Organisation par défaut chargée:', data.organization.name)
-        console.log('✅ Rôle utilisateur:', data.organization.role)
-      }
+      userRole.value = org.role || 'chef'
+      selectedOrganization.value = org
+      console.log('✅ Organisation chargée en temps réel:', org.name)
     } else {
-      // Si pas d'organisation principale, essayer de récupérer les organisations de l'utilisateur
-      const orgsResponse = await fetch('http://127.0.0.1:8000/api/organizations/user-organizations/', {
-        credentials: 'include'
-      })
-      
-      if (orgsResponse.ok) {
-        const orgsData = await orgsResponse.json()
-        if (orgsData.success && orgsData.organizations && orgsData.organizations.length > 0) {
-          // Prendre la première organisation
-          const firstOrg = orgsData.organizations[0]
-          userOrganization.value = firstOrg
-          userRole.value = firstOrg.role || 'member'
-          console.log('✅ Première organisation chargée:', firstOrg.name)
-          console.log('✅ Rôle utilisateur:', firstOrg.role)
-        }
-      }
+      userOrganization.value = null
     }
-  } catch (error) {
+  }, (error) => {
     console.error('❌ Erreur lors du chargement de l\'organisation:', error)
-  }
+  })
 }
 
 // Event listeners pour fermer le tooltip
@@ -1771,21 +1659,22 @@ const handleKeyDown = (event) => {
   }
 }
 
-onMounted(async () => {
-  await loadOrganizationData()
-  console.log('📊 userOrganization après loadOrganizationData:', userOrganization.value)
-  console.log('📊 organizationName computed:', organizationName.value)
-  await loadManagerStats()
+onMounted(() => {
+  loadOrganizationData()
   
-  // Charger les documents préparés au montage
-  if (userOrganization.value?.organization?.id) {
-    await fetchPreparedDocuments()
-  }
+  // Attendre que l'organisation soit chargée pour charger les documents
+  const waitAndLoad = setInterval(async () => {
+    if (userOrganization.value?.organization?.id) {
+      clearInterval(waitAndLoad)
+      console.log('📊 userOrganization après chargement:', userOrganization.value)
+      await loadManagerStats()
+      await fetchPreparedDocuments()
+      await checkOrganizationCertificates()
+    }
+  }, 300)
   
-  // Vérifier les certificats de l'organisation
-  if (userOrganization.value?.organization?.id) {
-    await checkOrganizationCertificates()
-  }
+  // Sécurité : arrêter après 10 secondes
+  setTimeout(() => clearInterval(waitAndLoad), 10000)
   
   // Ajouter les event listeners
   document.addEventListener('click', handleDocumentClick)
@@ -1796,6 +1685,7 @@ onMounted(async () => {
 onUnmounted(() => {
   document.removeEventListener('click', handleDocumentClick)
   document.removeEventListener('keydown', handleKeyDown)
+  if (unsubOrg) unsubOrg()
 })
 
 // Émettre les événements

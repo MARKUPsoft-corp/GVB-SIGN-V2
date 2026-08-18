@@ -872,22 +872,32 @@ const showDocumentPreview = (document, type, event) => {
   previewType.value = type
   pdfLoadError.value = false // Réinitialiser l'erreur PDF
   
-  // Utiliser l'endpoint spécial pour l'aperçu PDF (sans restrictions X-Frame-Options)
+  // Utiliser les données du document Firestore au lieu de l'endpoint
   let pdfUrl = null
-  if (type === 'current' && document.current_document) {
-    // Document à l'état actuel du workflow (avec signatures partielles)
-    pdfUrl = `http://127.0.0.1:8000/api/signatures/pdf-preview/${document.id}/current/`
+  
+  if (type === 'current' && document.current_document_url) {
+    pdfUrl = document.current_document_url;
     console.log('📄 Aperçu du document actuel (état du workflow)')
-  } else if (type === 'generated' && document.generated_pdf) {
-    // PDF généré avec éléments positionnés (QR code, signature)
-    pdfUrl = `http://127.0.0.1:8000/api/signatures/pdf-preview/${document.id}/generated/`
+  } else if (type === 'generated' && document.final_document_url) {
+    pdfUrl = document.final_document_url;
     console.log('📄 Aperçu du PDF généré (avec éléments)')
+  } else {
+    // Fallback
+    pdfUrl = document.original_document_url || document.current_document_url || document.final_document_url;
+  }
+  
+  // Rétrocompatibilité Base64
+  if (!pdfUrl) {
+    const base64Data = document.current_document_data || document.final_document_data || document.original_document_data || document.original_document_base64 || document.signed_document_base64;
+    if (base64Data) {
+      pdfUrl = base64Data.startsWith('data:') ? base64Data : `data:application/pdf;base64,${base64Data}`;
+    }
   }
   
   previewPdfSource.value = pdfUrl
   showPreviewTooltip.value = true
   
-  console.log('🔄 Utilisation de l\'endpoint spécial pour l\'aperçu PDF:', pdfUrl)
+  console.log('🔄 Utilisation de l\'url Cloudinary pour l\'aperçu PDF:', pdfUrl)
 }
 
 const closePreviewTooltip = () => {
@@ -946,18 +956,26 @@ const formatDate = (dateString) => {
 
 const retryPdfLoad = () => {
   pdfLoadError.value = false
-  // Recharger la source PDF avec l'endpoint spécial
+  // Recharger la source PDF avec la donnée URL ou base64
   if (currentPreviewDocument.value && previewType.value) {
     let pdfUrl = null
-    if (previewType.value === 'current' && currentPreviewDocument.value.current_document) {
-      // Document à l'état actuel du workflow (avec signatures partielles)
-      pdfUrl = `http://127.0.0.1:8000/api/signatures/pdf-preview/${currentPreviewDocument.value.id}/current/`
-    } else if (previewType.value === 'generated' && currentPreviewDocument.value.generated_pdf) {
-      // PDF généré avec éléments positionnés (QR code, signature)
-      pdfUrl = `http://127.0.0.1:8000/api/signatures/pdf-preview/${currentPreviewDocument.value.id}/generated/`
+    if (previewType.value === 'current' && currentPreviewDocument.value.current_document_url) {
+      pdfUrl = currentPreviewDocument.value.current_document_url;
+    } else if (previewType.value === 'generated' && currentPreviewDocument.value.final_document_url) {
+      pdfUrl = currentPreviewDocument.value.final_document_url;
+    } else {
+      pdfUrl = currentPreviewDocument.value.original_document_url || currentPreviewDocument.value.current_document_url || currentPreviewDocument.value.final_document_url;
+    }
+    
+    // Rétrocompatibilité Base64
+    if (!pdfUrl) {
+      const base64Data = currentPreviewDocument.value.current_document_data || currentPreviewDocument.value.final_document_data || currentPreviewDocument.value.original_document_data || currentPreviewDocument.value.original_document_base64 || currentPreviewDocument.value.signed_document_base64;
+      if (base64Data) {
+        pdfUrl = base64Data.startsWith('data:') ? base64Data : `data:application/pdf;base64,${base64Data}`;
+      }
     }
     previewPdfSource.value = pdfUrl
-    console.log('🔄 Retry avec endpoint spécial:', pdfUrl)
+    console.log('🔄 Retry avec url Cloudinary')
   }
 }
 
@@ -977,23 +995,31 @@ const downloadCurrentPreviewDocument = () => {
 
 // Fonction pour télécharger le document
 const downloadDocument = (document) => {
-  // Vérifier que nous sommes dans un environnement client
   if (typeof window === 'undefined') return
   
   try {
-    // Utiliser l'endpoint spécial pour télécharger le document actuel selon l'état du workflow
-    const downloadUrl = `http://127.0.0.1:8000/api/signatures/pdf-preview/${document.id}/current/?download=true`
     const filename = document.original_filename || document.document_title || 'document.pdf'
     
-    console.log('📥 Téléchargement du document actuel via endpoint spécial:', downloadUrl)
+    // Essayer les URLs Cloudinary d'abord
+    let downloadUrl = document.current_document_url || document.final_document_url || document.original_document_url;
     
-    // Créer un lien de téléchargement
+    // Fallback sur le Base64
+    if (!downloadUrl) {
+      const base64Data = document.current_document_data || document.final_document_data || document.original_document_data || document.original_document_base64 || document.signed_document_base64;
+      if (base64Data) {
+        downloadUrl = base64Data.startsWith('data:') ? base64Data : `data:application/pdf;base64,${base64Data}`;
+      }
+    }
+    
+    if (!downloadUrl) {
+      console.error('Données du document introuvables');
+      return;
+    }
+    
     const link = window.document.createElement('a')
     link.href = downloadUrl
     link.download = filename
-    link.target = '_blank'
     
-    // Déclencher le téléchargement
     window.document.body.appendChild(link)
     link.click()
     window.document.body.removeChild(link)
@@ -1098,45 +1124,20 @@ const fetchPreparedDocuments = async () => {
   documentsError.value = null
   
   try {
-    // Récupérer le token CSRF depuis les cookies
-    const getCookie = (name) => {
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop().split(';').shift();
-      return null;
-    };
-    
-    const csrfToken = getCookie('csrftoken');
-    
-    // Construire l'URL avec l'ID de l'organisation
     const organizationId = userOrganization.value?.organization?.id
     if (!organizationId) {
       throw new Error('Organisation non trouvée')
     }
     
-    const url = `http://127.0.0.1:8000/api/signatures/document-preparation/?organization_id=${organizationId}`
-    
-    const response = await fetch(url, {
-      method: 'GET',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': csrfToken || '',
-      },
-    })
-    
-    if (!response.ok) {
-      throw new Error(`Erreur ${response.status}: ${response.statusText}`)
-    }
-    
-    const data = await response.json()
+    const signatureApiService = new SignatureApiService()
+    const data = await signatureApiService.getDocumentPreparations(organizationId)
     
     if (data.success) {
       preparedDocuments.value = data.preparations || []
       filteredDocuments.value = data.preparations || []
       console.log('Documents préparés récupérés:', preparedDocuments.value)
     } else {
-      throw new Error(data.error || 'Erreur lors de la récupération des documents')
+      throw new Error('Erreur lors de la récupération des documents')
     }
     
   } catch (error) {
@@ -1278,20 +1279,13 @@ const loadOrganizationData = async () => {
     
     // Sinon, essayer de charger depuis l'API (organisation par défaut)
     console.log('🔄 Chargement de l\'organisation par défaut depuis l\'API')
-    const response = await fetch('http://127.0.0.1:8000/api/organizations/my-organization/', {
-      method: 'GET',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-    
-    if (response.ok) {
-      const data = await response.json()
-      if (data.success && data.organization) {
-        userOrganization.value = data.organization
-        console.log('✅ Organisation par défaut chargée:', data.organization.name)
+    const org = await OrganizationApiService.getUserOrganization()
+    if (org) {
+      userOrganization.value = {
+        organization: org,
+        role: org.role || 'secretaire'
       }
+      console.log('✅ Organisation par défaut chargée:', org.name)
     }
   } catch (error) {
     console.error('❌ Erreur lors du chargement de l\'organisation:', error)

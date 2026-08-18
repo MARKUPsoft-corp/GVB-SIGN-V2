@@ -322,6 +322,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '../../stores/auth'
+import OrganizationApiService from '../../services/OrganizationApiService'
 
 // Store d'authentification
 const authStore = useAuthStore()
@@ -431,20 +432,13 @@ const openProfile = () => {
 // Charger les données de l'organisation
 const loadOrganizationData = async () => {
   try {
-    const response = await fetch('http://127.0.0.1:8000/api/organizations/my-organization/', {
-      method: 'GET',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-    
-    if (response.ok) {
-      const data = await response.json()
-      if (data.success && data.organization) {
-        userOrganization.value = data.organization
-        console.log('✅ Organisation chargée:', data.organization.name)
+    const org = await OrganizationApiService.getUserOrganization()
+    if (org) {
+      userOrganization.value = {
+        organization: org,
+        role: org.role || 'member'
       }
+      console.log('✅ Organisation chargée:', org.name)
     }
   } catch (error) {
     console.error('❌ Erreur lors du chargement de l\'organisation:', error)

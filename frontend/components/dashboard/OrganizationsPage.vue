@@ -50,7 +50,7 @@
               <i class="bi bi-people"></i>
             </div>
             <div class="stat-content">
-              <h4 class="stat-number">{{ userOrganization.organization.member_count || 0 }}</h4>
+              <h4 class="stat-number">{{ activeMembersCount }}</h4>
               <p class="stat-label">Membres</p>
             </div>
           </div>
@@ -61,7 +61,7 @@
               <i class="bi bi-shield-check"></i>
             </div>
             <div class="stat-content">
-              <h4 class="stat-number">{{ userOrganization.organization.admin_count || 0 }}</h4>
+              <h4 class="stat-number">{{ adminMembersCount }}</h4>
               <p class="stat-label">Administrateurs</p>
             </div>
           </div>
@@ -461,10 +461,10 @@
                       <i class="bi bi-person-circle"></i>
                     </div>
                     <div class="member-details">
-                      <h6>{{ member.user_name || member.user_email }}</h6>
-                      <p class="text-muted">{{ member.user_email }}</p>
+                      <h6>{{ member.displayName || member.name || member.email || 'Utilisateur inconnu' }}</h6>
+                      <p class="text-muted">{{ member.email }}</p>
                       <small class="text-muted">
-                        Rejoint le {{ formatDate(member.joined_at) }}
+                        Rejoint le {{ formatDate(member.updated_at || member.created_at) || 'N/A' }}
                       </small>
                     </div>
                   </div>
@@ -501,8 +501,8 @@
                             <i class="bi bi-person-plus"></i>
                           </div>
                           <div class="member-details">
-                            <h6>{{ request.user_name || request.user_email }}</h6>
-                            <p class="text-muted">{{ request.user_email }}</p>
+                            <h6>{{ request.displayName || request.userName || request.email || 'Utilisateur inconnu' }}</h6>
+                            <p class="text-muted">{{ request.email }}</p>
                             <small class="text-muted">
                               Demande du {{ formatDate(request.created_at) }}
                             </small>
@@ -551,8 +551,8 @@
                             <i class="bi bi-person-x"></i>
                           </div>
                           <div class="member-details">
-                            <h6>{{ request.user_name || request.user_email }}</h6>
-                            <p class="text-muted">{{ request.user_email }}</p>
+                            <h6>{{ request.displayName || request.userName || request.email || 'Utilisateur inconnu' }}</h6>
+                            <p class="text-muted">{{ request.email }}</p>
                             <small class="text-muted">
                               Rejeté le {{ formatDate(request.processed_at) }}
                             </small>
@@ -1166,6 +1166,10 @@ const isLoadingOrganization = ref(false)
 const organizationMembers = ref([])
 const isLoadingMembers = ref(false)
 
+// Compteurs calculés dynamiquement
+const activeMembersCount = computed(() => organizationMembers.value.length)
+const adminMembersCount = computed(() => organizationMembers.value.filter(m => m.role === 'admin' || m.role === 'chief').length)
+
 // État pour les codes d'invitation
 const invitationCodes = ref([])
 const isLoadingInvitations = ref(false)
@@ -1173,6 +1177,24 @@ const isLoadingInvitations = ref(false)
 // État pour les certificats d'organisation
 const organizationCertificates = ref([])
 const isLoadingCertificates = ref(false)
+
+// Unsubscribers pour Firebase Real-time
+let unsubOrg = null
+let unsubMembers = null
+let unsubInvitations = null
+let unsubCertificates = null
+let unsubPending = null
+let unsubRejected = null
+
+// Nettoyage à la destruction du composant
+onUnmounted(() => {
+  if (unsubOrg) unsubOrg()
+  if (unsubMembers) unsubMembers()
+  if (unsubInvitations) unsubInvitations()
+  if (unsubCertificates) unsubCertificates()
+  if (unsubPending) unsubPending()
+  if (unsubRejected) unsubRejected()
+})
 
 // État de la modale d'import de certificat
 const isCertificateImportModalOpen = ref(false)
@@ -1447,34 +1469,9 @@ const getStatusText = (status) => {
   return statusMap[status] || status
 }
 
-// Fonction pour récupérer le token CSRF
+// Fonction pour récupérer le token CSRF (obsolète avec Firebase)
 const getCsrfToken = async () => {
-  try {
-    // D'abord, faire une requête GET pour obtenir le cookie CSRF
-    await $fetch('http://127.0.0.1:8000/api/auth/csrf/', {
-      method: 'GET',
-      credentials: 'include'
-    })
-    
-    // Ensuite, récupérer le token depuis les cookies
-    const cookies = document.cookie.split(';')
-    const csrfCookie = cookies.find(cookie => cookie.trim().startsWith('csrftoken='))
-    
-    if (csrfCookie) {
-      const token = csrfCookie.split('=')[1]
-      console.log('Token CSRF récupéré depuis les cookies:', token)
-      return token
-    }
-    
-    // Fallback: utiliser l'endpoint API
-    const response = await $fetch('http://127.0.0.1:8000/api/auth/csrf/', {
-      credentials: 'include'
-    })
-    return response.csrfToken
-  } catch (error) {
-    console.error('Erreur lors de la récupération du token CSRF:', error)
-    return null
-  }
+  return null
 }
 
 // Fonction pour positionner les modales
@@ -1556,58 +1553,43 @@ const positionModal = (modal, button) => {
   modal.style.top = topPosition + 'px'
 }
 
-// Fonction pour récupérer l'organisation de l'utilisateur
-const fetchUserOrganization = async () => {
+// Fonction pour récupérer l'organisation de l'utilisateur en temps réel
+const fetchUserOrganization = () => {
+  isLoadingOrganization.value = true
+  
   try {
-    isLoadingOrganization.value = true
     console.log('Récupération de l\'organisation de l\'utilisateur...')
     
-    // Vérifier d'abord le localStorage pour une organisation sélectionnée
-    const savedOrganization = localStorage.getItem('selectedOrganization')
-    if (savedOrganization) {
-      const organization = JSON.parse(savedOrganization)
-      console.log('✅ Utilisation de l\'organisation sélectionnée depuis localStorage:', organization.name)
-      console.log('🔍 Détails de l\'organisation sélectionnée:', organization)
-      
-      // Récupérer les données complètes de l'organisation sélectionnée
-      try {
-        const fullOrganization = await OrganizationApiService.getOrganization(organization.id)
-        console.log('✅ Données complètes de l\'organisation récupérées:', fullOrganization)
-        userOrganization.value = {
-          organization: fullOrganization.organization,
-          role: organization.role || 'admin'
-        }
-      } catch (error) {
-        console.error('❌ Erreur lors de la récupération des données complètes:', error)
-        // Fallback sur les données du localStorage
-        userOrganization.value = {
-          organization: organization,
-          role: organization.role || 'admin'
-        }
-      }
-      console.log('✅ Organisation mise à jour avec les données complètes:', userOrganization.value)
-      return // Sortir de la fonction sans faire d'appel API
-    }
-    
-    // Si une organisation est déjà sélectionnée en mémoire, l'utiliser
+    // Si une organisation est déjà sélectionnée en mémoire, l'utiliser temporairement
     if (selectedOrganization.value) {
       console.log('✅ Utilisation de l\'organisation sélectionnée:', selectedOrganization.value.name)
       userOrganization.value = {
         organization: selectedOrganization.value,
         role: selectedOrganization.value.role || 'admin'
       }
-      console.log('✅ Organisation mise à jour avec les données sélectionnées:', userOrganization.value)
-      return // Sortir de la fonction sans faire d'appel API
     }
     
-    // Sinon, récupérer l'organisation par défaut
-    const organization = await OrganizationApiService.getUserOrganization()
-    userOrganization.value = organization
-    console.log('Organisation de l\'utilisateur (API):', organization)
+    // Écouter l'organisation
+    if (unsubOrg) unsubOrg()
+    unsubOrg = OrganizationApiService.listenUserOrganization((org) => {
+      if (org) {
+        userOrganization.value = {
+          organization: org,
+          role: org.role || 'admin'
+        }
+        console.log('✅ Organisation mise à jour en temps réel:', org.name)
+      } else {
+        userOrganization.value = null
+      }
+      isLoadingOrganization.value = false
+    }, (error) => {
+      console.error('Erreur de l\'écouteur d\'organisation:', error)
+      isLoadingOrganization.value = false
+    })
+    
   } catch (error) {
-    console.error('Erreur lors de la récupération de l\'organisation:', error)
+    console.error('Erreur lors de la configuration de l\'écouteur d\'organisation:', error)
     userOrganization.value = null
-  } finally {
     isLoadingOrganization.value = false
   }
 }
@@ -1702,50 +1684,56 @@ const openSettings = () => {
   })
 }
 
-// Fonction pour charger les membres de l'organisation
-const loadOrganizationMembers = async () => {
+// Fonction pour écouter les membres de l'organisation
+const loadOrganizationMembers = () => {
   if (!userOrganization.value?.organization?.id) {
-    console.log('❌ Aucune organisation disponible pour charger les membres')
+    console.log('❌ Aucune organisation disponible pour écouter les membres')
     return
   }
   
-  try {
-    isLoadingMembers.value = true
-    console.log('🔄 Chargement des membres de l\'organisation...')
-    
-    const members = await OrganizationApiService.getOrganizationMembers(userOrganization.value.organization.id)
-    organizationMembers.value = members.members || []
-    
-    console.log('✅ Membres chargés:', organizationMembers.value)
-  } catch (error) {
-    console.error('❌ Erreur lors du chargement des membres:', error)
-    organizationMembers.value = []
-  } finally {
-    isLoadingMembers.value = false
-  }
+  isLoadingMembers.value = true
+  console.log('🔄 Écoute des membres de l\'organisation...')
+  
+  if (unsubMembers) unsubMembers()
+  unsubMembers = OrganizationApiService.listenOrganizationMembers(
+    userOrganization.value.organization.id,
+    (members) => {
+      organizationMembers.value = members || []
+      console.log('✅ Membres mis à jour (temps réel):', organizationMembers.value)
+      isLoadingMembers.value = false
+    },
+    (error) => {
+      console.error('❌ Erreur lors de l\'écoute des membres:', error)
+      organizationMembers.value = []
+      isLoadingMembers.value = false
+    }
+  )
 }
 
-// Fonction pour charger les codes d'invitation
-const loadInvitationCodes = async () => {
+// Fonction pour écouter les codes d'invitation
+const loadInvitationCodes = () => {
   if (!userOrganization.value?.organization?.id) {
-    console.log('❌ Aucune organisation disponible pour charger les codes d\'invitation')
+    console.log('❌ Aucune organisation disponible pour écouter les codes d\'invitation')
     return
   }
   
-  try {
-    isLoadingInvitations.value = true
-    console.log('🔄 Chargement des codes d\'invitation...')
-    
-    const codes = await OrganizationApiService.getInvitationCodes(userOrganization.value.organization.id)
-    invitationCodes.value = codes.invitation_codes || []
-    
-    console.log('✅ Codes d\'invitation chargés:', invitationCodes.value)
-  } catch (error) {
-    console.error('❌ Erreur lors du chargement des codes d\'invitation:', error)
-    invitationCodes.value = []
-  } finally {
-    isLoadingInvitations.value = false
-  }
+  isLoadingInvitations.value = true
+  console.log('🔄 Écoute des codes d\'invitation...')
+  
+  if (unsubInvitations) unsubInvitations()
+  unsubInvitations = OrganizationApiService.listenInvitationCodes(
+    userOrganization.value.organization.id,
+    (codes) => {
+      invitationCodes.value = codes || []
+      console.log('✅ Codes d\'invitation mis à jour (temps réel):', invitationCodes.value)
+      isLoadingInvitations.value = false
+    },
+    (error) => {
+      console.error('❌ Erreur lors de l\'écoute des codes d\'invitation:', error)
+      invitationCodes.value = []
+      isLoadingInvitations.value = false
+    }
+  )
 }
 
 const closeOrganizationSettingsModal = () => {
@@ -1785,80 +1773,47 @@ const loadAllMembersData = async () => {
 }
 
 // Charger les demandes d'adhésion en attente
-const loadPendingMembers = async () => {
+const loadPendingMembers = () => {
   if (!userOrganization.value?.organization?.id) return
   
-  // Éviter de recharger si déjà en cours de chargement
-  if (isLoadingPendingMembers.value) return
-  
   isLoadingPendingMembers.value = true
-  try {
-    const response = await fetch(`http://127.0.0.1:8000/api/organizations/${userOrganization.value.organization.id}/pending-membership-requests/`, {
-      method: 'GET',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-    
-    if (response.ok) {
-      const data = await response.json()
+  
+  if (unsubPending) unsubPending()
+  unsubPending = OrganizationApiService.listenPendingMembershipRequests(
+    userOrganization.value.organization.id,
+    (data) => {
       if (data.success) {
         pendingMembers.value = data.requests || []
-        console.log('✅ Demandes d\'adhésion en attente chargées:', pendingMembers.value)
-      } else {
-        console.error('❌ Erreur lors du chargement des demandes:', data.message)
-        pendingMembers.value = []
+        console.log('✅ Demandes d\'adhésion en attente chargées (temps réel):', pendingMembers.value)
       }
-    } else {
-      console.error('❌ Erreur HTTP lors du chargement des demandes')
+      isLoadingPendingMembers.value = false
+    },
+    (error) => {
+      console.error('Erreur listenPendingMembershipRequests:', error)
       pendingMembers.value = []
+      isLoadingPendingMembers.value = false
     }
-  } catch (error) {
-    console.error('❌ Erreur lors du chargement des demandes:', error)
-    pendingMembers.value = []
-  } finally {
-    isLoadingPendingMembers.value = false
-  }
+  )
 }
 
 // Approuver une demande d'adhésion
 const approveMembershipRequest = async (request) => {
   try {
-    // Récupérer le token CSRF
-    const getCookie = (name) => {
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop().split(';').shift();
-      return null;
-    };
+    const data = await OrganizationApiService.approveMembershipRequest(
+      userOrganization.value.organization.id,
+      request.id,
+      request.userId,
+      request.role
+    )
     
-    const csrfToken = getCookie('csrftoken');
-    
-    const response = await fetch(`http://127.0.0.1:8000/api/organizations/membership-requests/${request.id}/approve/`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': csrfToken || '',
-      },
-    })
-    
-    if (response.ok) {
-      const data = await response.json()
-      if (data.success) {
-        console.log('✅ Demande d\'adhésion approuvée')
-        // Recharger les listes
-        await loadPendingMembers()
-        await loadOrganizationMembers()
-        // Notification de succès
-        alert('Demande d\'adhésion approuvée avec succès !')
-      } else {
-        console.error('❌ Erreur lors de l\'approbation:', data.message)
-        alert('Erreur lors de l\'approbation: ' + data.message)
-      }
+    if (data.success) {
+      console.log('✅ Demande d\'adhésion approuvée')
+      // Recharger les listes
+      await loadPendingMembers()
+      await loadOrganizationMembers()
+      // Notification de succès
+      alert('Demande d\'adhésion approuvée avec succès !')
     } else {
-      console.error('❌ Erreur HTTP lors de l\'approbation')
       alert('Erreur lors de l\'approbation')
     }
   } catch (error) {
@@ -1874,39 +1829,18 @@ const rejectMembershipRequest = async (request) => {
   }
   
   try {
-    // Récupérer le token CSRF
-    const getCookie = (name) => {
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop().split(';').shift();
-      return null;
-    };
+    const data = await OrganizationApiService.rejectMembershipRequest(
+      userOrganization.value.organization.id,
+      request.id
+    )
     
-    const csrfToken = getCookie('csrftoken');
-    
-    const response = await fetch(`http://127.0.0.1:8000/api/organizations/membership-requests/${request.id}/reject/`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': csrfToken || '',
-      },
-    })
-    
-    if (response.ok) {
-      const data = await response.json()
-      if (data.success) {
-        console.log('✅ Demande d\'adhésion rejetée')
-        // Recharger la liste
-        await loadPendingMembers()
-        // Notification de succès
-        alert('Demande d\'adhésion rejetée')
-      } else {
-        console.error('❌ Erreur lors du rejet:', data.message)
-        alert('Erreur lors du rejet: ' + data.message)
-      }
+    if (data.success) {
+      console.log('✅ Demande d\'adhésion rejetée')
+      // Recharger la liste
+      await loadPendingMembers()
+      // Notification de succès
+      alert('Demande d\'adhésion rejetée')
     } else {
-      console.error('❌ Erreur HTTP lors du rejet')
       alert('Erreur lors du rejet')
     }
   } catch (error) {
@@ -1916,41 +1850,27 @@ const rejectMembershipRequest = async (request) => {
 }
 
 // Charger les membres rejetés
-const loadRejectedMembers = async () => {
+const loadRejectedMembers = () => {
   if (!userOrganization.value?.organization?.id) return
   
-  // Éviter de recharger si déjà en cours de chargement
-  if (isLoadingRejectedMembers.value) return
-  
   isLoadingRejectedMembers.value = true
-  try {
-    const response = await fetch(`http://127.0.0.1:8000/api/organizations/${userOrganization.value.organization.id}/rejected-membership-requests/`, {
-      method: 'GET',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    })
-    
-    if (response.ok) {
-      const data = await response.json()
+  
+  if (unsubRejected) unsubRejected()
+  unsubRejected = OrganizationApiService.listenRejectedMembershipRequests(
+    userOrganization.value.organization.id,
+    (data) => {
       if (data.success) {
         rejectedMembers.value = data.requests || []
-        console.log('✅ Membres rejetés chargés:', rejectedMembers.value)
-      } else {
-        console.error('❌ Erreur lors du chargement des membres rejetés:', data.message)
-        rejectedMembers.value = []
+        console.log('✅ Membres rejetés chargés (temps réel):', rejectedMembers.value)
       }
-    } else {
-      console.error('❌ Erreur HTTP lors du chargement des membres rejetés')
+      isLoadingRejectedMembers.value = false
+    },
+    (error) => {
+      console.error('Erreur listenRejectedMembershipRequests:', error)
       rejectedMembers.value = []
+      isLoadingRejectedMembers.value = false
     }
-  } catch (error) {
-    console.error('❌ Erreur lors du chargement des membres rejetés:', error)
-    rejectedMembers.value = []
-  } finally {
-    isLoadingRejectedMembers.value = false
-  }
+  )
 }
 
 // Réapprouver une demande d'adhésion rejetée
@@ -1960,42 +1880,25 @@ const reapproveMembershipRequest = async (requestId) => {
   }
   
   try {
-    // Récupérer le token CSRF
-    const getCookie = (name) => {
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop().split(';').shift();
-      return null;
-    };
+    const request = rejectedMembers.value.find(req => req.id === requestId)
+    if (!request) throw new Error('Demande introuvable')
+
+    const data = await OrganizationApiService.approveMembershipRequest(
+      userOrganization.value.organization.id,
+      requestId,
+      request.userId,
+      request.role
+    )
     
-    const csrfToken = getCookie('csrftoken');
-    
-    const response = await fetch(`http://127.0.0.1:8000/api/organizations/membership-requests/${requestId}/reapprove/`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': csrfToken
-      }
-    })
-    
-    if (response.ok) {
-      const data = await response.json()
-      if (data.success) {
-        // Recharger les listes
-        await loadRejectedMembers()
-        await loadPendingMembers()
-        await loadOrganizationMembers()
-        // Notification de succès
-        alert('Demande d\'adhésion réapprouvée avec succès')
-      } else {
-        console.error('❌ Erreur lors de la réapprobation:', data.message)
-        alert('Erreur lors de la réapprobation: ' + data.message)
-      }
+    if (data.success) {
+      // Recharger les listes
+      await loadRejectedMembers()
+      await loadPendingMembers()
+      await loadOrganizationMembers()
+      // Notification de succès
+      alert('Demande d\'adhésion réapprouvée avec succès')
     } else {
-      const errorData = await response.json().catch(() => ({ message: 'Erreur inconnue' }))
-      console.error('❌ Erreur HTTP lors de la réapprobation:', response.status, errorData)
-      alert(`Erreur ${response.status}: ${errorData.message || 'Erreur lors de la réapprobation'}`)
+      alert('Erreur lors de la réapprobation')
     }
   } catch (error) {
     console.error('❌ Erreur lors de la réapprobation:', error)
@@ -2177,42 +2080,28 @@ const generateInviteCode = async () => {
   console.log('Génération du code d\'invitation pour le rôle:', inviteForm.value.role)
   
   try {
-    // Récupérer le token CSRF
-    const csrfToken = await getCsrfToken()
-    console.log('Token CSRF récupéré:', csrfToken)
+    // Par défaut on met une expiration dans 7 jours
+    const expiresAt = new Date()
+    expiresAt.setDate(expiresAt.getDate() + 7)
     
-    if (!csrfToken) {
-      showNotification('error', 'Erreur', 'Impossible de récupérer le token CSRF')
-      return
-    }
+    const data = await OrganizationApiService.createInvitation(
+      userOrganization.value.organization.id,
+      inviteForm.value.role,
+      expiresAt.toISOString()
+    )
     
-    const requestData = {
-      organization: userOrganization.value?.organization?.id,
-      role: inviteForm.value.role
-    }
-    console.log('Données à envoyer:', requestData)
-    
-    // Appeler l'API pour créer le code d'invitation en base de données
-    const response = await $fetch('http://127.0.0.1:8000/api/organizations/invitations/create/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Csrftoken': csrfToken  // Note: Django attend 'X-Csrftoken' (minuscule 's')
-      },
-      credentials: 'include', // Inclure les cookies de session
-      body: requestData
-    })
-    
-    console.log('Réponse du serveur:', response)
-    
-    if (response.success) {
-      // Récupérer le code généré par le backend
-      generatedInviteCode.value = response.data.code
+    if (data.success) {
+      // Récupérer le code généré
+      generatedInviteCode.value = data.invitation.code
       console.log('Code d\'invitation généré et sauvegardé:', generatedInviteCode.value)
       showNotification('success', 'Succès', 'Code d\'invitation généré et sauvegardé !')
+      
+      // Recharger la liste des invitations si on est sur l'onglet correspondant
+      if (activeOrganizationTab.value === 'invitations') {
+        loadInvitationCodes()
+      }
     } else {
-      console.error('Erreur lors de la génération:', response.message)
-      showNotification('error', 'Erreur', response.message || 'Erreur lors de la génération du code')
+      showNotification('error', 'Erreur', 'Erreur lors de la génération du code')
     }
   } catch (error) {
     console.error('Erreur lors de la génération du code d\'invitation:', error)
@@ -2362,27 +2251,30 @@ const deleteInvitationCode = async (codeId) => {
   }
 }
 
-// Fonction pour charger les certificats d'organisation
-const loadOrganizationCertificates = async () => {
+// Fonction pour écouter les certificats d'organisation
+const loadOrganizationCertificates = () => {
   if (!userOrganization.value?.organization?.id) {
-    console.log('❌ Aucune organisation disponible pour charger les certificats')
+    console.log('❌ Aucune organisation disponible pour écouter les certificats')
     return
   }
   
-  try {
-    isLoadingCertificates.value = true
-    console.log('🔄 Chargement des certificats...')
-    
-    const certificates = await OrganizationApiService.getOrganizationCertificates(userOrganization.value.organization.id)
-    organizationCertificates.value = certificates.certificates || []
-    
-    console.log('✅ Certificats chargés:', organizationCertificates.value)
-  } catch (error) {
-    console.error('❌ Erreur lors du chargement des certificats:', error)
-    organizationCertificates.value = []
-  } finally {
-    isLoadingCertificates.value = false
-  }
+  isLoadingCertificates.value = true
+  console.log('🔄 Écoute des certificats...')
+  
+  if (unsubCertificates) unsubCertificates()
+  unsubCertificates = OrganizationApiService.listenOrganizationCertificates(
+    userOrganization.value.organization.id,
+    (certificates) => {
+      organizationCertificates.value = certificates || []
+      console.log('✅ Certificats mis à jour (temps réel):', organizationCertificates.value)
+      isLoadingCertificates.value = false
+    },
+    (error) => {
+      console.error('❌ Erreur lors de l\'écoute des certificats:', error)
+      organizationCertificates.value = []
+      isLoadingCertificates.value = false
+    }
+  )
 }
 
 // Fonctions pour l'affichage du statut des certificats

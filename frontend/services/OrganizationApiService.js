@@ -1,54 +1,83 @@
-const API_BASE_URL = 'http://127.0.0.1:8000/api'
+import { getFirestore, collection, doc, setDoc, getDoc, getDocs, updateDoc, deleteDoc, query, where, serverTimestamp, addDoc, collectionGroup, onSnapshot, orderBy } from 'firebase/firestore'
+import { getAuth } from 'firebase/auth'
+import { initializeApp, getApps, getApp } from 'firebase/app'
 
 class OrganizationApiService {
+  /**
+   * Helper: Récupère l'instance Firestore et Auth (vérifie qu'on est côté client)
+   */
+  static getFirebase() {
+    if (process.server) throw new Error("Ne peut pas être appelé côté serveur")
+    
+    if (!getApps().length) {
+      const config = useRuntimeConfig()
+      initializeApp({
+        apiKey: config.public.firebaseApiKey,
+        authDomain: config.public.firebaseAuthDomain,
+        projectId: config.public.firebaseProjectId,
+        storageBucket: config.public.firebaseStorageBucket,
+        messagingSenderId: config.public.firebaseMessagingSenderId,
+        appId: config.public.firebaseAppId,
+        measurementId: config.public.firebaseMeasurementId
+      })
+    }
+    
+    return {
+      db: getFirestore(),
+      auth: getAuth()
+    }
+  }
+
+  /**
+   * Helper: Récupère l'utilisateur actuellement connecté
+   */
+  static getCurrentUser(auth) {
+    const user = auth.currentUser
+    if (!user) throw new Error("Utilisateur non connecté")
+    return user
+  }
+
   /**
    * Créer une nouvelle organisation
    */
   static async createOrganization(organizationData) {
     try {
-      // Récupérer le token CSRF
-      const csrfResponse = await fetch(`${API_BASE_URL}/auth/csrf/`, {
-        method: 'GET',
-        credentials: 'include'
-      })
-      
-      let csrfToken = null
-      if (csrfResponse.ok) {
-        const csrfData = await csrfResponse.json()
-        csrfToken = csrfData.csrfToken
-        console.log('🔑 Token CSRF récupéré pour organisation:', csrfToken)
-      } else {
-        console.warn('⚠️ Impossible de récupérer le token CSRF pour organisation')
+      const { db, auth } = this.getFirebase()
+      const user = this.getCurrentUser(auth)
+
+      // Créer une nouvelle référence de document pour l'organisation
+      const orgRef = doc(collection(db, 'organizations'))
+      const orgId = orgRef.id
+
+      const orgDoc = {
+        id: orgId,
+        name: organizationData.name,
+        description: organizationData.description || '',
+        email: organizationData.email || '',
+        phone: organizationData.phone || '',
+        address: organizationData.address || '',
+        website: organizationData.website || '',
+        organization_type: organizationData.organization_type || '',
+        industry: organizationData.sector || organizationData.industry || '',
+        size: organizationData.size || '',
+        ownerId: user.uid,
+        approval_status: 'pending', // Nouveau statut pour validation par le super-admin
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       }
 
-      const headers = {
-        'Content-Type': 'application/json',
-      }
-      
-      if (csrfToken) {
-        headers['X-CSRFToken'] = csrfToken
-      }
+      await setDoc(orgRef, orgDoc)
 
-      console.log('📤 Envoi des données d\'organisation:', organizationData)
-      console.log('📤 Headers:', headers)
+      // Mettre à jour l'utilisateur pour l'assigner à cette organisation en tant que propriétaire/admin
+      const userRef = doc(db, 'users', user.uid)
+      await setDoc(userRef, {
+        organizationId: orgId,
+        role: 'admin', // Le créateur est l'administrateur
+        updated_at: new Date().toISOString()
+      }, { merge: true })
 
-      const response = await fetch(`${API_BASE_URL}/organizations/create/`, {
-        method: 'POST',
-        headers,
-        credentials: 'include',
-        body: JSON.stringify(organizationData)
-      })
-
-      console.log('📥 Réponse du serveur:', response.status, response.statusText)
-
-      const data = await response.json()
-      console.log('📥 Données reçues:', data)
-      
-      if (!response.ok) {
-        throw new Error(data.message || 'Erreur lors de la création de l\'organisation')
-      }
-
-      return data
+      console.log('✅ Organisation créée dans Firestore:', orgDoc)
+      return orgDoc
     } catch (error) {
       console.error('Erreur lors de la création de l\'organisation:', error)
       throw error
@@ -60,24 +89,84 @@ class OrganizationApiService {
    */
   static async getUserOrganization() {
     try {
-      const response = await fetch(`${API_BASE_URL}/organizations/my-organization/`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include'
-      })
+      const { db, auth } = this.getFirebase()
+      const user = this.getCurrentUser(auth)
 
-      const data = await response.json()
-      
-      if (!response.ok) {
-        throw new Error(data.message || 'Erreur lors de la récupération de l\'organisation')
+      // Récupérer le document utilisateur pour avoir son organizationId
+      const userDocRef = doc(db, 'users', user.uid)
+      const userDocSnap = await getDoc(userDocRef)
+
+      if (!userDocSnap.exists() || !userDocSnap.data().organizationId) {
+        throw new Error("L'utilisateur n'appartient à aucune organisation")
       }
 
-      return data
+      const orgId = userDocSnap.data().organizationId
+
+      // Récupérer l'organisation
+      const orgRef = doc(db, 'organizations', orgId)
+      const orgSnap = await getDoc(orgRef)
+
+      if (!orgSnap.exists()) {
+        throw new Error("Organisation introuvable")
+      }
+
+      return { id: orgSnap.id, ...orgSnap.data() }
     } catch (error) {
-      console.error('Erreur lors de la récupération de l\'organisation:', error)
+      if (error.message !== "L'utilisateur n'appartient à aucune organisation") {
+        console.error('Erreur lors de la récupération de l\'organisation:', error)
+      }
       throw error
+    }
+  }
+
+  /**
+   * Écouter l'organisation de l'utilisateur connecté en temps réel
+   */
+  static listenUserOrganization(callback, errorCallback) {
+    try {
+      const { db, auth } = this.getFirebase()
+      const user = this.getCurrentUser(auth)
+
+      const userDocRef = doc(db, 'users', user.uid)
+      let orgUnsubscribe = null
+
+      const userUnsubscribe = onSnapshot(userDocRef, (userDocSnap) => {
+        if (!userDocSnap.exists() || !userDocSnap.data().organizationId) {
+          if (orgUnsubscribe) {
+            orgUnsubscribe()
+            orgUnsubscribe = null
+          }
+          callback(null)
+          return
+        }
+
+        const orgId = userDocSnap.data().organizationId
+        const userRole = userDocSnap.data().role || 'member'
+        const orgRef = doc(db, 'organizations', orgId)
+
+        if (orgUnsubscribe) orgUnsubscribe()
+
+        orgUnsubscribe = onSnapshot(orgRef, (orgSnap) => {
+          if (orgSnap.exists()) {
+            callback({ id: orgSnap.id, ...orgSnap.data(), role: userRole })
+          } else {
+            callback(null)
+          }
+        }, (error) => {
+          if (errorCallback) errorCallback(error)
+        })
+      }, (error) => {
+        if (errorCallback) errorCallback(error)
+      })
+
+      // Retourner une fonction pour tout nettoyer
+      return () => {
+        if (userUnsubscribe) userUnsubscribe()
+        if (orgUnsubscribe) orgUnsubscribe()
+      }
+    } catch (error) {
+      if (errorCallback) errorCallback(error)
+      return () => {}
     }
   }
 
@@ -86,46 +175,19 @@ class OrganizationApiService {
    */
   static async updateOrganization(organizationId, organizationData) {
     try {
-      // Récupérer le token CSRF
-      const csrfResponse = await fetch(`${API_BASE_URL}/auth/csrf/`, {
-        method: 'GET',
-        credentials: 'include'
-      })
+      const { db } = this.getFirebase()
+      const orgRef = doc(db, 'organizations', organizationId)
       
-      let csrfToken = null
-      if (csrfResponse.ok) {
-        const csrfData = await csrfResponse.json()
-        csrfToken = csrfData.csrfToken
-      }
-
-      const headers = {
-        'Content-Type': 'application/json',
+      const updateData = {
+        ...organizationData,
+        updated_at: new Date().toISOString()
       }
       
-      if (csrfToken) {
-        headers['X-CSRFToken'] = csrfToken
-      }
+      await updateDoc(orgRef, updateData)
 
-      console.log('📤 Envoi des données de mise à jour:', organizationData)
-      console.log('📤 Headers:', headers)
-      console.log('📤 URL:', `${API_BASE_URL}/organizations/${organizationId}/update/`)
-
-      const response = await fetch(`${API_BASE_URL}/organizations/${organizationId}/update/`, {
-        method: 'PUT',
-        headers,
-        credentials: 'include',
-        body: JSON.stringify(organizationData)
-      })
-
-      console.log('📥 Réponse du serveur:', response.status, response.statusText)
-
-      const data = await response.json()
-      
-      if (!response.ok) {
-        throw new Error(data.message || 'Erreur lors de la mise à jour de l\'organisation')
-      }
-
-      return data
+      // Récupérer la nouvelle version pour la retourner
+      const orgSnap = await getDoc(orgRef)
+      return orgSnap.data()
     } catch (error) {
       console.error('Erreur lors de la mise à jour de l\'organisation:', error)
       throw error
@@ -135,50 +197,23 @@ class OrganizationApiService {
   /**
    * Supprimer une organisation
    */
-  static async deleteOrganization(organizationId, password) {
+  static async deleteOrganization(organizationId) {
     try {
-      // Récupérer le token CSRF
-      const csrfResponse = await fetch(`${API_BASE_URL}/auth/csrf/`, {
-        method: 'GET',
-        credentials: 'include'
+      const { db, auth } = this.getFirebase()
+      const orgRef = doc(db, 'organizations', organizationId)
+      
+      await deleteDoc(orgRef)
+      
+      // Mettre à jour l'utilisateur pour supprimer sa référence à l'organisation
+      const user = this.getCurrentUser(auth)
+      const userRef = doc(db, 'users', user.uid)
+      
+      await updateDoc(userRef, {
+        organizationId: null,
+        role: 'member'
       })
       
-      let csrfToken = null
-      if (csrfResponse.ok) {
-        const csrfData = await csrfResponse.json()
-        csrfToken = csrfData.csrfToken
-      }
-
-      const headers = {
-        'Content-Type': 'application/json',
-      }
-      
-      if (csrfToken) {
-        headers['X-CSRFToken'] = csrfToken
-      }
-
-      // Inclure le mot de passe dans le body
-      const requestData = {
-        password: password
-      }
-
-      console.log('📤 Suppression organisation - ID:', organizationId)
-      console.log('📤 Mot de passe fourni:', password ? 'Oui' : 'Non')
-
-      const response = await fetch(`${API_BASE_URL}/organizations/${organizationId}/delete/`, {
-        method: 'DELETE',
-        headers,
-        credentials: 'include',
-        body: JSON.stringify(requestData)
-      })
-
-      const data = await response.json()
-      
-      if (!response.ok) {
-        throw new Error(data.message || 'Erreur lors de la suppression de l\'organisation')
-      }
-
-      return data
+      return { success: true, message: "Organisation supprimée avec succès" }
     } catch (error) {
       console.error('Erreur lors de la suppression de l\'organisation:', error)
       throw error
@@ -190,20 +225,14 @@ class OrganizationApiService {
    */
   static async getOrganization(organizationId) {
     try {
-      const response = await fetch(`${API_BASE_URL}/organizations/${organizationId}/`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include'
-      })
-  
-      if (!response.ok) {
-        throw new Error(`Erreur HTTP: ${response.status}`)
+      const { db } = this.getFirebase()
+      const orgRef = doc(db, 'organizations', organizationId)
+      const orgSnap = await getDoc(orgRef)
+      
+      if (!orgSnap.exists()) {
+        throw new Error("Organisation introuvable")
       }
-  
-      const data = await response.json()
-      return data
+      return orgSnap.data()
     } catch (error) {
       console.error('Erreur lors de la récupération de l\'organisation:', error)
       throw error
@@ -215,22 +244,40 @@ class OrganizationApiService {
    */
   static async getInvitationCodes(organizationId) {
     try {
-      const response = await fetch(`${API_BASE_URL}/organizations/invitations/list/?organization_id=${organizationId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include'
+      const { db } = this.getFirebase()
+      const invitationsRef = collection(db, 'organizations', organizationId, 'invitations')
+      const snapshot = await getDocs(invitationsRef)
+      
+      const codes = []
+      snapshot.forEach(doc => {
+        codes.push({ id: doc.id, ...doc.data() })
       })
-  
-      if (!response.ok) {
-        throw new Error(`Erreur HTTP: ${response.status}`)
-      }
-  
-      const data = await response.json()
-      return data
+      
+      return codes
     } catch (error) {
       console.error('Erreur lors de la récupération des codes d\'invitation:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Écouter les codes d'invitation d'une organisation en temps réel
+   */
+  static listenInvitationCodes(organizationId, callback, errorCallback) {
+    try {
+      const { db } = this.getFirebase()
+      const invitationsRef = collection(db, 'organizations', organizationId, 'invitations')
+      
+      return onSnapshot(invitationsRef, (snapshot) => {
+        const codes = []
+        snapshot.forEach(doc => {
+          codes.push({ id: doc.id, ...doc.data() })
+        })
+        callback(codes)
+      }, errorCallback)
+    } catch (error) {
+      console.error('Erreur lors de l\'écoute des codes d\'invitation:', error)
+      if (errorCallback) errorCallback(error)
       throw error
     }
   }
@@ -240,32 +287,16 @@ class OrganizationApiService {
    */
   static async deactivateInvitationCode(codeId) {
     try {
-      // Récupérer le token CSRF
-      const csrfResponse = await fetch(`${API_BASE_URL}/auth/csrf/`, {
-        method: 'GET',
-        credentials: 'include'
-      })
-      const csrfData = await csrfResponse.json()
-      const csrfToken = csrfData.csrfToken
+      const { db, auth } = this.getFirebase()
+      const user = this.getCurrentUser(auth)
+      const userDocSnap = await getDoc(doc(db, 'users', user.uid))
+      const orgId = userDocSnap.data().organizationId
 
-      console.log('🔍 Désactivation code d\'invitation:', codeId)
-      console.log('🔍 Token CSRF:', csrfToken)
-
-      const response = await fetch(`${API_BASE_URL}/organizations/invitations/${codeId}/deactivate/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken,
-        },
-        credentials: 'include'
-      })
-  
-      if (!response.ok) {
-        throw new Error(`Erreur HTTP: ${response.status}`)
-      }
-  
-      const data = await response.json()
-      return data
+      const codeRef = doc(db, 'organizations', orgId, 'invitations', codeId)
+      await updateDoc(codeRef, { is_active: false })
+      
+      const snap = await getDoc(codeRef)
+      return { id: snap.id, ...snap.data() }
     } catch (error) {
       console.error('Erreur lors de la désactivation du code d\'invitation:', error)
       throw error
@@ -277,32 +308,16 @@ class OrganizationApiService {
    */
   static async reactivateInvitationCode(codeId) {
     try {
-      // Récupérer le token CSRF
-      const csrfResponse = await fetch(`${API_BASE_URL}/auth/csrf/`, {
-        method: 'GET',
-        credentials: 'include'
-      })
-      const csrfData = await csrfResponse.json()
-      const csrfToken = csrfData.csrfToken
+      const { db, auth } = this.getFirebase()
+      const user = this.getCurrentUser(auth)
+      const userDocSnap = await getDoc(doc(db, 'users', user.uid))
+      const orgId = userDocSnap.data().organizationId
 
-      console.log('🔍 Réactivation code d\'invitation:', codeId)
-      console.log('🔍 Token CSRF:', csrfToken)
-
-      const response = await fetch(`${API_BASE_URL}/organizations/invitations/${codeId}/reactivate/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken,
-        },
-        credentials: 'include'
-      })
-  
-      if (!response.ok) {
-        throw new Error(`Erreur HTTP: ${response.status}`)
-      }
-  
-      const data = await response.json()
-      return data
+      const codeRef = doc(db, 'organizations', orgId, 'invitations', codeId)
+      await updateDoc(codeRef, { is_active: true })
+      
+      const snap = await getDoc(codeRef)
+      return { id: snap.id, ...snap.data() }
     } catch (error) {
       console.error('Erreur lors de la réactivation du code d\'invitation:', error)
       throw error
@@ -314,32 +329,15 @@ class OrganizationApiService {
    */
   static async deleteInvitationCode(codeId) {
     try {
-      // Récupérer le token CSRF
-      const csrfResponse = await fetch(`${API_BASE_URL}/auth/csrf/`, {
-        method: 'GET',
-        credentials: 'include'
-      })
-      const csrfData = await csrfResponse.json()
-      const csrfToken = csrfData.csrfToken
+      const { db, auth } = this.getFirebase()
+      const user = this.getCurrentUser(auth)
+      const userDocSnap = await getDoc(doc(db, 'users', user.uid))
+      const orgId = userDocSnap.data().organizationId
 
-      console.log('🔍 Suppression code d\'invitation:', codeId)
-      console.log('🔍 Token CSRF:', csrfToken)
-
-      const response = await fetch(`${API_BASE_URL}/organizations/invitations/${codeId}/delete/`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken,
-        },
-        credentials: 'include'
-      })
-  
-      if (!response.ok) {
-        throw new Error(`Erreur HTTP: ${response.status}`)
-      }
-  
-      const data = await response.json()
-      return data
+      const codeRef = doc(db, 'organizations', orgId, 'invitations', codeId)
+      await deleteDoc(codeRef)
+      
+      return { success: true }
     } catch (error) {
       console.error('Erreur lors de la suppression du code d\'invitation:', error)
       throw error
@@ -351,22 +349,40 @@ class OrganizationApiService {
    */
   static async getOrganizationCertificates(organizationId) {
     try {
-      const response = await fetch(`${API_BASE_URL}/organizations/${organizationId}/certificates/`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include'
+      const { db } = this.getFirebase()
+      const certsRef = collection(db, 'organizations', organizationId, 'certificates')
+      const snapshot = await getDocs(certsRef)
+      
+      const certificates = []
+      snapshot.forEach(doc => {
+        certificates.push({ id: doc.id, ...doc.data() })
       })
-  
-      if (!response.ok) {
-        throw new Error(`Erreur HTTP: ${response.status}`)
-      }
-  
-      const data = await response.json()
-      return data
+      
+      return certificates
     } catch (error) {
       console.error('Erreur lors de la récupération des certificats:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Écouter les certificats d'une organisation en temps réel
+   */
+  static listenOrganizationCertificates(organizationId, callback, errorCallback) {
+    try {
+      const { db } = this.getFirebase()
+      const certsRef = collection(db, 'organizations', organizationId, 'certificates')
+      
+      return onSnapshot(certsRef, (snapshot) => {
+        const certs = []
+        snapshot.forEach(doc => {
+          certs.push({ id: doc.id, ...doc.data() })
+        })
+        callback(certs)
+      }, errorCallback)
+    } catch (error) {
+      console.error('Erreur lors de l\'écoute des certificats:', error)
+      if (errorCallback) errorCallback(error)
       throw error
     }
   }
@@ -376,30 +392,16 @@ class OrganizationApiService {
    */
   static async createOrganizationCertificate(organizationId, certificateData) {
     try {
-      // Récupérer le token CSRF
-      const csrfResponse = await fetch(`${API_BASE_URL}/auth/csrf/`, {
-        method: 'GET',
-        credentials: 'include'
-      })
-      const csrfData = await csrfResponse.json()
-      const csrfToken = csrfData.csrfToken
-
-      const response = await fetch(`${API_BASE_URL}/organizations/${organizationId}/certificates/create/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken,
-        },
-        credentials: 'include',
-        body: JSON.stringify(certificateData)
-      })
-  
-      if (!response.ok) {
-        throw new Error(`Erreur HTTP: ${response.status}`)
+      const { db } = this.getFirebase()
+      const certsRef = collection(db, 'organizations', organizationId, 'certificates')
+      
+      const dataToSave = {
+        ...certificateData,
+        created_at: new Date().toISOString()
       }
-  
-      const data = await response.json()
-      return data
+      
+      const docRef = await addDoc(certsRef, dataToSave)
+      return { id: docRef.id, ...dataToSave }
     } catch (error) {
       console.error('Erreur lors de la création du certificat:', error)
       throw error
@@ -411,29 +413,10 @@ class OrganizationApiService {
    */
   static async deleteOrganizationCertificate(organizationId, certificateId) {
     try {
-      // Récupérer le token CSRF
-      const csrfResponse = await fetch(`${API_BASE_URL}/auth/csrf/`, {
-        method: 'GET',
-        credentials: 'include'
-      })
-      const csrfData = await csrfResponse.json()
-      const csrfToken = csrfData.csrfToken
-
-      const response = await fetch(`${API_BASE_URL}/organizations/${organizationId}/certificates/${certificateId}/delete/`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken,
-        },
-        credentials: 'include'
-      })
-  
-      if (!response.ok) {
-        throw new Error(`Erreur HTTP: ${response.status}`)
-      }
-  
-      const data = await response.json()
-      return data
+      const { db } = this.getFirebase()
+      const certRef = doc(db, 'organizations', organizationId, 'certificates', certificateId)
+      await deleteDoc(certRef)
+      return { success: true }
     } catch (error) {
       console.error('Erreur lors de la suppression du certificat:', error)
       throw error
@@ -445,23 +428,50 @@ class OrganizationApiService {
    */
   static async getOrganizationMembers(organizationId) {
     try {
-      const response = await fetch(`${API_BASE_URL}/organizations/${organizationId}/members/`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include'
-      })
-
-      const data = await response.json()
+      const { db } = this.getFirebase()
       
-      if (!response.ok) {
-        throw new Error(data.message || 'Erreur lors de la récupération des membres')
-      }
-
-      return data
+      // On requête la collection globale 'users' où organizationId correspond
+      const usersRef = collection(db, 'users')
+      const q = query(usersRef, where('organizationId', '==', organizationId))
+      const snapshot = await getDocs(q)
+      
+      const members = []
+      snapshot.forEach(doc => {
+        const data = doc.data()
+        members.push({
+          id: doc.id,
+          name: data.displayName || 'Utilisateur',
+          email: data.email,
+          role: data.role || 'member'
+        })
+      })
+      
+      return members
     } catch (error) {
       console.error('Erreur lors de la récupération des membres:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Écouter les membres d'une organisation en temps réel
+   */
+  static listenOrganizationMembers(organizationId, callback, errorCallback) {
+    try {
+      const { db } = this.getFirebase()
+      const usersRef = collection(db, 'users')
+      const q = query(usersRef, where('organizationId', '==', organizationId))
+      
+      return onSnapshot(q, (snapshot) => {
+        const members = []
+        snapshot.forEach(doc => {
+          members.push({ id: doc.id, ...doc.data() })
+        })
+        callback(members)
+      }, errorCallback)
+    } catch (error) {
+      console.error('Erreur lors de l\'écoute des membres:', error)
+      if (errorCallback) errorCallback(error)
       throw error
     }
   }
@@ -471,27 +481,387 @@ class OrganizationApiService {
    */
   static async joinOrganization(inviteCode) {
     try {
-      const response = await fetch(`${API_BASE_URL}/organizations/join/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ invite_code: inviteCode })
-      })
-
-      const data = await response.json()
+      const { db, auth } = this.getFirebase()
+      const user = this.getCurrentUser(auth)
       
-      if (!response.ok) {
-        throw new Error(data.message || 'Erreur lors de l\'adhésion à l\'organisation')
+      // Note: Il n'y a pas de "collection group query" par défaut qui soit rapide sans index.
+      // Pour retrouver l'orga à partir du code, on pourrait l'avoir de manière globale ou scanner
+      // Par simplicité, si on a un objet "invitations" global ça serait plus simple,
+      // sinon on doit faire une Collection Group Query sur "invitations"
+      const invitationsQuery = query(collectionGroup(db, 'invitations'), where('code', '==', inviteCode), where('is_active', '==', true))
+      // TODO: Pour éviter des erreurs complexes, vous devez créer l'index Collection Group pour 'invitations'
+      // dans la console Firebase. 
+      
+      const snapshot = await getDocs(invitationsQuery)
+      if (snapshot.empty) {
+        throw new Error("Code d'invitation invalide ou expiré")
       }
-
-      return data
+      
+      const inviteDoc = snapshot.docs[0]
+      const inviteData = inviteDoc.data()
+      const organizationId = inviteDoc.ref.parent.parent.id // remonter vers orgRef
+      const roleToAssign = inviteData.role || 'member'
+      
+      // Mettre à jour l'utilisateur courant
+      const userRef = doc(db, 'users', user.uid)
+      await setDoc(userRef, {
+        organizationId: organizationId,
+        role: roleToAssign,
+        updated_at: new Date().toISOString()
+      }, { merge: true })
+      
+      return { success: true, organizationId }
     } catch (error) {
       console.error('Erreur lors de l\'adhésion à l\'organisation:', error)
       throw error
     }
   }
+
+  /**
+   * Récupérer toutes les organisations approuvées
+   */
+  static async getAllOrganizations() {
+    try {
+      const { db } = this.getFirebase()
+      const orgsRef = collection(db, 'organizations')
+      const snapshot = await getDocs(orgsRef)
+      
+      const organizations = []
+      snapshot.forEach(doc => {
+        const data = doc.data()
+        // Dans un flux réel, on filtre par approval_status == 'approved'
+        if (data.approval_status !== 'rejected') {
+          organizations.push({ id: doc.id, ...data })
+        }
+      })
+      
+      return organizations
+    } catch (error) {
+      console.error('Erreur lors de la récupération de toutes les organisations:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Vérifier l'adhésion d'un utilisateur à une organisation
+   */
+  static async checkMembership(organizationId) {
+    try {
+      const { db, auth } = this.getFirebase()
+      const user = this.getCurrentUser(auth)
+      
+      // Vérifier si l'utilisateur est déjà membre
+      const userDocSnap = await getDoc(doc(db, 'users', user.uid))
+      const userData = userDocSnap.data()
+      if (userData && userData.organizationId === organizationId) {
+        return { success: true, is_member: true, has_pending_request: false }
+      }
+      
+      // Vérifier s'il y a une demande en attente
+      const requestsRef = collection(db, 'organizations', organizationId, 'membership_requests')
+      const q = query(requestsRef, where('userId', '==', user.uid), where('status', '==', 'pending'))
+      const snapshot = await getDocs(q)
+      
+      if (!snapshot.empty) {
+        return { success: true, is_member: false, has_pending_request: true }
+      }
+      
+      return { success: true, is_member: false, has_pending_request: false }
+    } catch (error) {
+      console.error('Erreur lors de la vérification de l\'adhésion:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Demander l'adhésion à une organisation
+   */
+  static async requestMembership(organizationId, role, message) {
+    try {
+      const { db, auth } = this.getFirebase()
+      const user = this.getCurrentUser(auth)
+      
+      const requestsRef = collection(db, 'organizations', organizationId, 'membership_requests')
+      await addDoc(requestsRef, {
+        userId: user.uid,
+        userName: user.displayName || 'Utilisateur',
+        userEmail: user.email,
+        requestedRole: role,
+        message: message,
+        status: 'pending',
+        createdAt: serverTimestamp()
+      })
+      
+      return { success: true, message: "Demande d'adhésion envoyée avec succès" }
+    } catch (error) {
+      console.error('Erreur lors de la demande d\'adhésion:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Quitter une organisation
+   */
+  static async leaveOrganization(organizationId) {
+    try {
+      const { db, auth } = this.getFirebase()
+      const user = this.getCurrentUser(auth)
+      
+      const userRef = doc(db, 'users', user.uid)
+      await updateDoc(userRef, {
+        organizationId: null,
+        role: null
+      })
+      
+      return { success: true, message: "Vous avez quitté l'organisation avec succès" }
+    } catch (error) {
+      console.error('Erreur lors du départ de l\'organisation:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Récupérer les demandes d'adhésion en attente
+   */
+  static async getPendingMembershipRequests(organizationId) {
+    try {
+      const { db } = this.getFirebase()
+      const requestsRef = collection(db, 'organizations', organizationId, 'membership_requests')
+      const q = query(requestsRef, where('status', '==', 'pending'))
+      
+      const snapshot = await getDocs(q)
+      const requests = []
+      snapshot.forEach(doc => {
+        requests.push({ id: doc.id, ...doc.data() })
+      })
+      
+      return { success: true, requests }
+    } catch (error) {
+      console.error('Erreur getPendingMembershipRequests:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Écouter les demandes d'adhésion en attente en temps réel
+   */
+  static listenPendingMembershipRequests(organizationId, callback, errorCallback) {
+    try {
+      const { db } = this.getFirebase()
+      const requestsRef = collection(db, 'organizations', organizationId, 'membership_requests')
+      const q = query(requestsRef, where('status', '==', 'pending'))
+      
+      return onSnapshot(q, (snapshot) => {
+        const requests = []
+        snapshot.forEach(doc => {
+          requests.push({ id: doc.id, ...doc.data() })
+        })
+        callback({ success: true, requests })
+      }, errorCallback)
+    } catch (error) {
+      console.error('Erreur listenPendingMembershipRequests:', error)
+      if (errorCallback) errorCallback(error)
+      throw error
+    }
+  }
+
+  /**
+   * Récupérer les demandes d'adhésion rejetées
+   */
+  static async getRejectedMembershipRequests(organizationId) {
+    try {
+      const { db } = this.getFirebase()
+      const requestsRef = collection(db, 'organizations', organizationId, 'membership_requests')
+      const q = query(requestsRef, where('status', '==', 'rejected'))
+      
+      const snapshot = await getDocs(q)
+      const requests = []
+      snapshot.forEach(doc => {
+        requests.push({ id: doc.id, ...doc.data() })
+      })
+      
+      return { success: true, requests }
+    } catch (error) {
+      console.error('Erreur getRejectedMembershipRequests:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Écouter les demandes d'adhésion rejetées en temps réel
+   */
+  static listenRejectedMembershipRequests(organizationId, callback, errorCallback) {
+    try {
+      const { db } = this.getFirebase()
+      const requestsRef = collection(db, 'organizations', organizationId, 'membership_requests')
+      const q = query(requestsRef, where('status', '==', 'rejected'))
+      
+      return onSnapshot(q, (snapshot) => {
+        const requests = []
+        snapshot.forEach(doc => {
+          requests.push({ id: doc.id, ...doc.data() })
+        })
+        callback({ success: true, requests })
+      }, errorCallback)
+    } catch (error) {
+      console.error('Erreur listenRejectedMembershipRequests:', error)
+      if (errorCallback) errorCallback(error)
+      throw error
+    }
+  }
+
+  /**
+   * Approuver une demande d'adhésion
+   */
+  static async approveMembershipRequest(organizationId, requestId, userId, role) {
+    try {
+      const { db } = this.getFirebase()
+      
+      // Mettre à jour la demande
+      const requestRef = doc(db, 'organizations', organizationId, 'membership_requests', requestId)
+      await updateDoc(requestRef, {
+        status: 'approved',
+        updatedAt: serverTimestamp()
+      })
+      
+      // Mettre à jour l'utilisateur
+      const userRef = doc(db, 'users', userId)
+      await updateDoc(userRef, {
+        organizationId: organizationId,
+        role: role || 'member'
+      })
+      
+      return { success: true, message: 'Demande approuvée avec succès' }
+    } catch (error) {
+      console.error('Erreur approveMembershipRequest:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Rejeter une demande d'adhésion
+   */
+  static async rejectMembershipRequest(organizationId, requestId) {
+    try {
+      const { db } = this.getFirebase()
+      const requestRef = doc(db, 'organizations', organizationId, 'membership_requests', requestId)
+      
+      await updateDoc(requestRef, {
+        status: 'rejected',
+        updatedAt: serverTimestamp()
+      })
+      
+      return { success: true, message: 'Demande rejetée' }
+    } catch (error) {
+      console.error('Erreur rejectMembershipRequest:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Créer une invitation
+   */
+  static async createInvitation(organizationId, role, expiresAt) {
+    try {
+      const { db, auth } = this.getFirebase()
+      const user = this.getCurrentUser(auth)
+      
+      // Générer un code unique (ex: INV-XXXX)
+      const code = 'INV-' + Math.random().toString(36).substring(2, 8).toUpperCase()
+      
+      const invitationsRef = collection(db, 'organizations', organizationId, 'invitations')
+      await addDoc(invitationsRef, {
+        code: code,
+        role: role,
+        expiresAt: expiresAt,
+        createdBy: user.uid,
+        status: 'active',
+        is_active: true,
+        createdAt: serverTimestamp()
+      })
+      
+      return { 
+        success: true, 
+        invitation: {
+          code: code,
+          role: role,
+          expires_at: expiresAt
+        } 
+      }
+    } catch (error) {
+      console.error('Erreur createInvitation:', error)
+      throw error
+    }
+  }
+
+  /**
+   * SUPER ADMIN : Écouter toutes les organisations en temps réel
+   * @param {Function} callback Fonction appelée avec les nouvelles données
+   * @returns {Function} Fonction pour se désabonner (unsubscribe)
+   */
+  static listenAllOrganizations(callback) {
+    try {
+      const { db } = this.getFirebase()
+      const orgsRef = collection(db, 'organizations')
+      
+      // On peut ajouter orderBy si nécessaire, mais on fera le tri côté client pour plus de flexibilité
+      const unsubscribe = onSnapshot(orgsRef, (snapshot) => {
+        const organizations = []
+        snapshot.forEach((doc) => {
+          organizations.push({ id: doc.id, ...doc.data() })
+        })
+        callback(organizations)
+      }, (error) => {
+        console.error('Erreur listenAllOrganizations:', error)
+      })
+      
+      return unsubscribe
+    } catch (error) {
+      console.error('Erreur lors de l\'initialisation de l\'écouteur d\'organisations:', error)
+      throw error
+    }
+  }
+
+  /**
+   * SUPER ADMIN : Valider une organisation
+   */
+  static async validateOrganization(organizationId) {
+    try {
+      const { db } = this.getFirebase()
+      const orgRef = doc(db, 'organizations', organizationId)
+      
+      await updateDoc(orgRef, {
+        approval_status: 'approved',
+        updated_at: new Date().toISOString()
+      })
+      
+      return { success: true }
+    } catch (error) {
+      console.error('Erreur lors de la validation de l\'organisation:', error)
+      throw error
+    }
+  }
+
+  /**
+   * SUPER ADMIN : Rejeter une organisation
+   */
+  static async rejectOrganization(organizationId) {
+    try {
+      const { db } = this.getFirebase()
+      const orgRef = doc(db, 'organizations', organizationId)
+      
+      await updateDoc(orgRef, {
+        approval_status: 'rejected',
+        updated_at: new Date().toISOString()
+      })
+      
+      return { success: true }
+    } catch (error) {
+      console.error('Erreur lors du rejet de l\'organisation:', error)
+      throw error
+    }
+  }
+
 }
 
 export default OrganizationApiService

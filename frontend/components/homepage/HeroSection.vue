@@ -18,7 +18,7 @@
 
             <!-- Bouton d'action rapide -->
             <div class="hero-actions">
-              <NuxtLink to="/register" class="btn btn-primary-custom btn-lg hero-action-btn">
+              <NuxtLink to="/login" class="btn btn-primary-custom btn-lg hero-action-btn">
                 <i class="bi bi-play-circle me-2"></i>
                 Commencer maintenant
               </NuxtLink>

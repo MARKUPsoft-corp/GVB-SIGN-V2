@@ -1,15 +1,18 @@
 import { useAuthStore } from '../../stores/auth'
 
 export default defineNuxtRouteMiddleware(async (to, from) => {
-  // Ne pas exécuter côté serveur
   if (process.server) return
   
   const authStore = useAuthStore()
   
-  // Initialiser l'authentification depuis le localStorage
-  await authStore.initAuth()
+  try {
+    if (!authStore.authInitialized) {
+      await authStore.initAuth()
+    }
+  } catch (err) {
+    console.error("Guest middleware error:", err)
+  }
   
-  // Si l'utilisateur est déjà connecté, rediriger vers dashboard
   if (authStore.isAuthenticated) {
     return navigateTo('/dashboard')
   }

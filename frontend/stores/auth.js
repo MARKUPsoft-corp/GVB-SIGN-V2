@@ -1,10 +1,28 @@
 import { defineStore } from 'pinia'
+import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth'
+import { initializeApp, getApps, getApp } from 'firebase/app'
+
+const ensureFirebaseInitialized = () => {
+  if (!getApps().length) {
+    const config = useRuntimeConfig()
+    initializeApp({
+      apiKey: config.public.firebaseApiKey,
+      authDomain: config.public.firebaseAuthDomain,
+      projectId: config.public.firebaseProjectId,
+      storageBucket: config.public.firebaseStorageBucket,
+      messagingSenderId: config.public.firebaseMessagingSenderId,
+      appId: config.public.firebaseAppId,
+      measurementId: config.public.firebaseMeasurementId
+    })
+  }
+}
+import { getFirestore, doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null,
     isAuthenticated: false,
-    token: null
+    authInitialized: false
   }),
 
   getters: {
@@ -13,352 +31,169 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
-    // Initialiser l'authentification depuis le localStorage
-    async initAuth() {
-      if (process.client) {
-        const savedUser = localStorage.getItem('user')
-        const savedToken = localStorage.getItem('token')
+    // Initialise l'écouteur d'état d'authentification Firebase
+    initAuth() {
+      return new Promise((resolve) => {
+        if (process.server) return resolve(false);
         
-        if (savedUser && savedToken) {
-          try {
-            // Vérifier si la session Django est toujours valide
-            const response = await fetch('http://92.112.184.194:8000/api/auth/profile/', {
-              method: 'GET',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              credentials: 'include'
-            })
-
-            if (response.ok) {
-              // Session Django valide, restaurer l'état local
-              this.user = JSON.parse(savedUser)
-              this.token = savedToken
-              this.isAuthenticated = true
-              return true
-            } else {
-              // Session Django invalide, nettoyer le localStorage
-              console.log('Session Django expirée, nettoyage du localStorage')
-              this.clearAuth()
-              return false
-            }
-          } catch (error) {
-            console.error('Erreur lors de la vérification de la session:', error)
-            this.clearAuth()
-            return false
-          }
+        // Ne pas initialiser plusieurs fois
+        if (this.authInitialized) {
+          return resolve(this.isAuthenticated);
         }
-      }
-      return false
-    },
-
-    // Vérifier la session en arrière-plan (non bloquant)
-    async verifySessionInBackground() {
-      if (process.client && this.isAuthenticated) {
+        
         try {
-          const response = await fetch('http://:8000/api/auth/profile/', {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            credentials: 'include'
-          })
-
-          if (!response.ok) {
-            console.log('Session Django expirée en arrière-plan, nettoyage du localStorage')
-            this.clearAuth()
-            // Rediriger vers login seulement si on n'est pas déjà sur une page d'auth
-            if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
-              await navigateTo('/login')
+          ensureFirebaseInitialized()
+          const auth = getAuth()
+          onAuthStateChanged(auth, async (firebaseUser) => {
+            if (firebaseUser) {
+              const db = getFirestore()
+              const userRef = doc(db, 'users', firebaseUser.uid)
+              
+              try {
+                const userSnap = await getDoc(userRef)
+                let role = 'member'
+                if (userSnap.exists()) {
+                  role = userSnap.data().role || 'member'
+                }
+                
+                // L'utilisateur est connecté
+                this.user = {
+                  uid: firebaseUser.uid,
+                  email: firebaseUser.email,
+                  displayName: firebaseUser.displayName,
+                  photoURL: firebaseUser.photoURL,
+                  role: role
+                }
+                this.isAuthenticated = true
+              } catch (e) {
+                console.error("Erreur lors de la récupération du rôle:", e)
+                // Fallback de sécurité
+                this.user = {
+                  uid: firebaseUser.uid,
+                  email: firebaseUser.email,
+                  displayName: firebaseUser.displayName,
+                  photoURL: firebaseUser.photoURL,
+                  role: 'member'
+                }
+                this.isAuthenticated = true
+              }
+            } else {
+              // L'utilisateur est déconnecté
+              this.user = null
+              this.isAuthenticated = false
             }
-          }
+            this.authInitialized = true
+            resolve(this.isAuthenticated)
+          }, (error) => {
+            console.error("Erreur onAuthStateChanged:", error)
+            this.authInitialized = true
+            resolve(false)
+          })
         } catch (error) {
-          console.error('Erreur lors de la vérification de session en arrière-plan:', error)
-          // Ne pas nettoyer automatiquement en cas d'erreur réseau
+          console.error("Erreur critique initAuth:", error)
+          this.authInitialized = true
+          resolve(false)
         }
-      }
+      })
     },
 
-    // Connexion
-    async login(credentials) {
+    // Connexion avec Google (gère aussi l'inscription implicitement)
+    async loginWithGoogle() {
       try {
-        console.log('🔄 Tentative de connexion avec:', credentials)
+        ensureFirebaseInitialized()
+        const auth = getAuth()
+        const provider = new GoogleAuthProvider()
+        // Force la sélection du compte Google si l'utilisateur en a plusieurs
+        provider.setCustomParameters({ prompt: 'select_account' })
         
-        // Récupérer le token CSRF
-        const csrfResponse = await fetch('http://92.112.184.194:8000/api/auth/csrf/', {
-          method: 'GET',
-          credentials: 'include'
-        })
-        
-        let csrfToken = null
-        if (csrfResponse.ok) {
-          const csrfData = await csrfResponse.json()
-          csrfToken = csrfData.csrfToken
-          console.log('🔑 Token CSRF récupéré:', csrfToken)
-        } else {
-          console.warn('⚠️ Impossible de récupérer le token CSRF')
-        }
-        
-        const headers = {
-          'Content-Type': 'application/json',
-        }
-        
-        if (csrfToken) {
-          headers['X-CSRFToken'] = csrfToken
-        }
-        
-        const response = await fetch('http://92.112.184.194:8000/api/auth/login/', {
-          method: 'POST',
-          headers,
-          credentials: 'include',
-          body: JSON.stringify(credentials)
-        })
+        const result = await signInWithPopup(auth, provider)
+        const user = result.user
 
-        console.log('📡 Réponse HTTP:', response.status, response.statusText)
-        console.log('📋 Headers de réponse:', Object.fromEntries(response.headers.entries()))
+        // Enregistrer l'utilisateur dans Firestore s'il est nouveau
+        const db = getFirestore()
+        const userRef = doc(db, 'users', user.uid)
+        const userSnap = await getDoc(userRef)
 
-        // Vérifier si la réponse est OK avant de parser JSON
-        if (!response.ok) {
-          console.error('❌ Réponse HTTP non-OK:', response.status)
-          const errorText = await response.text()
-          console.error('❌ Contenu de l\'erreur:', errorText)
-          return { 
-            success: false, 
-            message: `Erreur HTTP ${response.status}: ${response.statusText}`,
-            status: response.status
-          }
+        if (!userSnap.exists()) {
+          // Nouvel utilisateur : on crée son profil dans Firestore
+          await setDoc(userRef, {
+            email: user.email,
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            createdAt: serverTimestamp(),
+            role: 'member' // Rôle par défaut
+          })
         }
 
-        const result = await response.json()
-        console.log('📦 Résultat JSON:', result)
-
-        if (result.success) {
-          const userData = {
-            id: result.user.id,
-            email: result.user.email,
-            full_name: result.user.full_name || `${result.user.first_name} ${result.user.last_name}`,
-            first_name: result.user.first_name,
-            last_name: result.user.last_name
-          }
-          
-          this.setUser(userData, result.token || 'authenticated')
-          console.log('✅ Connexion réussie!')
-          return { success: true, user: userData }
-        } else {
-          console.log('❌ Échec de connexion dans la réponse:', result)
-          return { success: false, errors: result.errors, message: result.message }
+        this.user = {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          photoURL: user.photoURL,
+          role: userSnap.exists() ? (userSnap.data().role || 'member') : 'member'
         }
+        this.isAuthenticated = true
+        
+        return { success: true, user: this.user }
       } catch (error) {
-        console.error('💥 Erreur de connexion:', error)
-        return { success: false, message: 'Erreur de connexion au serveur' }
-      }
-    },
-
-    // Inscription
-    async register(userData) {
-      try {
-        console.log('🔄 Tentative d\'inscription avec:', userData)
-        
-        // Récupérer le token CSRF
-        const csrfResponse = await fetch('http://92.112.184.194:8000/api/auth/csrf/', {
-          method: 'GET',
-          credentials: 'include'
-        })
-        
-        let csrfToken = null
-        if (csrfResponse.ok) {
-          const csrfData = await csrfResponse.json()
-          csrfToken = csrfData.csrfToken
-          console.log('🔑 Token CSRF récupéré:', csrfToken)
-        } else {
-          console.warn('⚠️ Impossible de récupérer le token CSRF')
-        }
-        
-        const headers = {
-          'Content-Type': 'application/json',
-        }
-        
-        if (csrfToken) {
-          headers['X-CSRFToken'] = csrfToken
-        }
-        
-        const response = await fetch('http://92.112.184.194/api/auth/register/', {
-          method: 'POST',
-          headers,
-          credentials: 'include',
-          body: JSON.stringify(userData)
-        })
-
-        console.log('📡 Réponse HTTP:', response.status, response.statusText)
-        console.log('📋 Headers de réponse:', Object.fromEntries(response.headers.entries()))
-
-        // Vérifier si la réponse est OK avant de parser JSON
-        if (!response.ok) {
-          console.error('❌ Réponse HTTP non-OK:', response.status)
-          const errorText = await response.text()
-          console.error('❌ Contenu de l\'erreur:', errorText)
-          return { 
-            success: false, 
-            message: `Erreur HTTP ${response.status}: ${response.statusText}`,
-            status: response.status
-          }
-        }
-
-        const result = await response.json()
-        console.log('📦 Résultat JSON:', result)
-
-        if (result.success) {
-          const user = {
-            id: result.user.id,
-            email: result.user.email,
-            full_name: result.user.full_name || `${userData.first_name} ${userData.last_name}`,
-            first_name: result.user.first_name || userData.first_name,
-            last_name: result.user.last_name || userData.last_name
-          }
-          
-          this.setUserDirect(user, result.token || 'authenticated')
-          console.log('✅ Inscription réussie!')
-          return { success: true, user }
-        } else {
-          console.log('❌ Échec d\'inscription dans la réponse:', result)
-          return { success: false, errors: result.errors, message: result.message }
-        }
-      } catch (error) {
-        console.error('💥 Erreur d\'inscription:', error)
-        return { success: false, message: 'Erreur de connexion au serveur' }
-      }
-    },
-
-    // Définir l'utilisateur
-    setUser(userData, token = 'authenticated') {
-      this.user = userData
-      this.token = token
-      this.isAuthenticated = true
-      
-      // Sauvegarder dans localStorage
-      if (process.client) {
-        localStorage.setItem('user', JSON.stringify(userData))
-        localStorage.setItem('token', token)
-      }
-    },
-
-    // Définir l'utilisateur sans vérification de session (pour l'inscription)
-    setUserDirect(userData, token = 'authenticated') {
-      this.user = userData
-      this.token = token
-      this.isAuthenticated = true
-      
-      // Sauvegarder dans localStorage
-      if (process.client) {
-        localStorage.setItem('user', JSON.stringify(userData))
-        localStorage.setItem('token', token)
+        console.error('Erreur lors de la connexion avec Google:', error)
+        return { success: false, message: error.message }
       }
     },
 
     // Déconnexion
     async logout() {
       try {
-        // Appel API de déconnexion
-        await fetch('http://92.112.184.194:8000/api/auth/logout/', {
-          method: 'POST',
-          credentials: 'include'
-        })
+        ensureFirebaseInitialized()
+        const auth = getAuth()
+        await signOut(auth)
+        this.clearAuth()
       } catch (error) {
         console.error('Erreur lors de la déconnexion:', error)
-      } finally {
-        // Nettoyer complètement l'état même si l'API échoue
-        this.clearAllData()
       }
     },
 
-    // Rafraîchir la session (pour éviter les expirations)
-    async refreshSession() {
-      if (process.client && this.isAuthenticated) {
-        try {
-          const response = await fetch('http://92.112.184.194:8000/api/auth/profile/', {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            credentials: 'include'
-          })
-
-          if (response.ok) {
-            console.log('✅ Session rafraîchie avec succès')
-            return true
-          } else {
-            console.log('❌ Session expirée, nettoyage nécessaire')
-            this.clearAuth()
-            return false
-          }
-        } catch (error) {
-          console.error('Erreur lors du rafraîchissement de session:', error)
-          return false
-        }
-      }
-      return false
-    },
-
-    // Nettoyer l'authentification (version optimisée)
+    // Nettoyer l'état local
     clearAuth() {
       this.user = null
-      this.token = null
       this.isAuthenticated = false
       
-      // Nettoyer seulement les données d'authentification essentielles
       if (process.client) {
-        // Nettoyer les données d'authentification
-        localStorage.removeItem('user')
-        localStorage.removeItem('token')
-        
-        // Nettoyer les données de session
-        localStorage.removeItem('sessionId')
-        localStorage.removeItem('csrfToken')
-        
-        console.log('🧹 Session d\'authentification effacée')
-      }
-    },
-
-    // Nettoyer complètement (pour déconnexion volontaire)
-    clearAllData() {
-      this.user = null
-      this.token = null
-      this.isAuthenticated = false
-      
-      // Nettoyer complètement le localStorage et sessionStorage
-      if (process.client) {
-        // Nettoyer les données d'authentification
-        localStorage.removeItem('user')
-        localStorage.removeItem('token')
-        
-        // Nettoyer les données d'organisation
+        // Nettoyer les données locales
         localStorage.removeItem('user_has_organization')
         localStorage.removeItem('user_organization')
-        
-        // Nettoyer les données de certificat
-        localStorage.removeItem('certificate')
         localStorage.removeItem('certificateInfo')
-        localStorage.removeItem('privateKey')
-        localStorage.removeItem('publicKey')
-        
-        // Nettoyer les données de signature
-        localStorage.removeItem('signatureResults')
-        localStorage.removeItem('uploadedFiles')
-        localStorage.removeItem('signatureData')
-        
-        // Nettoyer les données de session
-        localStorage.removeItem('sessionId')
-        localStorage.removeItem('csrfToken')
-        
-        // Nettoyer le sessionStorage également
         sessionStorage.clear()
+      }
+    },
+    
+    // Rafraîchir la session (rôle et token)
+    async refreshSession() {
+      if (process.server) return false;
+      
+      try {
+        ensureFirebaseInitialized()
+        const auth = getAuth()
+        const firebaseUser = auth.currentUser
         
-        // Nettoyer tous les cookies (si possible côté client)
-        document.cookie.split(";").forEach(function(c) { 
-          document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
-        })
-        
-        console.log('🧹 Session complètement effacée du navigateur')
+        if (firebaseUser) {
+          // Forcer le rafraîchissement du token
+          await firebaseUser.getIdToken(true)
+          
+          // Rafraîchir le rôle
+          const db = getFirestore()
+          const userRef = doc(db, 'users', firebaseUser.uid)
+          const userSnap = await getDoc(userRef)
+          
+          if (userSnap.exists() && this.user) {
+            this.user.role = userSnap.data().role || 'member'
+          }
+          return true
+        }
+        return false
+      } catch (error) {
+        console.error("Erreur refreshSession:", error)
+        return false
       }
     }
   }

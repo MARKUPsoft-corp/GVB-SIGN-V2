@@ -43,7 +43,7 @@
 
             <!-- Boutons d'action -->
             <div class="cta-buttons d-flex flex-column flex-md-row justify-content-center gap-3">
-              <NuxtLink to="/register" class="btn btn-light btn-lg px-5 py-3 fw-bold">
+              <NuxtLink to="/login" class="btn btn-light btn-lg px-5 py-3 fw-bold">
                 <i class="bi bi-rocket-takeoff me-2"></i>
                 Commencer Gratuitement
                 <small class="d-block text-muted mt-1">Aucune carte de crédit requise</small>

@@ -763,14 +763,19 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useAuthStore } from '../../stores/auth'
-import { useAuthHeaders } from '../../composables/useAuthHeaders'
+// Temporary mock for useAuthHeaders to fix compilation
+// import { useAuthHeaders } from '../../composables/useAuthHeaders'
 import SignBase from './SignBase.vue'
+import { SignatureApiService } from '../../services/SignatureApiService'
+import OrganizationApiService from '../../services/OrganizationApiService'
+import CloudinaryService from '../../services/CloudinaryService'
 
 // Store d'authentification
 const authStore = useAuthStore()
 
-// Composable pour les headers d'authentification
-const { getAuthHeaders, authenticatedFetch } = useAuthHeaders()
+// Composable pour les headers d'authentification (MOCK)
+const getAuthHeaders = () => ({})
+const authenticatedFetch = async (url, options) => fetch(url, options)
 
 // Référence vers le composant SignBase
 const signBaseRef = ref(null)
@@ -1334,29 +1339,18 @@ const validateWorkflow = async () => {
       throw new Error('Aucune organisation sélectionnée')
     }
     
-    console.log('URL de la requête:', `http://127.0.0.1:8000/api/organizations/${currentOrganization.id}/members/`)
-    
     // Faire une requête pour récupérer les membres de l'organisation
-    const response = await authenticatedFetch(`http://127.0.0.1:8000/api/organizations/${currentOrganization.id}/members/`, {
-      method: 'GET'
-    })
+    const members = await OrganizationApiService.getOrganizationMembers(currentOrganization.id)
     
-    console.log('Réponse de l\'API:', response.status, response.statusText)
+    console.log('Membres disponibles:', members)
     
-    if (!response.ok) {
-      const errorText = await response.text()
-      console.error('Erreur API:', errorText)
-      throw new Error(`Erreur lors de la récupération des membres: ${response.status} ${response.statusText}`)
-    }
-    
-    const data = await response.json()
-    console.log('Données reçues:', data)
-    console.log('Membres disponibles:', data.members)
+    // Simuler le format de réponse de l'ancienne API pour la compatibilité
+    const data = { members: members }
     
     // Afficher les rôles disponibles
     if (data.members && data.members.length > 0) {
       console.log('Rôles disponibles:', data.members.map(member => ({ 
-        name: member.user_name || member.name, 
+        name: member.displayName || member.name || member.email || 'Utilisateur', 
         role: member.role,
         user_role: member.user_role 
       })))
@@ -1374,10 +1368,10 @@ const validateWorkflow = async () => {
     if (chief) {
       workflowValidation.value.hasChief = true
       workflowValidation.value.chiefInfo = {
-        name: chief.user_name || chief.name || 'Nom non disponible',
-        email: chief.user_email || chief.email || 'Email non disponible',
+        name: chief.displayName || chief.name || chief.email || 'Nom non disponible',
+        email: chief.email || 'Email non disponible',
         role: chief.role,
-        joinedDate: chief.joined_date || chief.date_joined
+        joinedDate: chief.updated_at || chief.created_at || chief.joined_date || chief.date_joined
       }
     } else {
       workflowValidation.value.hasChief = false
@@ -1652,6 +1646,28 @@ const processDocument = async (fileData, index, currentOrganization) => {
       }
     }
     
+    // Upload vers Cloudinary
+    documentProgress.value[index] = 80
+    console.log(`☁️ Upload du document original vers Cloudinary...`)
+    const originalUrl = await CloudinaryService.uploadPdf(originalBase64, `original_${fileData.name}`)
+    
+    let currentUrl = originalUrl
+    let finalUrl = null
+
+    if (finalPdfBase64) {
+       console.log(`☁️ Upload du document préparé vers Cloudinary...`)
+       finalUrl = await CloudinaryService.uploadPdf(`data:application/pdf;base64,${finalPdfBase64}`, `prepared_${fileData.name}`)
+       currentUrl = finalUrl
+    } else if (currentDocumentBase64 && currentDocumentBase64 !== originalBase64) {
+       // Si currentDocumentBase64 est différent mais non géré par finalPdfBase64
+       let base64String = currentDocumentBase64
+       if (!base64String.startsWith('data:')) {
+         base64String = `data:application/pdf;base64,${base64String}`
+       }
+       console.log(`☁️ Upload du document courant vers Cloudinary...`)
+       currentUrl = await CloudinaryService.uploadPdf(base64String, `current_${fileData.name}`)
+    }
+
     const submissionData = {
       organization: currentOrganization,
       document_title: fileData.name,
@@ -1661,9 +1677,9 @@ const processDocument = async (fileData, index, currentOrganization) => {
       signature_image: signatureImage || '',
       file_size_original: fileData.size,
       preparation_notes: `Document préparé via l'interface secrétaire (${index + 1}/${totalDocuments.value})`,
-      original_document_data: originalBase64,
-      current_document_data: currentDocumentBase64 || originalBase64,
-      final_document_data: finalPdfBase64 || '',
+      original_document_url: originalUrl,
+      current_document_url: currentUrl,
+      final_document_url: finalUrl || '',
       has_positioned_elements: hasElements
     }
     
@@ -1677,20 +1693,10 @@ const processDocument = async (fileData, index, currentOrganization) => {
     })
     
     console.log(`📋 Configuration des éléments finale:`, elementsConfig)
-    
-    // Envoyer vers l'API
+    // Envoyer vers l'API Firebase
     documentProgress.value[index] = 90
-    const response = await authenticatedFetch('http://127.0.0.1:8000/api/signatures/document-preparation/create/', {
-      method: 'POST',
-      body: JSON.stringify(submissionData)
-    })
-    
-    if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`Erreur API (${response.status}): ${errorText}`)
-    }
-    
-    const result = await response.json()
+    const signatureApiService = new SignatureApiService()
+    const result = await signatureApiService.createDocumentPreparation(submissionData)
     
     if (!result.success) {
       throw new Error(result.error || 'Erreur lors de la préparation')

@@ -6,7 +6,12 @@
         <div class="welcome-content">
           <h1 class="welcome-title">
             <span class="text-dark">{{ welcomePrefix }}</span>
-            <span class="text-primary-blue">{{ userName }}</span>
+            <ClientOnly>
+              <span class="text-primary-blue">{{ userName }}</span>
+              <template #fallback>
+                <span class="text-primary-blue">Utilisateur</span>
+              </template>
+            </ClientOnly>
           </h1>
           <p class="welcome-subtitle">{{ welcomeSubtitle }}</p>
         </div>
@@ -410,7 +415,7 @@ const authStore = process.client ? useAuthStore() : null
 
 // Données utilisateur
 const route = useRoute()
-const userName = computed(() => authStore?.user?.full_name || 'Utilisateur')
+const userName = computed(() => authStore?.user?.displayName || 'Utilisateur')
 const userEmail = computed(() => authStore?.user?.email || '')
 const isFromRegistration = ref(false)
 
@@ -704,98 +709,25 @@ const joinOrganization = async () => {
   try {
     console.log('Validation du code d\'invitation:', inviteCode.value)
     
-    // Récupérer le token CSRF
-    const csrfToken = await getCsrfToken()
-    console.log('Token CSRF récupéré:', csrfToken)
+    // Appeler le service Firebase pour rejoindre l'organisation
+    const result = await OrganizationApiService.joinOrganization(inviteCode.value)
     
-    if (!csrfToken) {
-      showNotification('error', 'Erreur', 'Impossible de récupérer le token CSRF')
-      return
-    }
+    console.log('Code d\'invitation validé avec succès:', result)
     
-    // Appeler l'API pour valider le code d'invitation
-    const requestHeaders = {
-      'Content-Type': 'application/json',
-      'X-Csrftoken': csrfToken
-    }
-    console.log('Headers envoyés:', requestHeaders)
+    showNotification('success', 'Succès', 'Vous avez rejoint l\'organisation avec succès !')
     
-    const response = await $fetch('http://127.0.0.1:8000/api/organizations/invitations/validate/', {
-      method: 'POST',
-      headers: requestHeaders,
-      credentials: 'include',
-      body: {
-        code: inviteCode.value
-      }
-    })
+    closeJoinOrganizationModal()
     
-    console.log('Réponse du serveur:', response)
+    // Rafraîchir la page pour mettre à jour l'état
+    setTimeout(() => {
+      window.location.reload()
+    }, 2000)
     
-    if (response.success) {
-      console.log('Code d\'invitation validé avec succès:', response)
-      
-      // Vérifier si l'utilisateur était déjà membre de cette organisation
-      if (response.already_member) {
-        showNotification('info', 'Déjà membre', `Vous appartenez déjà à l'organisation ${response.organization.name} en tant que ${response.role_display}`)
-      } else {
-        showNotification('success', 'Succès', `Vous avez rejoint l'organisation ${response.organization.name} avec succès !`)
-      }
-      
-      closeJoinOrganizationModal()
-      
-      // Rafraîchir la page pour mettre à jour l'état
-      setTimeout(() => {
-        window.location.reload()
-      }, 2000)
-    } else {
-      console.error('Erreur lors de la validation:', response.message)
-      showNotification('error', 'Erreur', response.message || 'Erreur lors de la validation du code d\'invitation')
-    }
   } catch (error) {
     console.error('Erreur lors de la jointure:', error)
-    
-    // Gestion des erreurs spécifiques
-    if (error.status === 400) {
-      showNotification('error', 'Code invalide', 'Le code d\'invitation saisi n\'est pas valide ou a expiré')
-    } else if (error.status === 404) {
-      showNotification('error', 'Code introuvable', 'Ce code d\'invitation n\'existe pas dans notre base de données')
-    } else if (error.status === 403) {
-      showNotification('error', 'Accès refusé', 'Vous n\'êtes pas autorisé à utiliser ce code d\'invitation')
-    } else {
-      showNotification('error', 'Erreur de connexion', 'Impossible de rejoindre l\'organisation. Vérifiez votre connexion.')
-    }
+    showNotification('error', 'Erreur', error.message || 'Impossible de rejoindre l\'organisation. Code invalide ou expiré.')
   } finally {
     isJoiningOrganization.value = false
-  }
-}
-
-// Fonction pour récupérer le token CSRF
-const getCsrfToken = async () => {
-  try {
-    // D'abord, faire une requête GET pour obtenir le cookie CSRF
-    await $fetch('http://127.0.0.1:8000/api/auth/csrf/', {
-      method: 'GET',
-      credentials: 'include'
-    })
-    
-    // Ensuite, récupérer le token depuis les cookies
-    const cookies = document.cookie.split(';')
-    const csrfCookie = cookies.find(cookie => cookie.trim().startsWith('csrftoken='))
-    
-    if (csrfCookie) {
-      const token = csrfCookie.split('=')[1]
-      console.log('Token CSRF récupéré depuis les cookies:', token)
-      return token
-    }
-    
-    // Fallback: utiliser l'endpoint API
-    const response = await $fetch('http://127.0.0.1:8000/api/auth/csrf/', {
-      credentials: 'include'
-    })
-    return response.csrfToken
-  } catch (error) {
-    console.error('Erreur lors de la récupération du token CSRF:', error)
-    return null
   }
 }
 

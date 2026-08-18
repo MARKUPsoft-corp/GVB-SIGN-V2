@@ -53,7 +53,7 @@
               <i class="bi bi-file-earmark-text"></i>
             </div>
             <div class="stat-content">
-              <h4 class="stat-number">24</h4>
+              <h4 class="stat-number">{{ realDocuments.length }}</h4>
               <p class="stat-label">Total documents</p>
             </div>
           </div>
@@ -64,7 +64,7 @@
               <i class="bi bi-file-earmark-check"></i>
             </div>
             <div class="stat-content">
-              <h4 class="stat-number">18</h4>
+              <h4 class="stat-number">{{ realDocuments.length }}</h4>
               <p class="stat-label">Signés</p>
             </div>
           </div>
@@ -75,7 +75,7 @@
               <i class="bi bi-clock-history"></i>
             </div>
             <div class="stat-content">
-              <h4 class="stat-number">6</h4>
+              <h4 class="stat-number">0</h4>
               <p class="stat-label">En attente</p>
             </div>
           </div>
@@ -83,323 +83,140 @@
       </div>
     </div>
 
-    <!-- Sections des documents en deux colonnes -->
-    <div v-if="!showAllDocuments" class="documents-sections">
-      <!-- En-tête de section -->
-      <div class="row mb-5">
+    <!-- Liste des documents réels -->
+    <div class="documents-grid-section mt-5">
+      <div class="row mb-4">
         <div class="col-12">
           <div class="sections-header text-center">
-            <h2 class="display-4 fw-bold mb-3 text-dark sections-title">
-              <span class="text-dark">Gestion</span> 
-              <span class="text-primary-blue"> Documentaire</span>
+            <h2 class="display-6 fw-bold mb-3 text-dark sections-title">
+              <span class="text-dark">Vos</span> 
+              <span class="text-primary-blue"> Documents Signés</span>
             </h2>
-            <p class="lead mb-0 text-dark sections-subtitle">
-              Accédez rapidement à vos documents par catégorie et gérez-les efficacement.
+            <p class="lead mb-0 text-muted sections-subtitle">
+              Retrouvez l'historique complet de vos signatures.
             </p>
           </div>
         </div>
       </div>
-
-      <div class="row align-items-center">
-        <!-- Colonne gauche - Mes Documents Récents -->
-        <div class="col-lg-6 mb-4">
-          <div class="documents-section-card">
-            <div class="section-card-header">
-              <div class="section-icon">
-                <i class="bi bi-file-earmark-text text-primary-blue"></i>
+      
+      <div v-if="loading" class="text-center py-5">
+        <div class="spinner-border text-primary-blue" role="status">
+          <span class="visually-hidden">Chargement...</span>
+        </div>
+        <p class="mt-3 text-muted">Récupération de vos documents...</p>
+      </div>
+      
+      <div v-else-if="realDocuments.length === 0" class="text-center py-5">
+        <div class="empty-state">
+          <i class="bi bi-folder-x display-1 text-muted mb-3 d-block"></i>
+          <h4>Aucun document signé</h4>
+          <p class="text-muted">Vous n'avez pas encore signé de document sur la plateforme.</p>
+        </div>
+      </div>
+      
+      <div v-else class="row g-4">
+        <!-- Carte de document -->
+        <div v-for="doc in paginatedRealDocuments" :key="doc.id" class="col-md-6 col-lg-4">
+          <div class="documents-section-card p-0 d-flex flex-column overflow-hidden h-100">
+            <!-- Miniature Cloudinary -->
+            <div class="thumbnail-container bg-light position-relative" style="height: 180px; border-bottom: 1px solid rgba(0, 102, 204, 0.08);">
+              <img 
+                v-if="doc.signed_document_url"
+                :src="getCloudinaryThumbnail(doc.signed_document_url)" 
+                class="w-100 h-100 object-fit-cover" 
+                alt="Aperçu du document"
+                @error="handleImageError"
+              />
+              <div v-else class="w-100 h-100 d-flex align-items-center justify-content-center bg-light">
+                <i class="bi bi-file-earmark-pdf display-1 text-muted"></i>
               </div>
-              <div class="section-header-content">
-                <h3 class="section-card-title">Documents Récents</h3>
-                <p class="section-card-subtitle">Vos derniers documents signés</p>
+              <div class="document-status signed position-absolute top-0 end-0 m-3 shadow-sm" style="backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); background: rgba(255,255,255,0.9); border: 1px solid rgba(40, 167, 69, 0.2);">
+                <i class="bi bi-check-circle-fill me-1"></i> Signé
               </div>
             </div>
             
-            <div class="documents-list">
-              <!-- Document 1 -->
-              <div class="document-item">
-                <div class="document-icon">
+            <div class="p-4 d-flex flex-column flex-grow-1">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <div class="document-icon" style="width: 32px; height: 32px; font-size: 1rem;">
                   <i class="bi bi-file-earmark-pdf text-danger"></i>
                 </div>
-                <div class="document-info">
-                  <h5 class="document-name">Contrat de service 2024</h5>
-                  <p class="document-details">
-                    <span class="document-date">15 Jan 2024</span>
-                    <span class="document-status signed">Signé</span>
-                  </p>
-                </div>
-                <div class="document-actions">
-                  <button class="btn btn-sm btn-outline-primary" @click="openEditor()" title="Éditer">
-                    <i class="bi bi-pencil-square"></i>
-                  </button>
-                </div>
+                <h5 class="document-name text-truncate m-0" :title="doc.original_filename">
+                  {{ doc.original_filename || 'Document sans nom' }}
+                </h5>
               </div>
-
-              <!-- Document 2 -->
-              <div class="document-item">
-                <div class="document-icon">
-                  <i class="bi bi-file-earmark-pdf text-danger"></i>
-                </div>
-                <div class="document-info">
-                  <h5 class="document-name">Accord de confidentialité</h5>
-                  <p class="document-details">
-                    <span class="document-date">12 Jan 2024</span>
-                    <span class="document-status signed">Signé</span>
-                  </p>
-                </div>
-                <div class="document-actions">
-                  <button class="btn btn-sm btn-outline-primary" @click="openEditor()" title="Éditer">
-                    <i class="bi bi-pencil-square"></i>
-                  </button>
-                </div>
+              <div class="document-details mb-4">
+                <i class="bi bi-calendar3 text-muted"></i>
+                <span class="document-date">{{ formatDate(doc.signature_timestamp || doc.createdAt?.toDate()) }}</span>
               </div>
-
-              <!-- Document 3 -->
-              <div class="document-item">
-                <div class="document-icon">
-                  <i class="bi bi-file-earmark-pdf text-danger"></i>
-                </div>
-                <div class="document-info">
-                  <h5 class="document-name">Facture janvier 2024</h5>
-                  <p class="document-details">
-                    <span class="document-date">10 Jan 2024</span>
-                    <span class="document-status pending">En attente</span>
-                  </p>
-                </div>
-                <div class="document-actions">
-                  <button class="btn btn-sm btn-outline-primary" @click="openEditor()" title="Éditer">
-                    <i class="bi bi-pencil-square"></i>
-                  </button>
-                </div>
+              
+              <div class="mt-auto document-actions d-flex gap-2">
+                <button class="btn btn-outline-primary flex-grow-1" style="border-radius: 8px; font-weight: 600;" @click="openPreviewModal(doc)">
+                  <i class="bi bi-eye me-1"></i> Voir
+                </button>
+                <a v-if="doc.signed_document_url" :href="getDownloadUrl(doc.signed_document_url)" target="_blank" class="btn btn-primary-blue flex-grow-1 text-decoration-none text-center">
+                  <i class="bi bi-download me-1"></i> Télécharger
+                </a>
               </div>
-            </div>
-
-            <div class="section-footer">
-              <button class="btn btn-primary-blue btn-sm" @click="toggleAllDocuments">
-                Voir tous les documents
-                <i class="bi bi-arrow-right ms-2"></i>
-              </button>
             </div>
           </div>
         </div>
-        
-        <!-- Colonne droite - Actions sur les Documents -->
-        <div class="col-lg-6 mb-4">
-          <div class="documents-section-card">
-            <div class="section-card-header">
-              <div class="section-icon">
-                <i class="bi bi-plus-circle text-primary-blue"></i>
-              </div>
-              <div class="section-header-content">
-                <h3 class="section-card-title">Actions Rapides</h3>
-                <p class="section-card-subtitle">Créez et gérez vos documents</p>
-              </div>
-            </div>
-            
-            <div class="documents-actions">
-              <!-- Action 1 - Nouveau document -->
-              <div class="action-item-doc">
-                <div class="action-card-doc" @click="openEditor()">
-                  <div class="action-icon-doc">
-                    <i class="bi bi-file-earmark-plus text-primary-blue"></i>
-                  </div>
-                  <div class="action-content-doc">
-                    <h5 class="action-title">Nouveau Document</h5>
-                    <p class="action-description">Créer un nouveau document à signer</p>
-                  </div>
-                  <div class="action-arrow">
-                    <i class="bi bi-arrow-right"></i>
-                  </div>
-                </div>
-              </div>
+      </div>
+      
+      <!-- Pagination -->
+      <div v-if="realTotalPages > 1" class="d-flex justify-content-center mt-5">
+        <nav aria-label="Pagination des documents">
+          <ul class="pagination pagination-custom gap-2">
+            <li class="page-item" :class="{ disabled: realCurrentPage === 1 }">
+              <button class="page-link rounded-circle border-0 text-primary-blue fw-bold" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;" @click="realCurrentPage--" aria-label="Précédent">
+                <i class="bi bi-chevron-left"></i>
+              </button>
+            </li>
+            <li v-for="page in realTotalPages" :key="page" class="page-item">
+              <button class="page-link rounded-circle border-0 fw-bold" 
+                      :class="realCurrentPage === page ? 'bg-primary-blue text-white shadow-sm' : 'text-primary-blue bg-light'"
+                      style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;"
+                      @click="realCurrentPage = page">{{ page }}</button>
+            </li>
+            <li class="page-item" :class="{ disabled: realCurrentPage === realTotalPages }">
+              <button class="page-link rounded-circle border-0 text-primary-blue fw-bold" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;" @click="realCurrentPage++" aria-label="Suivant">
+                <i class="bi bi-chevron-right"></i>
+              </button>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div> <!-- Fin de v-else -->
+</div> <!-- Fin de documents-page -->
 
-              <!-- Action 2 - Éditer -->
-              <div class="action-item-doc">
-                <div class="action-card-doc" @click="openEditor()">
-                  <div class="action-icon-doc">
-                    <i class="bi bi-pencil-square text-primary-blue"></i>
-                  </div>
-                  <div class="action-content-doc">
-                    <h5 class="action-title">Éditer</h5>
-                    <p class="action-description">Modifier vos documents existants</p>
-                  </div>
-                  <div class="action-arrow">
-                    <i class="bi bi-arrow-right"></i>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Action 3 - Modèles -->
-              <div class="action-item-doc">
-                <div class="action-card-doc">
-                  <div class="action-icon-doc">
-                    <i class="bi bi-file-earmark-text text-primary-blue"></i>
-                  </div>
-                  <div class="action-content-doc">
-                    <h5 class="action-title">Modèles</h5>
-                    <p class="action-description">Utiliser un modèle prédéfini</p>
-                  </div>
-                  <div class="action-arrow">
-                    <i class="bi bi-arrow-right"></i>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Action 4 - Organiser -->
-              <div class="action-item-doc">
-                <div class="action-card-doc">
-                  <div class="action-icon-doc">
-                    <i class="bi bi-folder2-open text-primary-blue"></i>
-                  </div>
-                  <div class="action-content-doc">
-                    <h5 class="action-title">Organiser</h5>
-                    <p class="action-description">Créer des dossiers et catégories</p>
-                  </div>
-                  <div class="action-arrow">
-                    <i class="bi bi-arrow-right"></i>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+    <!-- Modale de prévisualisation PDF -->
+    <div v-if="isPreviewModalOpen" class="signature-modal-overlay" @click="closePreviewModal">
+      <div class="signature-modal" style="width: 90vw; max-width: 1000px; height: 85vh; display: flex; flex-direction: column;" @click.stop>
+        <div class="signature-modal-header">
+          <h5 class="text-truncate flex-grow-1 mb-0 me-3" style="max-width: 80%;">
+            <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+            {{ documentToPreview?.original_filename || 'Aperçu du document' }}
+          </h5>
+          <button class="close-btn" @click="closePreviewModal">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <div class="signature-modal-content p-0 flex-grow-1" style="background: #f8f9fa;">
+          <iframe 
+            v-if="documentToPreview?.signed_document_url"
+            :src="documentToPreview.signed_document_url" 
+            class="w-100 h-100" 
+            style="border: none;"
+          ></iframe>
+        </div>
+        <div class="p-3 border-top d-flex justify-content-end bg-white" style="border-radius: 0 0 16px 16px;">
+          <a :href="getDownloadUrl(documentToPreview?.signed_document_url)" target="_blank" class="btn btn-primary-blue me-3">
+            <i class="bi bi-download me-2"></i> Télécharger le document
+          </a>
+          <button class="btn btn-outline-secondary" style="border-radius: 8px; font-weight: 600;" @click="closePreviewModal">Fermer</button>
         </div>
       </div>
     </div>
-
-    <!-- Vue de tous les documents -->
-    <div v-if="showAllDocuments" class="all-documents-view">
-      <!-- Header de la vue complète -->
-      <div class="all-documents-header">
-        <div class="row mb-4">
-          <div class="col-12">
-            <div class="d-flex align-items-center justify-content-between">
-              <div>
-                <h2 class="display-6 fw-bold mb-2 text-dark">
-                  <span class="text-dark">Mes</span>
-                  <span class="text-primary-blue"> Documents</span>
-                </h2>
-                <p class="lead mb-0 text-muted">
-                  Tous vos documents signés et en attente de signature
-                </p>
-              </div>
-              <button class="btn btn-outline-primary" @click="backToMainView">
-                <i class="bi bi-arrow-left me-2"></i>
-                Retour
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Liste complète des documents -->
-      <div class="all-documents-list">
-        <div class="row">
-          <div class="col-12">
-            <div class="documents-table-container">
-              <div class="documents-table">
-                <div class="table-header">
-                  <div class="table-row header-row">
-                    <div class="table-cell">Document</div>
-                    <div class="table-cell">Date</div>
-                    <div class="table-cell">Statut</div>
-                    <div class="table-cell">Taille</div>
-                    <div class="table-cell">Actions</div>
-                  </div>
-                </div>
-                <div class="table-body">
-                  <div 
-                    v-for="document in paginatedDocuments" 
-                    :key="document.id" 
-                    class="table-row document-row"
-                  >
-                    <div class="table-cell document-cell">
-                      <div class="document-info-full">
-                        <div class="document-icon-full">
-                          <i class="bi bi-file-earmark-pdf text-danger"></i>
-                        </div>
-                        <div class="document-details-full">
-                          <h6 class="document-name-full">{{ document.name }}</h6>
-                          <span class="document-type">PDF</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="table-cell" data-label="Date">{{ document.date }}</div>
-                    <div class="table-cell" data-label="Statut">
-                      <span 
-                        class="status-badge" 
-                        :class="document.status === 'signed' ? 'signed' : 'pending'"
-                      >
-                        {{ document.status === 'signed' ? 'Signé' : 'En attente' }}
-                      </span>
-                    </div>
-                    <div class="table-cell" data-label="Taille">{{ document.size }}</div>
-                    <div class="table-cell" data-label="Actions">
-                      <div class="document-actions-full">
-                        <button class="btn btn-sm btn-outline-primary me-2" @click="openEditor(document)" title="Éditer">
-                          <i class="bi bi-pencil-square"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-info me-2" title="Voir">
-                          <i class="bi bi-eye"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-secondary me-2" title="Télécharger">
-                          <i class="bi bi-download"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger" title="Supprimer">
-                          <i class="bi bi-trash"></i>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Contrôles de pagination -->
-        <div class="pagination-container">
-          <div class="pagination-info">
-            <span class="pagination-text">
-              Page {{ currentPage }} sur {{ totalPages }} 
-              ({{ documents.length }} documents au total)
-            </span>
-          </div>
-          
-          <div class="pagination-controls">
-            <button 
-              class="btn btn-outline-primary pagination-btn" 
-              :disabled="currentPage === 1"
-              @click="prevPage"
-            >
-              <i class="bi bi-chevron-left"></i>
-              Précédent
-            </button>
-            
-            <div class="pagination-numbers">
-              <button 
-                v-for="page in totalPages" 
-                :key="page"
-                class="btn pagination-number"
-                :class="page === currentPage ? 'btn-primary' : 'btn-outline-primary'"
-                @click="goToPage(page)"
-              >
-                {{ page }}
-              </button>
-            </div>
-            
-            <button 
-              class="btn btn-outline-primary pagination-btn" 
-              :disabled="currentPage === totalPages"
-              @click="nextPage"
-            >
-              Suivant
-              <i class="bi bi-chevron-right"></i>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-    </div>
-      </div>
     
     <!-- Modale contextuelle de signature -->
     <div v-if="isSignatureModalOpen" class="signature-modal-overlay" @click="closeSignatureModal">
@@ -503,11 +320,10 @@ import DocumentEditor from './DocumentEditor.vue'
 import SignImmediatelyPage from './SignImmediatelyPage.vue'
 import { CertificateService } from '../../services/CertificateService'
 
+import { SignatureApiService } from '../../services/SignatureApiService'
+
 // Émissions
 const emit = defineEmits(['navigate-to-signature', 'open-profile-modal'])
-
-// État pour afficher la liste complète des documents
-const showAllDocuments = ref(false)
 
 // État pour l'éditeur
 const showEditor = ref(false)
@@ -516,8 +332,9 @@ const showEditor = ref(false)
 const showSignaturePage = ref(false)
 const currentDocument = ref(null)
 
-// Service de certificat
+// Services
 const certificateService = new CertificateService()
+const signatureApiService = new SignatureApiService()
 
 // État pour la modale de signature
 const isSignatureModalOpen = ref(false)
@@ -528,87 +345,100 @@ const signatureModal = ref(null)
 const isCertificateErrorModalOpen = ref(false)
 const certificateErrorModal = ref(null)
 
-// Pagination
-const currentPage = ref(1)
-const documentsPerPage = 7
+// État pour la prévisualisation PDF
+const isPreviewModalOpen = ref(false)
+const documentToPreview = ref(null)
 
-// Données des documents (simulées)
-const documents = ref([
-  {
-    id: 1,
-    name: 'Contrat de service 2024',
-    type: 'pdf',
-    date: '15 Jan 2024',
-    status: 'signed',
-    size: '2.3 MB'
-  },
-  {
-    id: 2,
-    name: 'Accord de confidentialité',
-    type: 'pdf',
-    date: '12 Jan 2024',
-    status: 'signed',
-    size: '1.8 MB'
-  },
-  {
-    id: 3,
-    name: 'Facture janvier 2024',
-    type: 'pdf',
-    date: '10 Jan 2024',
-    status: 'pending',
-    size: '0.9 MB'
-  },
-  {
-    id: 4,
-    name: 'Devis projet web',
-    type: 'pdf',
-    date: '08 Jan 2024',
-    status: 'signed',
-    size: '1.2 MB'
-  },
-  {
-    id: 5,
-    name: 'Convention de stage',
-    type: 'pdf',
-    date: '05 Jan 2024',
-    status: 'signed',
-    size: '3.1 MB'
-  },
-  {
-    id: 6,
-    name: 'Bon de commande #2024-001',
-    type: 'pdf',
-    date: '03 Jan 2024',
-    status: 'pending',
-    size: '1.5 MB'
-  },
-  {
-    id: 7,
-    name: 'Contrat de location',
-    type: 'pdf',
-    date: '01 Jan 2024',
-    status: 'signed',
-    size: '2.7 MB'
-  },
-  {
-    id: 8,
-    name: 'Devis rénovation',
-    type: 'pdf',
-    date: '28 Dec 2023',
-    status: 'signed',
-    size: '1.9 MB'
+// État des documents réels
+const loading = ref(true)
+const realDocuments = ref([])
+
+// Pagination réelle
+const realCurrentPage = ref(1)
+const realDocumentsPerPage = 6
+
+// Charger les documents au montage
+onMounted(async () => {
+  await fetchUserDocuments()
+})
+
+const fetchUserDocuments = async () => {
+  try {
+    loading.value = true
+    const docs = await signatureApiService.getUserSignatures()
+    // Trier par date la plus récente
+    realDocuments.value = docs.sort((a, b) => {
+      const dateA = a.signature_timestamp || (a.createdAt ? a.createdAt.toDate().toISOString() : '')
+      const dateB = b.signature_timestamp || (b.createdAt ? b.createdAt.toDate().toISOString() : '')
+      return new Date(dateB) - new Date(dateA)
+    })
+  } catch (error) {
+    console.error('Erreur lors de la récupération des documents:', error)
+  } finally {
+    loading.value = false
   }
-])
-
-// Fonction pour afficher tous les documents
-const toggleAllDocuments = () => {
-  showAllDocuments.value = !showAllDocuments.value
 }
 
-// Fonction pour revenir à la vue principale
-const backToMainView = () => {
-  showAllDocuments.value = false
-  currentPage.value = 1 // Reset à la première page
+// Computed properties pour la pagination réelle
+const realTotalPages = computed(() => Math.max(1, Math.ceil(realDocuments.value.length / realDocumentsPerPage)))
+
+const paginatedRealDocuments = computed(() => {
+  const startIndex = (realCurrentPage.value - 1) * realDocumentsPerPage
+  const endIndex = startIndex + realDocumentsPerPage
+  return realDocuments.value.slice(startIndex, endIndex)
+})
+
+// Utilitaires d'affichage
+const formatDate = (dateString) => {
+  if (!dateString) return 'Date inconnue'
+  const date = new Date(dateString)
+  return new Intl.DateTimeFormat('fr-FR', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(date)
+}
+
+const getCloudinaryThumbnail = (url) => {
+  if (!url) return ''
+  // Remplacer l'extension par .jpg
+  let thumbnailUrl = url.replace(/\.pdf$/i, '.jpg')
+  // Ajouter les transformations Cloudinary: page 1 (pg_1), format jpeg (f_jpg), redimensionnement (w_400,c_fill)
+  if (thumbnailUrl.includes('/upload/')) {
+    thumbnailUrl = thumbnailUrl.replace('/upload/', '/upload/w_400,h_300,c_fill,pg_1,f_jpg/')
+  }
+  return thumbnailUrl
+}
+
+// Fonction pour forcer le téléchargement via Cloudinary (fl_attachment)
+const getDownloadUrl = (url) => {
+  if (!url) return ''
+  if (url.includes('/upload/')) {
+    return url.replace('/upload/', '/upload/fl_attachment/')
+  }
+  return url
+}
+
+const handleImageError = (e) => {
+  // Si la génération de miniature échoue, on cache l'image pour laisser apparaître l'icône par défaut en dessous
+  e.target.style.display = 'none'
+}
+
+// Modale de prévisualisation
+const openPreviewModal = (doc) => {
+  documentToPreview.value = doc
+  isPreviewModalOpen.value = true
+  document.body.style.overflow = 'hidden'
+}
+
+const closePreviewModal = () => {
+  isPreviewModalOpen.value = false
+  setTimeout(() => {
+    documentToPreview.value = null
+  }, 300)
+  document.body.style.overflow = ''
 }
 
 // Fonctions de l'éditeur
@@ -624,40 +454,10 @@ const closeEditor = () => {
 
 const saveDocument = (data) => {
   console.log('Document sauvegardé:', data)
-  // Ici on pourrait envoyer les données au backend
 }
 
 const shareDocument = (data) => {
   console.log('Document partagé:', data)
-  // Ici on pourrait implémenter le partage
-}
-
-// Computed properties pour la pagination
-const totalPages = computed(() => Math.ceil(documents.value.length / documentsPerPage))
-
-const paginatedDocuments = computed(() => {
-  const startIndex = (currentPage.value - 1) * documentsPerPage
-  const endIndex = startIndex + documentsPerPage
-  return documents.value.slice(startIndex, endIndex)
-})
-
-// Fonctions de pagination
-const goToPage = (page) => {
-  if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page
-  }
-}
-
-const nextPage = () => {
-  if (currentPage.value < totalPages.value) {
-    currentPage.value++
-  }
-}
-
-const prevPage = () => {
-  if (currentPage.value > 1) {
-    currentPage.value--
-  }
 }
 
 // Fonctions pour la modale de signature

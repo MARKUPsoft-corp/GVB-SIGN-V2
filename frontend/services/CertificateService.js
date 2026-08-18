@@ -422,7 +422,13 @@ export class CertificateService {
    * Vérifie si le certificat peut être utilisé (valide et non expiré)
    */
   canUseCertificate() {
-    return this.hasCertificate() && this.certificateInfo?.validity?.isValid
+    // TODO: RESTAURATION VALIDITÉ CERTIFICAT
+    // La vérification de validité (expiration) est temporairement désactivée à la demande.
+    // Pour empêcher la signature avec un certificat expiré, décommentez la ligne ci-dessous :
+    // return this.hasCertificate() && this.certificateInfo?.validity?.isValid
+    
+    // Actuellement, on autorise l'utilisation tant qu'un certificat est présent, même s'il est expiré
+    return this.hasCertificate()
   }
 
   /**

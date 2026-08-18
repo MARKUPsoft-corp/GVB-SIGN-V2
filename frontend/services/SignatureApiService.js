@@ -1,9 +1,32 @@
 /**
- * Service pour l'API des signatures de documents
+ * Service pour l'API des signatures de documents (Firebase)
  */
+import { getApp } from 'firebase/app'
+import { getFirestore, collection, addDoc, getDocs, getDoc, doc, query, where, serverTimestamp } from 'firebase/firestore'
+import { getAuth } from 'firebase/auth'
+import CloudinaryService from './CloudinaryService'
+
 export class SignatureApiService {
   constructor() {
-    this.baseURL = 'http://92.112.184.194:8000/api/signatures'
+    this.db = null
+    this.auth = null
+  }
+
+  /**
+   * Initialisation sécurisée de Firebase
+   */
+  getFirebase() {
+    if (this.db && this.auth) return { db: this.db, auth: this.auth }
+    
+    try {
+      const app = getApp()
+      this.db = getFirestore(app)
+      this.auth = getAuth(app)
+      return { db: this.db, auth: this.auth }
+    } catch (error) {
+      console.warn("⚠️ [SignatureApiService] Firebase n'est pas encore initialisé, tentative d'initialisation via appNuxt...")
+      throw new Error("Firebase n'est pas initialisé.")
+    }
   }
 
   /**
@@ -14,7 +37,6 @@ export class SignatureApiService {
       const reader = new FileReader()
       reader.readAsDataURL(file)
       reader.onload = () => {
-        // Enlever le préfixe data:application/pdf;base64,
         const base64 = reader.result.split(',')[1]
         resolve(base64)
       }
@@ -36,27 +58,32 @@ export class SignatureApiService {
   }
 
   /**
-   * Enregistrer une signature de document
+   * Enregistrer une signature de document dans Firestore
    */
   async saveDocumentSignature(signatureData) {
     try {
-      const response = await fetch(`${this.baseURL}/create/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': this.getCSRFToken(),
-        },
-        credentials: 'include',
-        body: JSON.stringify(signatureData)
-      })
+      const { db, auth } = this.getFirebase()
+      const user = auth.currentUser
 
-      const data = await response.json()
-      
-      if (!response.ok) {
-        throw new Error(data.message || 'Erreur lors de l\'enregistrement')
+      if (!user) {
+        throw new Error("Utilisateur non authentifié")
       }
 
-      return data
+      const signaturesRef = collection(db, 'signatures')
+      
+      const payload = {
+        ...signatureData,
+        userId: user.uid,
+        createdAt: serverTimestamp()
+      }
+
+      const docRef = await addDoc(signaturesRef, payload)
+      
+      return {
+        success: true,
+        id: docRef.id,
+        message: "Signature enregistrée avec succès"
+      }
     } catch (error) {
       console.error('Erreur SignatureApiService.saveDocumentSignature:', error)
       throw error
@@ -68,33 +95,29 @@ export class SignatureApiService {
    */
   async saveMultipleSignatures(signaturesData) {
     try {
-      // Logs pour diagnostiquer l'authentification
-      console.log('=== DIAGNOSTIC AUTHENTIFICATION ===')
-      console.log('CSRF Token:', this.getCSRFToken())
-      console.log('Cookies:', document.cookie)
-      console.log('Nombre de signatures à enregistrer:', signaturesData.length)
-      
-      const response = await fetch(`${this.baseURL}/bulk-create/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': this.getCSRFToken(),
-        },
-        credentials: 'include',
-        body: JSON.stringify({ signatures: signaturesData })
-      })
+      const { db, auth } = this.getFirebase()
+      const user = auth.currentUser
 
-      console.log('Response status:', response.status)
-      console.log('Response headers:', Object.fromEntries(response.headers.entries()))
+      if (!user) throw new Error("Utilisateur non authentifié")
 
-      const data = await response.json()
-      console.log('Response data:', data)
-      
-      if (!response.ok) {
-        throw new Error(data.message || 'Erreur lors de l\'enregistrement')
+      const signaturesRef = collection(db, 'signatures')
+      const results = []
+
+      // Dans un vrai environnement on utiliserait un writeBatch
+      for (const sigData of signaturesData) {
+        const docRef = await addDoc(signaturesRef, {
+          ...sigData,
+          userId: user.uid,
+          createdAt: serverTimestamp()
+        })
+        results.push(docRef.id)
       }
 
-      return data
+      return {
+        success: true,
+        ids: results,
+        message: `${results.length} signatures enregistrées`
+      }
     } catch (error) {
       console.error('Erreur SignatureApiService.saveMultipleSignatures:', error)
       throw error
@@ -106,23 +129,115 @@ export class SignatureApiService {
    */
   async getUserSignatures() {
     try {
-      const response = await fetch(`${this.baseURL}/list/`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include'
+      const { db, auth } = this.getFirebase()
+      const user = auth.currentUser
+
+      if (!user) throw new Error("Utilisateur non authentifié")
+
+      const signaturesRef = collection(db, 'signatures')
+      const q = query(signaturesRef, where('userId', '==', user.uid))
+      const snapshot = await getDocs(q)
+      
+      const signatures = []
+      snapshot.forEach(doc => {
+        signatures.push({
+          id: doc.id,
+          ...doc.data()
+        })
       })
 
-      const data = await response.json()
-      
-      if (!response.ok) {
-        throw new Error('Erreur lors de la récupération des signatures')
-      }
-
-      return data
+      return signatures
     } catch (error) {
       console.error('Erreur SignatureApiService.getUserSignatures:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Créer une préparation de document
+   */
+  async createDocumentPreparation(submissionData) {
+    try {
+      const { db, auth } = this.getFirebase()
+      const user = auth.currentUser
+
+      if (!user) {
+        throw new Error('Utilisateur non connecté')
+      }
+
+      const prepRef = collection(db, 'document_preparations')
+      
+      const payload = {
+        ...submissionData,
+        userId: user.uid,
+        status: 'prepared',
+        current_step: 0,
+        createdAt: serverTimestamp()
+      }
+
+      const docRef = await addDoc(prepRef, payload)
+      
+      return {
+        success: true,
+        document_preparation: {
+          id: docRef.id,
+          ...payload
+        }
+      }
+    } catch (error) {
+      console.error('Erreur SignatureApiService.createDocumentPreparation:', error)
+      throw error
+    }
+  }
+  
+  /**
+   * Récupérer les préparations de documents pour une organisation
+   */
+  async getDocumentPreparations(organizationId) {
+    try {
+      const { db } = this.getFirebase()
+      const prepRef = collection(db, 'document_preparations')
+      const q = query(prepRef, where('organization.id', '==', organizationId))
+      
+      const querySnapshot = await getDocs(q)
+      const preparations = []
+      
+      querySnapshot.forEach((doc) => {
+        preparations.push({
+          id: doc.id,
+          ...doc.data()
+        })
+      })
+      
+      return { success: true, preparations }
+    } catch (error) {
+      console.error('Erreur SignatureApiService.getDocumentPreparations:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Récupérer les documents signés pour une organisation
+   */
+  async getSignedDocuments(organizationId) {
+    try {
+      const { db } = this.getFirebase()
+      const sigRef = collection(db, 'signatures')
+      const q = query(sigRef, where('organization_id', '==', organizationId))
+      
+      const querySnapshot = await getDocs(q)
+      const documents = []
+      
+      querySnapshot.forEach((doc) => {
+        documents.push({
+          id: doc.id,
+          ...doc.data()
+        })
+      })
+      
+      return { success: true, documents }
+    } catch (error) {
+      console.error('Erreur SignatureApiService.getSignedDocuments:', error)
       throw error
     }
   }
@@ -132,21 +247,18 @@ export class SignatureApiService {
    */
   async getSignatureDetails(signatureId) {
     try {
-      const response = await fetch(`${this.baseURL}/${signatureId}/`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include'
-      })
-
-      const data = await response.json()
+      const { db } = this.getFirebase()
+      const docRef = doc(db, 'signatures', signatureId)
+      const docSnap = await getDoc(docRef)
       
-      if (!response.ok) {
-        throw new Error('Erreur lors de la récupération des détails')
+      if (!docSnap.exists()) {
+        throw new Error('Signature introuvable')
       }
 
-      return data
+      return {
+        id: docSnap.id,
+        ...docSnap.data()
+      }
     } catch (error) {
       console.error('Erreur SignatureApiService.getSignatureDetails:', error)
       throw error
@@ -154,27 +266,35 @@ export class SignatureApiService {
   }
 
   /**
-   * Préparer les données de signature pour l'API
+   * Préparer les données de signature pour Firestore
    */
   async prepareSignatureData(signatureResult, originalFileData, certificateInfo) {
     try {
-      // Récupérer les informations de l'utilisateur connecté
-      const { useAuthStore } = await import('../stores/auth')
-      const authStore = useAuthStore()
-      const user = authStore.user
+      const { auth } = this.getFirebase()
+      const user = auth.currentUser
 
-      if (!user || !user.full_name) {
-        throw new Error('Utilisateur non connecté ou nom complet non disponible')
+      if (!user) {
+        throw new Error('Utilisateur non connecté')
       }
 
-      // Convertir les données en base64
       const originalDocumentBase64 = this.uint8ArrayToBase64(originalFileData)
       const signedDocumentBase64 = this.uint8ArrayToBase64(signatureResult.signedDocument)
 
-      // Préparer les données
-      const signatureData = {
+      // Upload vers Cloudinary
+      const originalDocumentUrl = await CloudinaryService.uploadPdf(
+        `data:application/pdf;base64,${originalDocumentBase64}`, 
+        `original_${signatureResult.fileName || 'document.pdf'}`
+      )
+      
+      const signedDocumentUrl = await CloudinaryService.uploadPdf(
+        `data:application/pdf;base64,${signedDocumentBase64}`, 
+        `signed_${signatureResult.fileName || 'document.pdf'}`
+      )
+
+      return {
         document_id: signatureResult.documentId,
-        signer_full_name: user.full_name, // Utiliser le nom de l'utilisateur connecté
+        signer_full_name: user.displayName || 'Utilisateur',
+        signer_email: user.email,
         original_filename: signatureResult.fileName || 'document.pdf',
         document_hash: signatureResult.originalHash,
         public_key: signatureResult.publicKeyPem,
@@ -183,11 +303,9 @@ export class SignatureApiService {
         file_size_original: originalFileData.byteLength,
         file_size_signed: signatureResult.signedDocument.byteLength,
         execution_time: parseFloat(signatureResult.executionTime) || 0,
-        original_document_base64: originalDocumentBase64,
-        signed_document_base64: signedDocumentBase64
+        original_document_url: originalDocumentUrl,
+        signed_document_url: signedDocumentUrl
       }
-
-      return signatureData
     } catch (error) {
       console.error('Erreur lors de la préparation des données:', error)
       throw error
@@ -195,39 +313,15 @@ export class SignatureApiService {
   }
 
   /**
-   * Tester l'authentification
+   * Tester l'authentification (vérifie si l'utilisateur est connecté via Firebase Auth)
    */
   async testAuthentication() {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/auth/profile/', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include'
-      })
-
-      const data = await response.json()
-      console.log('Test auth response:', response.status, data)
-      
-      return response.ok
+      const { auth } = this.getFirebase()
+      return auth.currentUser !== null
     } catch (error) {
       console.error('Erreur test auth:', error)
       return false
     }
-  }
-
-  /**
-   * Récupérer le token CSRF
-   */
-  getCSRFToken() {
-    const cookies = document.cookie.split(';')
-    for (let cookie of cookies) {
-      const [name, value] = cookie.trim().split('=')
-      if (name === 'csrftoken') {
-        return value
-      }
-    }
-    return ''
   }
 }

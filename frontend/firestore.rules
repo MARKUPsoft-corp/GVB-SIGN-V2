@@ -1,0 +1,107 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Fonction utilitaire pour vérifier si l'utilisateur est authentifié
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Fonction utilitaire pour vérifier si l'utilisateur est super-admin
+    function isSuperAdmin() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super-admin';
+    }
+    
+    // Fonction utilitaire pour vérifier si l'utilisateur appartient à une organisation
+    // On vérifie via le champ organizationId dans le document user (notre architecture réelle)
+    function isOrganizationMember(orgId) {
+      return isAuthenticated() &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.organizationId == orgId;
+    }
+    
+    // Allow collection group queries on invitations (needed for joinOrganization)
+    match /{path=**}/invitations/{invitationId} {
+      allow read: if isAuthenticated();
+    }
+
+    // 1. Collection `users`
+    match /users/{userId} {
+      // Tout utilisateur connecté peut lire les profils (pour la recherche de membres)
+      allow read: if isAuthenticated();
+      // Un utilisateur ne peut modifier que son propre profil, mais un super-admin peut modifier tout le monde
+      allow write: if isAuthenticated() && (request.auth.uid == userId || isSuperAdmin());
+    }
+
+    // 2. Collection `organizations`
+    match /organizations/{orgId} {
+      // Tout le monde peut lire les organisations
+      allow read: if isAuthenticated();
+      // Tout le monde peut créer une organisation
+      allow create: if isAuthenticated();
+      // Seul un membre ou un super admin peut modifier / supprimer
+      allow update, delete: if isOrganizationMember(orgId) || isSuperAdmin();
+      
+      // Sous-collection: membres
+      match /members/{memberId} {
+        allow read: if isAuthenticated();
+        allow write: if isOrganizationMember(orgId) || (isAuthenticated() && request.auth.uid == memberId);
+      }
+      
+      // Sous-collection: invitations
+      match /invitations/{invitationId} {
+        allow read: if isAuthenticated();
+        allow write: if isOrganizationMember(orgId);
+      }
+      
+      // Sous-collection: requêtes d'adhésion
+      match /membership_requests/{requestId} {
+        allow read: if isOrganizationMember(orgId) || (isAuthenticated() && resource.data.userId == request.auth.uid);
+        allow create: if isAuthenticated();
+        allow update, delete: if isOrganizationMember(orgId) || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      }
+      
+      // Sous-collection: certificats de l'organisation
+      match /certificates/{certId} {
+        allow read, write: if isOrganizationMember(orgId) || isSuperAdmin();
+      }
+    }
+
+    // 3. Collection `signatures`
+    match /signatures/{signatureId} {
+      allow read: if isAuthenticated() && (
+        isSuperAdmin() ||
+        (resource != null && resource.data.userId == request.auth.uid) ||
+        (resource != null && resource.data.organization_id != null && isOrganizationMember(resource.data.organization_id))
+      );
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && (
+        isSuperAdmin() ||
+        (resource != null && resource.data.userId == request.auth.uid)
+      );
+    }
+    
+    // 4. Collection `document_preparations`
+    match /document_preparations/{prepId} {
+      allow read: if isAuthenticated() && (
+        isSuperAdmin() ||
+        (resource != null && resource.data.userId == request.auth.uid) ||
+        (resource != null && resource.data.organization != null && isOrganizationMember(resource.data.organization.id))
+      );
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && (
+        isSuperAdmin() ||
+        (resource != null && resource.data.userId == request.auth.uid) ||
+        (resource != null && resource.data.organization != null && isOrganizationMember(resource.data.organization.id))
+      );
+    }
+    
+    // 5. Collection `certificates` (globaux)
+    match /certificates/{certId} {
+      allow read, write: if isAuthenticated() && (
+        (resource != null && resource.data.userId == request.auth.uid) || 
+        (request.resource != null && request.resource.data.userId == request.auth.uid)
+      );
+    }
+  }
+}

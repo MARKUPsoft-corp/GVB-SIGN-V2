@@ -161,7 +161,7 @@
             <div class="organization-meta">
               <div class="meta-item" @mouseenter="showOrganizationMembers(org, $event)" @mouseleave="closeMembersModal" @click="showOrganizationMembers(org, $event)" style="cursor: pointer;" title="Voir les membres">
                 <i class="bi bi-people"></i>
-                <span>{{ org.member_count || 0 }} membres</span>
+                <!-- <span v-if="org.member_count !== undefined">{{ org.member_count }} membres</span> -->
               </div>
               <div class="meta-item">
                 <i class="bi bi-file-earmark-text"></i>
@@ -178,7 +178,10 @@
               <button class="btn btn-sm btn-outline-primary" @click.stop="viewOrganizationDetails(org)" @mouseenter="showOrganizationInfo(org, $event)" @mouseleave="closeOrganizationInfo" title="Détails">
                 <i class="bi bi-eye"></i>
               </button>
-              <button class="btn btn-sm btn-outline-danger" @click.stop="leaveOrganization(org)" title="Quitter l'organisation">
+              <button v-if="org.role === 'chief' || org.role === 'chef'" class="btn btn-sm btn-outline-danger" @click.stop="deleteOrganization(org)" title="Supprimer l'organisation">
+                <i class="bi bi-trash"></i>
+              </button>
+              <button v-else class="btn btn-sm btn-outline-danger" @click.stop="leaveOrganization(org)" title="Quitter l'organisation">
                 <i class="bi bi-box-arrow-right"></i>
               </button>
             </div>
@@ -261,7 +264,7 @@
                   <div class="organization-meta">
                     <div class="meta-item">
                       <i class="bi bi-people"></i>
-                      <span>{{ org.member_count || 0 }} membres</span>
+                      <!-- <span v-if="org.member_count !== undefined">{{ org.member_count }} membres</span> -->
                     </div>
                     <div class="meta-item">
                       <i class="bi bi-calendar"></i>
@@ -354,8 +357,8 @@
               <i class="bi bi-person-circle"></i>
             </div>
             <div class="member-info">
-              <div class="member-name">{{ member.user_name || member.user_email }}</div>
-              <div class="member-email">{{ member.user_email }}</div>
+              <div class="member-name">{{ member.displayName || member.name || member.email || 'Utilisateur' }}</div>
+              <div class="member-email text-muted small">{{ member.email }}</div>
             </div>
             <div class="member-role">
               <span class="role-badge" :class="member.role">
@@ -428,7 +431,7 @@
           <div class="info-item">
             <i class="bi bi-people me-2"></i>
             <span class="info-label">Membres:</span>
-            <span class="info-value">{{ currentOrganizationInfo?.member_count || 0 }}</span>
+            <!-- <span class="info-value">{{ currentOrganizationInfo?.member_count || 0 }}</span> -->
           </div>
           
           <div class="info-item">
@@ -803,7 +806,7 @@ const newOrganization = ref({
 
 // Computed pour les statistiques
 const totalMembers = computed(() => {
-  return userOrganizations.value.reduce((total, org) => total + (org.member_count || 0), 0)
+  return userOrganizations.value.length
 })
 
 const totalDocuments = computed(() => {
@@ -821,35 +824,25 @@ const selectedRoleDescription = computed(() => {
   return role ? role.description : ''
 })
 
+// Écouteur temps réel
+let unsubUserOrg = null
+
 // Charger les organisations de l'utilisateur
 const loadUserOrganizations = async () => {
-  try {
-    const response = await fetch('http://127.0.0.1:8000/api/organizations/user-organizations/', {
-      method: 'GET',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-    
-    if (response.ok) {
-      const data = await response.json()
-      if (data.success && data.organizations) {
-        userOrganizations.value = data.organizations
-        console.log('✅ Organisations chargées:', data.organizations.length)
-        console.log('📋 Détails des organisations:', data.organizations)
-      } else {
-        console.log('ℹ️ Aucune organisation trouvée pour cet utilisateur')
-        userOrganizations.value = []
-      }
+  if (unsubUserOrg) unsubUserOrg()
+  
+  unsubUserOrg = OrganizationApiService.listenUserOrganization((org) => {
+    if (org) {
+      userOrganizations.value = [org]
+      console.log('✅ Organisation chargée en temps réel:', org)
     } else {
-      console.error('❌ Erreur lors du chargement des organisations')
       userOrganizations.value = []
+      console.log('ℹ️ Aucune organisation trouvée pour cet utilisateur.')
     }
-  } catch (error) {
-    console.error('❌ Erreur lors du chargement des organisations:', error)
+  }, (error) => {
+    console.error('Erreur écoute organisation:', error)
     userOrganizations.value = []
-  }
+  })
 }
 
 // Sélectionner une organisation
@@ -879,6 +872,7 @@ const selectOrganization = (organization) => {
 const getRoleDisplayName = (role) => {
   const roleNames = {
     'admin': 'Administrateur',
+    'chief': 'Chef (Propriétaire)',
     'chef': 'Chef',
     'chef+1': 'Chef+1',
     'chef+2': 'Chef+2',
@@ -1089,31 +1083,10 @@ const showOrganizationMembers = async (organization, event) => {
     currentOrganization.value = organization
     showMembersModal.value = true
     
-    // Charger les membres de l'organisation
-    const response = await fetch(`http://127.0.0.1:8000/api/organizations/${organization.id}/members/`, {
-      method: 'GET',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-    
-    if (response.ok) {
-      const data = await response.json()
-      if (data.success && data.members) {
-        currentOrganizationMembers.value = data.members
-        console.log('✅ Membres chargés:', data.members.length)
-      } else {
-        console.log('ℹ️ Aucun membre trouvé pour cette organisation')
-        currentOrganizationMembers.value = []
-      }
-    } else if (response.status === 403) {
-      console.log('ℹ️ Accès non autorisé aux membres de cette organisation')
-      currentOrganizationMembers.value = []
-    } else {
-      console.error('❌ Erreur lors du chargement des membres')
-      currentOrganizationMembers.value = []
-    }
+    // Charger les membres de l'organisation via Firebase
+    const members = await OrganizationApiService.getOrganizationMembers(organization.id)
+    currentOrganizationMembers.value = members
+    console.log('✅ Membres chargés:', members.length)
   } catch (error) {
     console.error('❌ Erreur lors du chargement des membres:', error)
     currentOrganizationMembers.value = []
@@ -1143,48 +1116,38 @@ const cancelCloseMembersModal = () => {
   }
 }
 
+// Supprimer l'organisation (pour les chefs)
+const deleteOrganization = async (organization) => {
+  if (confirm(`Êtes-vous sûr de vouloir SUPPRIMER DÉFINITIVEMENT l'organisation "${organization.name}" ?\n\nToutes les données (membres, documents) seront perdues.\nCette action est irréversible.`)) {
+    try {
+      await OrganizationApiService.deleteOrganization(organization.id)
+      console.log('✅ Organisation supprimée avec succès')
+      displayNotification('success', 'Succès', 'Organisation supprimée avec succès !')
+      // Recharger la liste des organisations
+      if (unsubUserOrg) {
+        unsubUserOrg()
+        unsubUserOrg = null
+      }
+      await loadUserOrganizations()
+    } catch (error) {
+      console.error('❌ Erreur lors de la suppression de l\'organisation:', error)
+      displayNotification('error', 'Erreur', 'Erreur lors de la suppression de l\'organisation: ' + error.message)
+    }
+  }
+}
+
 // Quitter l'organisation
 const leaveOrganization = async (organization) => {
   if (confirm(`Êtes-vous sûr de vouloir quitter l'organisation "${organization.name}" ?\n\nCette action est irréversible.`)) {
     try {
-      // Récupérer le token CSRF depuis les cookies
-      const getCookie = (name) => {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) return parts.pop().split(';').shift();
-        return null;
-      };
-      
-      const csrfToken = getCookie('csrftoken');
-      
-      const response = await fetch(`http://127.0.0.1:8000/api/organizations/${organization.id}/leave/`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': csrfToken || '',
-        },
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success) {
-          console.log('✅ Organisation quittée avec succès')
-          alert('Organisation quittée avec succès !')
-          // Recharger la liste des organisations
-          await loadUserOrganizations()
-        } else {
-          console.error('❌ Erreur lors de la sortie de l\'organisation:', data.message)
-          alert('Erreur lors de la sortie de l\'organisation: ' + data.message)
-        }
-      } else {
-        const errorData = await response.json().catch(() => ({}))
-        console.error('❌ Erreur lors de la sortie de l\'organisation:', errorData)
-        alert('Erreur lors de la sortie de l\'organisation: ' + (errorData.message || 'Erreur inconnue'))
-      }
+      await OrganizationApiService.leaveOrganization(organization.id)
+      console.log('✅ Organisation quittée avec succès')
+      alert('Organisation quittée avec succès !')
+      // Recharger la liste des organisations
+      await loadUserOrganizations()
     } catch (error) {
       console.error('❌ Erreur lors de la sortie de l\'organisation:', error)
-      alert('Erreur lors de la sortie de l\'organisation')
+      alert('Erreur lors de la sortie de l\'organisation: ' + error.message)
     }
   }
 }
@@ -1203,33 +1166,10 @@ const setActiveTab = (tab) => {
 const loadAllOrganizations = async () => {
   try {
     isLoading.value = true
-    const response = await fetch('http://127.0.0.1:8000/api/organizations/', {
-      method: 'GET',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-    
-    if (response.ok) {
-      const data = await response.json()
-      if (data.success && data.organizations) {
-        // Filtrer pour ne garder que les organisations approuvées
-        const approvedOrganizations = data.organizations.filter(org => org.approval_status === 'approved')
-        allOrganizations.value = approvedOrganizations
-        filteredOrganizations.value = approvedOrganizations
-        console.log('✅ Organisations approuvées chargées:', approvedOrganizations.length)
-        console.log('📋 Organisations filtrées (approuvées uniquement):', approvedOrganizations)
-      } else {
-        console.log('ℹ️ Aucune organisation trouvée')
-        allOrganizations.value = []
-        filteredOrganizations.value = []
-      }
-    } else {
-      console.error('❌ Erreur lors du chargement des organisations')
-      allOrganizations.value = []
-      filteredOrganizations.value = []
-    }
+    const organizations = await OrganizationApiService.getAllOrganizations()
+    allOrganizations.value = organizations
+    filteredOrganizations.value = organizations
+    console.log('✅ Organisations approuvées chargées:', organizations.length)
   } catch (error) {
     console.error('❌ Erreur lors du chargement des organisations:', error)
     allOrganizations.value = []
@@ -1470,46 +1410,17 @@ const checkMembershipAndProceed = async (organization, event) => {
   try {
     console.log('🔍 Vérification de l\'adhésion pour:', organization.name)
     
-    // Récupérer le token CSRF
-    const getCookie = (name) => {
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop().split(';').shift();
-      return null;
-    };
+    const data = await OrganizationApiService.checkMembership(organization.id)
     
-    const csrfToken = getCookie('csrftoken');
-    
-    // Vérifier si l'utilisateur est déjà membre ou a une demande en attente
-    const response = await fetch(`http://127.0.0.1:8000/api/organizations/${organization.id}/check-membership/`, {
-      method: 'GET',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': csrfToken || '',
-      },
-    })
-    
-    if (response.ok) {
-      const data = await response.json()
-      console.log('📥 Réponse vérification adhésion:', data)
-      
-      if (data.is_member) {
-        // L'utilisateur est déjà membre
-        console.log('⚠️ Utilisateur déjà membre de l\'organisation')
-        displayNotification('warning', 'Information', 'Vous êtes déjà membre de cette organisation')
-      } else if (data.has_pending_request) {
-        // L'utilisateur a déjà une demande en attente
-        console.log('⚠️ Utilisateur a déjà une demande en attente')
-        displayNotification('info', 'Information', 'Vous avez déjà une demande d\'adhésion en attente pour cette organisation')
-      } else {
-        // L'utilisateur n'est pas membre et n'a pas de demande en attente, ouvrir la pop-up de confirmation
-        console.log('✅ Utilisateur pas membre et pas de demande en attente, ouverture de la pop-up de confirmation')
-        openJoinConfirmation(organization, event)
-      }
+    if (data.is_member) {
+      console.log('⚠️ Utilisateur déjà membre de l\'organisation')
+      displayNotification('warning', 'Information', 'Vous êtes déjà membre de cette organisation')
+    } else if (data.has_pending_request) {
+      console.log('⚠️ Utilisateur a déjà une demande en attente')
+      displayNotification('info', 'Information', 'Vous avez déjà une demande d\'adhésion en attente pour cette organisation')
     } else {
-      console.error('❌ Erreur lors de la vérification d\'adhésion')
-      displayNotification('error', 'Erreur', 'Erreur lors de la vérification de votre adhésion')
+      console.log('✅ Utilisateur pas membre et pas de demande en attente, ouverture de la pop-up de confirmation')
+      openJoinConfirmation(organization, event)
     }
   } catch (error) {
     console.error('❌ Erreur lors de la vérification d\'adhésion:', error)
@@ -1541,49 +1452,18 @@ const confirmRoleSelection = async () => {
   }
   
   try {
-    // Récupérer le token CSRF depuis les cookies
-    const getCookie = (name) => {
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop().split(';').shift();
-      return null;
-    };
+    const message = `Demande d'adhésion pour le rôle: ${availableRoles.value.find(r => r.value === selectedRole.value)?.label}`
+    const response = await OrganizationApiService.requestMembership(organizationToJoin.value.id, selectedRole.value, message)
     
-    const csrfToken = getCookie('csrftoken');
-    
-    const response = await fetch(`http://127.0.0.1:8000/api/organizations/membership-request/`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': csrfToken || '',
-      },
-      body: JSON.stringify({
-        organization_id: organizationToJoin.value.id,
-        requested_role: selectedRole.value,
-        message: `Demande d'adhésion pour le rôle: ${availableRoles.value.find(r => r.value === selectedRole.value)?.label}`
-      })
-    })
-    
-    if (response.ok) {
-      const data = await response.json()
-      if (data.success) {
-        console.log('✅ Demande d\'adhésion créée avec succès')
-        displayNotification('success', 'Succès', data.message)
-        // Recharger les organisations de l'utilisateur
-        await loadUserOrganizations()
-      } else {
-        console.error('❌ Erreur lors de la création de la demande:', data.message)
-        displayNotification('error', 'Erreur', data.message)
-      }
-    } else {
-      const errorData = await response.json().catch(() => ({}))
-      console.error('❌ Erreur lors de la création de la demande:', errorData)
-      displayNotification('error', 'Erreur', errorData.message || 'Erreur inconnue')
+    if (response.success) {
+      console.log('✅ Demande d\'adhésion créée avec succès')
+      displayNotification('success', 'Succès', response.message)
+      // Recharger les organisations de l'utilisateur
+      await loadUserOrganizations()
     }
   } catch (error) {
     console.error('❌ Erreur lors de la création de la demande:', error)
-    displayNotification('error', 'Erreur', 'Erreur lors de la création de la demande')
+    displayNotification('error', 'Erreur', error.message || 'Erreur lors de la création de la demande')
   } finally {
     closeRoleSelection()
   }
@@ -1619,6 +1499,7 @@ onMounted(async () => {
 // Nettoyage
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
+  if (unsubUserOrg) unsubUserOrg()
 })
 
 // Fonctions pour les modales d'organisation
@@ -1731,16 +1612,16 @@ const createOrganization = async () => {
     const currentUser = authStore.user
     
     console.log('Utilisateur connecté:', currentUser)
-    console.log('ID utilisateur connecté:', currentUser?.id)
+    console.log('ID utilisateur connecté:', currentUser?.uid)
     
-    if (!currentUser || !currentUser.id) {
+    if (!currentUser || !currentUser.uid) {
       throw new Error('Aucun utilisateur connecté trouvé')
     }
     
     // Ajouter l'ID de l'utilisateur connecté aux données
     const organizationData = {
       ...newOrganization.value,
-      user_id: currentUser.id
+      user_id: currentUser.uid
     }
     
     console.log('Données d\'organisation avec user_id:', organizationData)
@@ -1778,98 +1659,23 @@ const joinOrganization = async () => {
   try {
     console.log('Validation du code d\'invitation:', inviteCode.value)
     
-    // Récupérer le token CSRF
-    const csrfToken = await getCsrfToken()
-    console.log('Token CSRF récupéré:', csrfToken)
+    const result = await OrganizationApiService.joinOrganization(inviteCode.value)
     
-    if (!csrfToken) {
-      displayNotification('error', 'Erreur', 'Impossible de récupérer le token CSRF')
-      return
-    }
+    console.log('Code d\'invitation validé avec succès:', result)
+    displayNotification('success', 'Succès', 'Vous avez rejoint l\'organisation avec succès !')
     
-    // Appeler l'API pour valider le code d'invitation
-    const requestHeaders = {
-      'Content-Type': 'application/json',
-      'X-Csrftoken': csrfToken
-    }
-    console.log('Headers envoyés:', requestHeaders)
+    closeJoinOrganizationModal()
     
-    const response = await $fetch('http://127.0.0.1:8000/api/organizations/invitations/validate/', {
-      method: 'POST',
-      headers: requestHeaders,
-      credentials: 'include',
-      body: {
-        code: inviteCode.value
-      }
-    })
+    // Rafraîchir la page pour mettre à jour l'état
+    setTimeout(() => {
+      window.location.reload()
+    }, 2000)
     
-    console.log('Réponse du serveur:', response)
-    
-    if (response.success) {
-      console.log('Code d\'invitation validé avec succès:', response)
-      
-      // Vérifier si l'utilisateur était déjà membre de cette organisation
-      if (response.already_member) {
-        displayNotification('info', 'Déjà membre', `Vous appartenez déjà à l'organisation ${response.organization.name} en tant que ${response.role_display}`)
-      } else {
-        displayNotification('success', 'Succès', `Vous avez rejoint l'organisation ${response.organization.name} avec succès !`)
-      }
-      
-      closeJoinOrganizationModal()
-      
-      // Rafraîchir la page pour mettre à jour l'état
-      setTimeout(() => {
-        window.location.reload()
-      }, 2000)
-    } else {
-      console.error('Erreur lors de la validation:', response.message)
-      displayNotification('error', 'Erreur', response.message || 'Erreur lors de la validation du code d\'invitation')
-    }
   } catch (error) {
     console.error('Erreur lors de la jointure:', error)
-    
-    // Gestion des erreurs spécifiques
-    if (error.status === 400) {
-      displayNotification('error', 'Code invalide', 'Le code d\'invitation saisi n\'est pas valide ou a expiré')
-    } else if (error.status === 404) {
-      displayNotification('error', 'Code introuvable', 'Ce code d\'invitation n\'existe pas dans notre base de données')
-    } else if (error.status === 403) {
-      displayNotification('error', 'Accès refusé', 'Vous n\'êtes pas autorisé à utiliser ce code d\'invitation')
-    } else {
-      displayNotification('error', 'Erreur de connexion', 'Impossible de rejoindre l\'organisation. Vérifiez votre connexion.')
-    }
+    displayNotification('error', 'Erreur', error.message || 'Impossible de rejoindre l\'organisation. Code invalide ou expiré.')
   } finally {
     isJoiningOrganization.value = false
-  }
-}
-
-// Fonction pour récupérer le token CSRF
-const getCsrfToken = async () => {
-  try {
-    // D'abord, faire une requête GET pour obtenir le cookie CSRF
-    await $fetch('http://127.0.0.1:8000/api/auth/csrf/', {
-      method: 'GET',
-      credentials: 'include'
-    })
-    
-    // Ensuite, récupérer le token depuis les cookies
-    const cookies = document.cookie.split(';')
-    const csrfCookie = cookies.find(cookie => cookie.trim().startsWith('csrftoken='))
-    
-    if (csrfCookie) {
-      const token = csrfCookie.split('=')[1]
-      console.log('Token CSRF récupéré depuis les cookies:', token)
-      return token
-    }
-    
-    // Fallback: utiliser l'endpoint API
-    const response = await $fetch('http://127.0.0.1:8000/api/auth/csrf/', {
-      credentials: 'include'
-    })
-    return response.csrfToken
-  } catch (error) {
-    console.error('Erreur lors de la récupération du token CSRF:', error)
-    return null
   }
 }
 </script>

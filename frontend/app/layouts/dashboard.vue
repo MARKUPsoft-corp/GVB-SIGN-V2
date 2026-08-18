@@ -64,6 +64,12 @@
                 Paramètres
               </button>
             </li>
+            <li class="nav-item" v-if="userStore.role === 'super-admin'">
+              <button class="nav-link fw-500 border-0 bg-transparent text-danger" :class="{ active: activePage === 'super-admin' }" @click="setActivePage('super-admin')">
+                <i class="bi bi-shield-lock-fill me-2"></i>
+                Administration
+              </button>
+            </li>
           </ul>
 
           <!-- User info et logout -->
@@ -128,6 +134,12 @@
               Organisation
             </button>
           </li>
+          <li class="sidebar-nav-item" v-if="userStore.role === 'super-admin'">
+            <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start text-danger" :class="{ active: activePage === 'super-admin' }" @click="setActivePage('super-admin')">
+              <i class="bi bi-shield-lock-fill me-3"></i>
+              Administration
+            </button>
+          </li>
         </ul>
       </nav>
 
@@ -139,8 +151,14 @@
               <i class="bi bi-person-circle"></i>
             </div>
             <div class="user-details">
-              <span class="user-name">{{ userStore.fullName || 'Utilisateur' }}</span>
-              <span class="user-email">{{ userStore.email || 'email@example.com' }}</span>
+              <ClientOnly>
+                <span class="user-name">{{ userStore.fullName || 'Utilisateur' }}</span>
+                <span class="user-email">{{ userStore.email || 'email@example.com' }}</span>
+                <template #fallback>
+                  <span class="user-name">Utilisateur</span>
+                  <span class="user-email">email@example.com</span>
+                </template>
+              </ClientOnly>
             </div>
           </div>
           <button @click="handleLogout" class="logout-btn">
@@ -186,6 +204,12 @@
             <button class="nav-link" :class="{ active: isOrganizationPage }" @click="setActivePage('organization-selection')">
               <i class="bi bi-building"></i>
               <span v-show="!isSidebarCollapsed">Organisation</span>
+            </button>
+          </li>
+          <li class="nav-item" v-if="userStore.role === 'super-admin'">
+            <button class="nav-link text-danger" :class="{ active: activePage === 'super-admin' }" @click="setActivePage('super-admin')">
+              <i class="bi bi-shield-lock-fill"></i>
+              <span v-show="!isSidebarCollapsed">Administration</span>
             </button>
           </li>
         </ul>
@@ -659,6 +683,9 @@
         <div v-else-if="activePage === 'document-preparation'">
           <DocumentPreparationPage @go-back="setActivePage('organization-secretary')" />
         </div>
+        <div v-else-if="activePage === 'super-admin'">
+          <SuperAdminPage />
+        </div>
         <div v-else>
           <div class="page-placeholder">
             <div class="text-center py-5">
@@ -685,7 +712,9 @@ import OrganizationMemberPage from '../../components/dashboard/OrganizationMembe
 import OrganizationSecretaryPage from '../../components/dashboard/OrganizationSecretaryPage.vue'
 import OrganizationManagerPage from '../../components/dashboard/OrganizationManagerPage.vue'
 import DocumentPreparationPage from '../../components/dashboard/DocumentPreparationPage.vue'
+import SuperAdminPage from '../../components/dashboard/SuperAdminPage.vue'
 import { CertificateService } from '../../services/CertificateService'
+import OrganizationApiService from '../../services/OrganizationApiService'
 
 // Store d'authentification (côté client seulement)
 const authStore = process.client ? useAuthStore() : null
@@ -695,8 +724,9 @@ const { startSessionRefresh, stopSessionRefresh, cleanup } = useSessionRefresh()
 
 // Store utilisateur avec les données du store d'authentification
 const userStore = computed(() => ({
-  fullName: authStore?.user?.full_name || 'Utilisateur',
-  email: authStore?.user?.email || 'email@example.com'
+  fullName: authStore?.user?.displayName || 'Utilisateur',
+  email: authStore?.user?.email || 'email@example.com',
+  role: authStore?.user?.role || 'member'
 }))
 
 // État de la sidebar mobile
@@ -727,7 +757,8 @@ const certificateInfo = ref(null)
 const certificateError = ref(null)
 
 // État de la navigation du dashboard
-const activePage = ref('dashboard')
+const route = useRoute()
+const activePage = ref(route.query.page || 'dashboard')
 
 // Propriété calculée pour vérifier si on est sur une page d'organisation
 const isOrganizationPage = computed(() => {
@@ -763,6 +794,13 @@ const setActivePage = (page) => {
     return
   }
   
+  // Sécurisation de la route Super Admin
+  if (page === 'super-admin' && userStore.value.role !== 'super-admin') {
+    console.warn('⚠️ Tentative d\'accès non autorisé à la page Super Admin')
+    activePage.value = 'dashboard'
+    return
+  }
+
   activePage.value = page
   localStorage.setItem('dashboardActivePage', page)
   
@@ -798,9 +836,11 @@ const handleOrganizationSelected = (event) => {
   // Rediriger vers la page appropriée selon le rôle
   switch (role) {
     case 'admin':
+    case 'super-admin':
       console.log('🔄 Redirection vers la page admin')
       setActivePage('organization')
       break
+    case 'chief':
     case 'chef':
     case 'chef+1':
     case 'chef+2':
@@ -906,51 +946,24 @@ const checkUserOrganizations = async () => {
     
     console.log('🔍 Vérification des organisations de l\'utilisateur...')
     
-    // Appel API pour vérifier si l'utilisateur a une organisation
-    const response = await fetch('http://127.0.0.1:8000/api/organizations/my-organization/', {
-      method: 'GET',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-    
-    if (response.ok) {
-      const data = await response.json()
-      console.log('📥 Réponse API organisations:', data)
+    // Appel au nouveau service Firestore
+    try {
+      const orgData = await OrganizationApiService.getUserOrganization()
       
-      if (data.success && data.organization) {
-        hasOrganization.value = true
-        localStorage.setItem('user_has_organization', 'true')
-        console.log('✅ Utilisateur a une organisation:', data.organization.name)
-        console.log('🔍 Rôle de l\'utilisateur:', data.organization.role || 'Non spécifié')
-        
-        // L'utilisateur a une organisation, pas de redirection automatique
-        console.log('✅ Utilisateur a une organisation, rester sur la page actuelle')
-      } else {
+      hasOrganization.value = true
+      localStorage.setItem('user_has_organization', 'true')
+      console.log('✅ Utilisateur a une organisation:', orgData.name)
+      
+      // L'utilisateur a une organisation, pas de redirection automatique
+      console.log('✅ Utilisateur a une organisation, rester sur la page actuelle')
+    } catch (err) {
+      if (err.message === "L'utilisateur n'appartient à aucune organisation") {
         hasOrganization.value = false
         localStorage.removeItem('user_has_organization')
         console.log('❌ Utilisateur n\'a pas d\'organisation')
-        
-        // L'utilisateur n'a pas d'organisation, rester sur la page actuelle
-        console.log('ℹ️ Utilisateur sans organisation, rester sur la page actuelle')
+      } else {
+        throw err
       }
-    } else if (response.status === 404) {
-      // 404 signifie que l'utilisateur n'a pas d'organisation
-      hasOrganization.value = false
-      localStorage.removeItem('user_has_organization')
-      console.log('❌ Utilisateur n\'a pas d\'organisation (404)')
-      
-      // L'utilisateur n'a pas d'organisation (404), rester sur la page actuelle
-      console.log('ℹ️ Utilisateur sans organisation (404), rester sur la page actuelle')
-    } else {
-      // Autre erreur
-      hasOrganization.value = false
-      localStorage.removeItem('user_has_organization')
-      console.log('❌ Erreur lors de la vérification des organisations:', response.status)
-      
-      // Erreur lors de la vérification, rester sur la page actuelle
-      console.log('ℹ️ Erreur lors de la vérification, rester sur la page actuelle')
     }
     
     console.log('🔍 État final hasOrganization:', hasOrganization.value)

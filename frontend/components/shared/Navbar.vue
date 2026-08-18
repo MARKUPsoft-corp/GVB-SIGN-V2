@@ -42,15 +42,11 @@
           </li>
         </ul>
 
-        <!-- Boutons d'authentification -->
+        <!-- Boutons d'action -->
         <div class="d-flex align-items-center gap-3 navbar-buttons-animated">
-          <NuxtLink to="/login" class="btn btn-outline-primary-custom btn-sm">
-            <i class="bi bi-box-arrow-in-right me-2"></i>
-            Connexion
-          </NuxtLink>
-          <NuxtLink to="/register" class="btn btn-primary-custom btn-sm">
-            <i class="bi bi-person-plus me-2"></i>
-            Inscription
+          <NuxtLink to="/login" class="btn btn-primary-custom btn-sm px-4 rounded-pill shadow-sm">
+            <i class="bi bi-google me-2"></i>
+            Connexion / Inscription
           </NuxtLink>
         </div>
       </div>
@@ -100,13 +96,9 @@
       </ul>
       
       <div class="sidebar-actions">
-        <NuxtLink to="/login" class="btn btn-outline-primary-custom w-100 mb-3" @click="closeSidebar">
-          <i class="bi bi-box-arrow-in-right me-2"></i>
-          Connexion
-        </NuxtLink>
-        <NuxtLink to="/register" class="btn btn-primary-custom w-100" @click="closeSidebar">
-          <i class="bi bi-person-plus me-2"></i>
-          Inscription
+        <NuxtLink to="/login" class="btn btn-primary-custom w-100 rounded-pill shadow-sm" @click="closeSidebar">
+          <i class="bi bi-google me-2"></i>
+          Connexion / Inscription
         </NuxtLink>
       </div>
     </div>
