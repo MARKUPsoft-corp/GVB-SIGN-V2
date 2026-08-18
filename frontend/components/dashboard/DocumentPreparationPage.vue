@@ -1649,7 +1649,7 @@ const processDocument = async (fileData, index, currentOrganization) => {
     // Upload vers Cloudinary
     documentProgress.value[index] = 80
     console.log(`☁️ Upload du document original vers Cloudinary...`)
-    const originalUrl = await CloudinaryService.uploadPdf(originalBase64, `original_${fileData.name}`)
+    const originalUrl = await CloudinaryService.uploadPdf(`data:application/pdf;base64,${originalBase64}`, `original_${fileData.name}`)
     
     let currentUrl = originalUrl
     let finalUrl = null

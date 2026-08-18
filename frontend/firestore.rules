@@ -20,6 +20,12 @@ service cloud.firestore {
              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.organizationId == orgId;
     }
     
+    // Fonction pour vérifier si un utilisateur est admin de l'organisation
+    function isOrganizationAdmin(orgId) {
+      let user = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      return isAuthenticated() && user.organizationId == orgId && (user.role == 'admin' || user.role == 'chief');
+    }
+
     // Allow collection group queries on invitations (needed for joinOrganization)
     match /{path=**}/invitations/{invitationId} {
       allow read: if isAuthenticated();
@@ -29,8 +35,14 @@ service cloud.firestore {
     match /users/{userId} {
       // Tout utilisateur connecté peut lire les profils (pour la recherche de membres)
       allow read: if isAuthenticated();
-      // Un utilisateur ne peut modifier que son propre profil, mais un super-admin peut modifier tout le monde
-      allow write: if isAuthenticated() && (request.auth.uid == userId || isSuperAdmin());
+      // Un utilisateur ne peut modifier que son propre profil. 
+      // Un admin d'organisation peut modifier le profil d'un membre de son organisation (ou d'un futur membre).
+      allow write: if isAuthenticated() && (
+        request.auth.uid == userId || 
+        isSuperAdmin() ||
+        (resource != null && resource.data.organizationId != null && isOrganizationAdmin(resource.data.organizationId)) ||
+        (request.resource != null && request.resource.data.organizationId != null && isOrganizationAdmin(request.resource.data.organizationId))
+      );
     }
 
     // 2. Collection `organizations`

@@ -566,6 +566,8 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useAuthStore } from '../../stores/auth'
+import { SignatureApiService } from '../../services/SignatureApiService'
+import OrganizationApiService from '../../services/OrganizationApiService'
 
 // Store d'authentification
 const authStore = useAuthStore()

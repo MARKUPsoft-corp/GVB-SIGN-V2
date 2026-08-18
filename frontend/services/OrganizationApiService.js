@@ -401,7 +401,7 @@ class OrganizationApiService {
       }
       
       const docRef = await addDoc(certsRef, dataToSave)
-      return { id: docRef.id, ...dataToSave }
+      return { success: true, certificate: { id: docRef.id, ...dataToSave } }
     } catch (error) {
       console.error('Erreur lors de la création du certificat:', error)
       throw error
@@ -706,6 +706,62 @@ class OrganizationApiService {
     } catch (error) {
       console.error('Erreur listenRejectedMembershipRequests:', error)
       if (errorCallback) errorCallback(error)
+      throw error
+    }
+  }
+
+  /**
+   * Modifier le statut d'un membre (Révocation, Rejet, Suppression)
+   */
+  static async updateMemberStatus(organizationId, member, newStatus) {
+    try {
+      const { db } = this.getFirebase()
+      const userId = member.id
+      
+      // 1. Retirer l'utilisateur de l'organisation
+      const userRef = doc(db, 'users', userId)
+      await updateDoc(userRef, {
+        organizationId: null,
+        role: null,
+        updated_at: new Date().toISOString()
+      })
+      
+      const requestsRef = collection(db, 'organizations', organizationId, 'membership_requests')
+      const q = query(requestsRef, where('userId', '==', userId))
+      const snapshot = await getDocs(q)
+      
+      // 2. Traitement selon le nouveau statut
+      if (newStatus === 'pending' || newStatus === 'rejected') {
+        if (!snapshot.empty) {
+          // Mettre à jour la requête existante
+          const requestDoc = snapshot.docs[0]
+          await updateDoc(doc(db, 'organizations', organizationId, 'membership_requests', requestDoc.id), {
+            status: newStatus,
+            updatedAt: serverTimestamp()
+          })
+        } else {
+          // Créer une nouvelle requête si elle n'existait pas
+          await addDoc(requestsRef, {
+            userId: userId,
+            userName: member.displayName || member.name || member.email || 'Utilisateur',
+            userEmail: member.email,
+            requestedRole: member.role || 'member',
+            message: newStatus === 'pending' ? 'Remis en attente par un administrateur' : 'Revoqué et rejeté par un administrateur',
+            status: newStatus,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          })
+        }
+      } else if (newStatus === 'deleted') {
+        // Supprimer définitivement toutes les requêtes d'adhésion de cet utilisateur
+        for (const requestDoc of snapshot.docs) {
+          await deleteDoc(doc(db, 'organizations', organizationId, 'membership_requests', requestDoc.id))
+        }
+      }
+      
+      return { success: true }
+    } catch (error) {
+      console.error('Erreur updateMemberStatus:', error)
       throw error
     }
   }

@@ -468,10 +468,35 @@
                       </small>
                     </div>
                   </div>
-                  <div class="member-actions">
+                  <div class="member-actions d-flex align-items-center gap-2">
                     <span class="badge" :class="getRoleBadgeClass(member.role)">
                       {{ getRoleDisplayName(member.role) }}
                     </span>
+                    
+                    <div class="dropdown" v-if="member.id !== authStore.user?.uid">
+                      <button class="btn btn-sm btn-link text-muted" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Actions">
+                        <i class="bi bi-three-dots-vertical"></i>
+                      </button>
+                      <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                        <li><h6 class="dropdown-header">Actions membre</h6></li>
+                        <li>
+                          <button class="dropdown-item text-warning" @click="updateMemberStatus(member, 'pending')">
+                            <i class="bi bi-pause-circle me-2"></i>Mettre en attente
+                          </button>
+                        </li>
+                        <li>
+                          <button class="dropdown-item text-danger" @click="updateMemberStatus(member, 'rejected')">
+                            <i class="bi bi-x-circle me-2"></i>Rejeter l'adhésion
+                          </button>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                          <button class="dropdown-item text-danger" @click="updateMemberStatus(member, 'deleted')">
+                            <i class="bi bi-trash me-2"></i>Supprimer définitivement
+                          </button>
+                        </li>
+                      </ul>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -687,7 +712,7 @@
                       <h6>{{ certificate.name }}</h6>
                       <p class="text-muted">{{ certificate.subject_common_name || 'Certificat de signature' }}</p>
                       <small class="text-muted">
-                        Importé le {{ formatDate(certificate.imported_at) }}
+                        Importé le {{ formatDate(certificate.created_at) || 'N/A' }}
                         <span v-if="certificate.imported_by_name"> par {{ certificate.imported_by_name }}</span>
                       </small>
                     </div>
@@ -1027,7 +1052,7 @@
               <div class="info-item">
                 <i class="bi bi-calendar me-2"></i>
                 <span class="info-label">Importé le:</span>
-                <span class="info-value">{{ formatDate(currentCertificateDetails?.imported_at) || 'Non renseigné' }}</span>
+                <span class="info-value">{{ formatDate(currentCertificateDetails?.created_at) || 'Non renseigné' }}</span>
               </div>
               <div class="info-item">
                 <i class="bi bi-person me-2"></i>
@@ -1796,6 +1821,34 @@ const loadPendingMembers = () => {
   )
 }
 
+// Mettre à jour le statut d'un membre (révoquer, rejeter, supprimer)
+const updateMemberStatus = async (member, status) => {
+  const actionText = status === 'pending' ? 'mettre en attente' : 
+                     status === 'rejected' ? 'rejeter' : 
+                     'supprimer définitivement';
+  
+  if (!confirm(`Êtes-vous sûr de vouloir ${actionText} le membre ${member.displayName || member.name || member.email} ?`)) {
+    return
+  }
+  
+  try {
+    const data = await OrganizationApiService.updateMemberStatus(
+      userOrganization.value.organization.id,
+      member,
+      status
+    )
+    
+    if (data.success) {
+      console.log(`✅ Membre ${actionText} avec succès`)
+      // Pas besoin de recharger explicitement car les listeners onSnapshot feront le travail !
+      alert(`Membre ${actionText} avec succès !`)
+    }
+  } catch (error) {
+    console.error(`Erreur lors de l'action (${status}) :`, error)
+    alert(`Erreur: ${error.message}`)
+  }
+}
+
 // Approuver une demande d'adhésion
 const approveMembershipRequest = async (request) => {
   try {
@@ -1803,7 +1856,7 @@ const approveMembershipRequest = async (request) => {
       userOrganization.value.organization.id,
       request.id,
       request.userId,
-      request.role
+      request.requestedRole || request.role
     )
     
     if (data.success) {
@@ -1887,7 +1940,7 @@ const reapproveMembershipRequest = async (requestId) => {
       userOrganization.value.organization.id,
       requestId,
       request.userId,
-      request.role
+      request.requestedRole || request.role
     )
     
     if (data.success) {
@@ -2379,24 +2432,25 @@ const importCertificate = async () => {
     // Sauvegarder en base de données pour l'organisation
     const certificateData = {
       name: certificateInfo.subject.commonName || 'Certificat d\'organisation',
-      subject_common_name: certificateInfo.subject.commonName,
-      subject_organization: certificateInfo.subject.organization,
-      subject_organizational_unit: certificateInfo.subject.organizationalUnit,
-      subject_country: certificateInfo.subject.country,
-      subject_email: certificateInfo.subject.email,
-      issuer_common_name: certificateInfo.issuer.commonName,
-      issuer_organization: certificateInfo.issuer.organization,
-      issuer_country: certificateInfo.issuer.country,
-      serial_number: certificateInfo.serialNumber,
-      fingerprint: certificateInfo.fingerprint,
-      signature_algorithm: certificateInfo.signatureAlgorithm,
-      not_before: certificateInfo.validity.notBefore,
-      not_after: certificateInfo.validity.notAfter,
-      is_valid: certificateInfo.validity.isValid,
-      key_usage: certificateInfo.keyUsage,
-      private_key_pem: certificateService.getPrivateKeyPem(),
-      public_key_pem: certificateService.getPublicKeyPem(),
-      certificate_pem: certificateService.getCertificatePem()
+      subject_common_name: certificateInfo.subject.commonName || null,
+      subject_organization: certificateInfo.subject.organization || null,
+      subject_organizational_unit: certificateInfo.subject.organizationalUnit || null,
+      subject_country: certificateInfo.subject.country || null,
+      subject_email: certificateInfo.subject.email || null,
+      issuer_common_name: certificateInfo.issuer.commonName || null,
+      issuer_organization: certificateInfo.issuer.organization || null,
+      issuer_country: certificateInfo.issuer.country || null,
+      serial_number: certificateInfo.serialNumber || null,
+      fingerprint: certificateInfo.fingerprint || null,
+      signature_algorithm: certificateInfo.signatureAlgorithm || null,
+      not_before: certificateInfo.validity.notBefore || null,
+      not_after: certificateInfo.validity.notAfter || null,
+      is_valid: certificateInfo.validity.isValid !== undefined ? certificateInfo.validity.isValid : null,
+      is_active: true,
+      key_usage: certificateInfo.keyUsage || null,
+      private_key_pem: certificateService.getPrivateKeyPem() || null,
+      public_key_pem: certificateService.getPublicKeyPem() || null,
+      certificate_pem: certificateService.getCertificatePem() || null
     }
     
     // Envoyer à l'API

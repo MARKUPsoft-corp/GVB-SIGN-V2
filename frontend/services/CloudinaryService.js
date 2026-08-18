@@ -22,10 +22,20 @@ export default class CloudinaryService {
         })
       })
 
-      const data = await response.json()
+      const textData = await response.text()
+      let data
+      try {
+        data = JSON.parse(textData)
+      } catch (e) {
+        throw new Error(`Server returned non-JSON (${response.status}): ${textData.substring(0, 100)}...`)
+      }
 
-      if (!data.success) {
-        throw new Error(data.error || 'Erreur lors de l\'upload')
+      if (!response.ok || !data.success) {
+        const errorMsg = data.error || data.statusMessage || `Erreur serveur HTTP ${response.status}`
+        if (errorMsg.includes('429')) {
+          throw new Error("Limite d'utilisation Cloudinary atteinte (Quota dépassé). Veuillez patienter ou vérifier votre compte Cloudinary.")
+        }
+        throw new Error(errorMsg)
       }
 
       console.log('✅ Upload Cloudinary réussi:', data.url)
