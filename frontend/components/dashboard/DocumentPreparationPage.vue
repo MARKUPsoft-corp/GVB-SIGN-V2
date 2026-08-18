@@ -1368,6 +1368,7 @@ const validateWorkflow = async () => {
     if (chief) {
       workflowValidation.value.hasChief = true
       workflowValidation.value.chiefInfo = {
+        id: chief.id || chief.userId || chief.uid || chief.user_id || chief.user_email || '',
         name: chief.displayName || chief.name || chief.email || 'Nom non disponible',
         email: chief.email || 'Email non disponible',
         role: chief.role,
@@ -1680,7 +1681,20 @@ const processDocument = async (fileData, index, currentOrganization) => {
       original_document_url: originalUrl,
       current_document_url: currentUrl,
       final_document_url: finalUrl || '',
-      has_positioned_elements: hasElements
+      has_positioned_elements: hasElements,
+      // Ajout du workflow de signature pour que le Chef puisse signer
+      signature_workflow: workflowValidation.value.hasChief ? [{
+        user_id: workflowValidation.value.chiefInfo?.id || '',
+        name: workflowValidation.value.chiefInfo?.name || 'Chef',
+        email: workflowValidation.value.chiefInfo?.email || null,
+        role: workflowValidation.value.chiefInfo?.role || 'chief',
+        step: 0
+      }] : [],
+      current_signer: workflowValidation.value.hasChief ? {
+        id: workflowValidation.value.chiefInfo?.id || '',
+        name: workflowValidation.value.chiefInfo?.name || 'Chef',
+        email: workflowValidation.value.chiefInfo?.email || null
+      } : null
     }
     
     console.log(`📋 Données de soumission pour ${fileData.name}:`, {

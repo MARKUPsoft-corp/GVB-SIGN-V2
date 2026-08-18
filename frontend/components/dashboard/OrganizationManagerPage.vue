@@ -476,8 +476,8 @@
                       <i class="bi bi-fingerprint me-1"></i>
                       Hash SHA-256
                     </span>
-                    <span class="detail-value hash-value" :title="document.document_hash">
-                      {{ document.document_hash.substring(0, 16) }}...
+                    <span class="detail-value hash-value" :title="document.document_hash || document.signatures_history?.[document.signatures_history?.length - 1]?.hash || 'Hash non disponible'">
+                      {{ (document.document_hash || document.signatures_history?.[document.signatures_history?.length - 1]?.hash || 'N/A').substring(0, 16) }}...
                     </span>
                   </div>
                   <div class="detail-item">
@@ -486,7 +486,7 @@
                       Taille originale
                     </span>
                     <span class="detail-value">
-                      {{ formatFileSize(document.file_size_original) }}
+                      {{ formatFileSize(document.file_size_original || 0) }}
                     </span>
                   </div>
                   <div class="detail-item">
@@ -495,7 +495,7 @@
                       Taille signée
                     </span>
                     <span class="detail-value">
-                      {{ formatFileSize(document.file_size_signed) }}
+                      {{ formatFileSize(document.file_size_signed || document.file_size_original || 0) }}
                     </span>
                   </div>
                   <div class="detail-item">
@@ -504,27 +504,27 @@
                       Temps d'exécution
                     </span>
                     <span class="detail-value">
-                      {{ document.execution_time.toFixed(3) }}s
+                      {{ (document.execution_time || 0).toFixed(3) }}s
                     </span>
                   </div>
                 </div>
 
                 <!-- Workflow history si disponible -->
-                <div v-if="document.is_workflow_document && document.workflow_history.length > 0" class="workflow-info">
+                <div v-if="document.signatures_history && document.signatures_history.length > 0" class="workflow-info">
                   <h6 class="workflow-title">
                     <i class="bi bi-diagram-3 me-2"></i>
-                    Historique du workflow
+                    Historique des signatures
                   </h6>
                   <div class="workflow-steps">
                     <div 
                       class="workflow-step-mini" 
-                      v-for="(step, index) in document.workflow_history" 
+                      v-for="(step, index) in document.signatures_history" 
                       :key="index"
                     >
-                      <div class="step-number">{{ step.step }}</div>
+                      <div class="step-number">{{ index + 1 }}</div>
                       <div class="step-info-mini">
-                        <span class="step-name">{{ step.user_name }}</span>
-                        <span class="step-role">{{ step.role }}</span>
+                        <span class="step-name">{{ step.signer_name || 'Signataire' }}</span>
+                        <span class="step-role">{{ step.step !== undefined ? `Étape ${step.step}` : 'Terminé' }}</span>
                       </div>
                     </div>
                   </div>
@@ -1380,12 +1380,13 @@ const signDocument = async (document) => {
     const documentDetails = await documentSigningService.fetchDocumentPreparation(document.id)
     
     // ÉTAPE 5: Vérifier que l'utilisateur peut signer ce document
-    const canSign = documentSigningService.canUserSignDocument(documentDetails, authStore.user.id)
+    const userId = authStore.user.uid || authStore.user.id
+    const canSign = documentSigningService.canUserSignDocument(documentDetails, userId)
     
     if (!canSign) {
       console.log('❌ Vérification des permissions échouée')
       console.log('❌ Document current_signer:', documentDetails.current_signer)
-      console.log('❌ Utilisateur actuel:', authStore.user.id)
+      console.log('❌ Utilisateur actuel:', userId)
       showNotification('error', 'Non autorisé', 
         'Vous n\'êtes pas autorisé à signer ce document ou le document n\'est pas dans un état signable.')
       return

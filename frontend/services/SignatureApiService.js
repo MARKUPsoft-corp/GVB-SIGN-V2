@@ -203,10 +203,14 @@ export class SignatureApiService {
       const preparations = []
       
       querySnapshot.forEach((doc) => {
-        preparations.push({
-          id: doc.id,
-          ...doc.data()
-        })
+        const data = doc.data()
+        // Filtrer côté client pour éviter les erreurs d'index composite Firestore
+        if (['prepared', 'in_progress', 'pending_signature'].includes(data.status)) {
+          preparations.push({
+            id: doc.id,
+            ...data
+          })
+        }
       })
       
       return { success: true, preparations }
@@ -222,17 +226,21 @@ export class SignatureApiService {
   async getSignedDocuments(organizationId) {
     try {
       const { db } = this.getFirebase()
-      const sigRef = collection(db, 'signatures')
-      const q = query(sigRef, where('organization_id', '==', organizationId))
+      const prepRef = collection(db, 'document_preparations')
+      const q = query(prepRef, where('organization.id', '==', organizationId))
       
       const querySnapshot = await getDocs(q)
       const documents = []
       
       querySnapshot.forEach((doc) => {
-        documents.push({
-          id: doc.id,
-          ...doc.data()
-        })
+        const data = doc.data()
+        // Filtrer côté client pour éviter les erreurs d'index composite Firestore
+        if (data.status === 'completed') {
+          documents.push({
+            id: doc.id,
+            ...data
+          })
+        }
       })
       
       return { success: true, documents }

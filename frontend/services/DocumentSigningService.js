@@ -96,7 +96,7 @@ export class DocumentSigningService {
    * Télécharge le PDF actuel du document (Stockage Firebase ou URL externe)
    */
   async downloadCurrentPDF(documentPreparation) {
-    let pdfUrl = documentPreparation.current_document || documentPreparation.original_document
+    let pdfUrl = documentPreparation.current_document_url || documentPreparation.original_document_url || documentPreparation.current_document || documentPreparation.original_document
 
     if (!pdfUrl) {
       throw new Error('Aucun document PDF disponible')
@@ -162,10 +162,10 @@ export class DocumentSigningService {
    */
   async fetchOrganizationCertificate(organizationId) {
     const { db } = this.getFirebase()
-    const certsRef = collection(db, 'certificates')
+    const certsRef = collection(db, 'organizations', organizationId, 'certificates')
     
     // Rechercher le certificat de l'organisation
-    const q = query(certsRef, where('organizationId', '==', organizationId), where('status', '==', 'active'))
+    const q = query(certsRef, where('is_active', '==', true))
     const querySnapshot = await getDocs(q)
     
     if (querySnapshot.empty) {
@@ -333,8 +333,8 @@ export class DocumentSigningService {
   async hasOrganizationCertificate(organizationId) {
     try {
       const { db } = this.getFirebase()
-      const certsRef = collection(db, 'certificates')
-      const q = query(certsRef, where('organizationId', '==', organizationId), where('status', '==', 'active'))
+      const certsRef = collection(db, 'organizations', organizationId, 'certificates')
+      const q = query(certsRef, where('is_active', '==', true))
       const querySnapshot = await getDocs(q)
       return !querySnapshot.empty
     } catch (error) {
@@ -363,6 +363,7 @@ export class DocumentSigningService {
 
       await updateDoc(docRef, {
         current_document: dataUrl,
+        current_document_url: dataUrl,
         current_step: nextStep,
         status: isComplete ? 'completed' : 'in_progress',
         current_signer: nextSigner,

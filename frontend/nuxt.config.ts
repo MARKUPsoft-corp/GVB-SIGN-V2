@@ -6,7 +6,8 @@ export default defineNuxtConfig({
   // CSS global
   css: [
     'bootstrap/dist/css/bootstrap.min.css',
-    'bootstrap-icons/font/bootstrap-icons.css'
+    'bootstrap-icons/font/bootstrap-icons.css',
+    '~~/assets/styles/main.scss'
   ],
   
   // Configuration de l'application
@@ -48,17 +49,6 @@ export default defineNuxtConfig({
     host: '127.0.0.1'
   },
   
-  // Configuration Vite
-  vite: {
-    css: {
-      preprocessorOptions: {
-        scss: {
-          additionalData: '@use "~/assets/styles/main.scss" as *;'
-        }
-      }
-    }
-  },
-  
   // Configuration d'environnement
   runtimeConfig: {
     public: {
@@ -76,15 +66,6 @@ export default defineNuxtConfig({
     },
     // Cloudinary (Secret - Utilisable uniquement côté serveur)
     cloudinaryApiSecret: process.env.NUXT_CLOUDINARY_API_SECRET
-  },
-  vite: {
-    css: {
-      preprocessorOptions: {
-        scss: {
-          additionalData: '@import "~/assets/styles/main.scss";'
-        }
-      }
-    }
   },
   
   // Configuration du build
