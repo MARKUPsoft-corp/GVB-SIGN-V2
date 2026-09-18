@@ -17,9 +17,9 @@
             <i class="bi bi-pen-fill"></i>
           </div>
           <div class="upload-text">
-            <h3>Déposez votre signature manuscrite ici</h3>
-            <p>ou <span class="link">cliquez pour sélectionner</span></p>
-            <small>Formats acceptés: PNG, JPEG, GIF, BMP, WEBP, SVG • Taille max: 10MB</small>
+            <h3>{{ t('signBase.uploadTitle') }}</h3>
+            <p>{{ t('signImmediately.dropzone.or') }} <span class="link">{{ t('signBase.uploadBrowse') }}</span></p>
+            <small>{{ t('signBase.uploadHint') }}</small>
           </div>
         </label>
       </div>
@@ -29,7 +29,7 @@
           <img :src="signatureImageUrl" alt="Signature" class="signature-preview-img">
           <div class="signature-controls-section">
             <div class="size-slider">
-              <label for="signature-size">Taille: {{ signatureSize }}% de la page</label>
+              <label for="signature-size">{{ t('signBase.sizeLabel') }} {{ signatureSize }}{{ t('signBase.sizeOfPage') }}</label>
               <input 
                 type="range" 
                 id="signature-size" 
@@ -41,7 +41,7 @@
               >
             </div>
             <button @click="removeSignature" class="remove-signature-btn">
-              <i class="bi bi-trash3"></i> Supprimer
+              <i class="bi bi-trash3"></i> {{ t('signBase.removeSignature') }}
             </button>
           </div>
         </div>
@@ -52,7 +52,7 @@
       <!-- Colonne de gauche : Aperçu du document -->
       <div class="document-preview-area">
         <div class="preview-header-section">
-          <h5>Aperçu du document</h5>
+          <h5>{{ locale === 'fr' ? 'Aperçu du document' : 'Document preview' }}</h5>
           <div class="page-navigation">
             <button @click="previousPage" :disabled="currentPage === 1" class="nav-btn">
               <i class="bi bi-chevron-left"></i>
@@ -86,7 +86,7 @@
               />
               <div v-else class="pdf-loading-state">
                 <i class="bi bi-file-earmark-pdf-fill"></i>
-                <p>Chargement du document...</p>
+                <p>{{ locale === 'fr' ? 'Chargement du document...' : 'Loading document...' }}</p>
               </div>
             </div>
 
@@ -124,10 +124,10 @@
         <!-- Indicateurs de position -->
         <div class="position-feedback" v-if="showPositionInfo">
           <span v-if="isDraggingQr">
-            Position QR : X: {{ Math.round(getCurrentPagePosition().x) }}% | Y: {{ Math.round(getCurrentPagePosition().y) }}%
+            {{ locale === 'fr' ? 'Position QR :' : 'QR Position:' }} X: {{ Math.round(getCurrentPagePosition().x) }}% | Y: {{ Math.round(getCurrentPagePosition().y) }}%
           </span>
           <span v-if="isDraggingSignature">
-            Position Signature : X: {{ Math.round(getCurrentPageSignaturePosition().x) }}% | Y: {{ Math.round(getCurrentPageSignaturePosition().y) }}%
+            {{ locale === 'fr' ? 'Position Signature :' : 'Signature Position:' }} X: {{ Math.round(getCurrentPageSignaturePosition().x) }}% | Y: {{ Math.round(getCurrentPageSignaturePosition().y) }}%
           </span>
         </div>
       </div>
@@ -136,7 +136,7 @@
       <div class="controls-panel">
         <!-- Aperçu de toutes les pages -->
         <div class="pages-overview" v-if="totalPages > 1">
-          <h5>Pages du document ({{ totalPages }} pages)</h5>
+          <h5>{{ locale === 'fr' ? 'Pages du document' : 'Document pages' }} ({{ totalPages }} pages)</h5>
           <div class="pages-grid">
             <div 
               v-for="page in Math.min(totalPages, 20)" 
@@ -163,36 +163,36 @@
             </div>
             <div v-if="totalPages > 20" class="more-pages-indicator">
               <i class="bi bi-three-dots"></i>
-              <span>{{ totalPages - 20 }} pages supplémentaires</span>
+              <span>{{ totalPages - 20 }} {{ locale === 'fr' ? 'pages supplémentaires' : 'more pages' }}</span>
             </div>
           </div>
         </div>
 
         <!-- Sélection des pages -->
         <div class="pages-selection-section">
-          <h5>Pages...</h5>
+          <h5>{{ locale === 'fr' ? 'Application des pages' : 'Apply to pages' }}</h5>
           <div class="application-options">
             <label class="option-item">
               <input type="radio" v-model="pageApplication" value="all" />
-              <span>Toutes</span>
+              <span>{{ locale === 'fr' ? 'Toutes' : 'All' }}</span>
             </label>
             <label class="option-item">
               <input type="radio" v-model="pageApplication" value="current" />
-              <span>Actuelle</span>
+              <span>{{ locale === 'fr' ? 'Actuelle' : 'Current' }}</span>
             </label>
             <label class="option-item">
               <input type="radio" v-model="pageApplication" value="custom" />
-              <span>Personnalisée</span>
+              <span>{{ locale === 'fr' ? 'Personnalisée' : 'Custom' }}</span>
             </label>
             <label class="option-item">
               <input type="radio" v-model="pageApplication" value="individual" />
-              <span>Individuelle</span>
+              <span>{{ locale === 'fr' ? 'Individuelle' : 'Individual' }}</span>
             </label>
           </div>
 
           <!-- Sélection personnalisée des pages -->
           <div v-if="pageApplication === 'custom'" class="custom-selection">
-            <p class="selection-hint">Sélectionnez les pages :</p>
+            <p class="selection-hint">{{ locale === 'fr' ? 'Sélectionnez les pages :' : 'Select pages:' }}</p>
             <div class="pages-checkboxes">
               <label v-for="page in totalPages" :key="page" class="page-check">
                 <input 
@@ -222,17 +222,17 @@
                 <span class="page-number">Page {{ page }}</span>
                 <span v-if="hasIndividualPosition(page)" class="status-indicator">
                   <i class="bi bi-check-circle-fill"></i>
-                  Positionnés
+                  {{ locale === 'fr' ? 'Positionnés' : 'Positioned' }}
                 </span>
                 <span v-else-if="currentPage === page" class="status-indicator ready">
                   <i class="bi bi-cursor-fill"></i>
-                  Prêt à positionner
+                  {{ locale === 'fr' ? 'Prêt à positionner' : 'Ready to place' }}
                 </span>
                 <button 
                   v-if="hasIndividualPosition(page)" 
                   @click.stop="removeIndividualPosition(page)"
                   class="remove-position-btn"
-                  title="Supprimer les éléments de cette page"
+                  :title="locale === 'fr' ? 'Supprimer les éléments de cette page' : 'Remove elements from this page'"
                 >
                   <i class="bi bi-x-lg"></i>
                 </button>
@@ -243,7 +243,7 @@
 
         <!-- Contrôles de taille du QR -->
         <div class="qr-size-controls">
-          <h5>Taille du QR Code :</h5>
+          <h5>{{ locale === 'fr' ? 'Taille du QR Code :' : 'QR Code Size:' }}</h5>
           <div class="size-options">
             <button 
               v-for="size in qrSizes" 
@@ -261,12 +261,12 @@
         <div class="actions-panel">
           <button @click="resetPosition" class="action-btn primary">
             <i class="bi bi-arrow-clockwise"></i>
-            Réinitialiser
+            {{ locale === 'fr' ? 'Réinitialiser' : 'Reset' }}
           </button>
           
           <button @click="showFinalPreview" class="action-btn preview" :disabled="isGeneratingPdf">
             <i class="bi" :class="isGeneratingPdf ? 'bi-hourglass-split spin' : 'bi-eye-fill'"></i>
-            {{ isGeneratingPdf ? 'Génération en cours...' : 'Aperçu final' }}
+            {{ isGeneratingPdf ? (locale === 'fr' ? 'Génération en cours...' : 'Generating...') : (locale === 'fr' ? 'Aperçu final' : 'Final preview') }}
           </button>
         </div>
       </div>
@@ -280,8 +280,8 @@
             <i class="bi bi-eye-fill"></i>
           </div>
           <div class="header-text">
-            <h4>Aperçu final du document</h4>
-            <p>Visualisation du document avec QR code et signature</p>
+            <h4>{{ locale === 'fr' ? 'Aperçu final du document' : 'Final document preview' }}</h4>
+            <p>{{ locale === 'fr' ? 'Visualisation du document avec QR code et signature' : 'Preview document with QR code and signature' }}</p>
           </div>
           <button @click="closePreviewModal" class="close-modal-btn">
             <i class="bi bi-x-lg"></i>
@@ -294,8 +294,8 @@
             <div class="loading-content">
               <div class="spinner"></div>
               <div class="loading-text">
-                <h5>Génération du PDF en cours...</h5>
-                <p>Veuillez patienter pendant que nous préparons votre document</p>
+                <h5>{{ locale === 'fr' ? 'Génération du PDF en cours...' : 'Generating PDF...' }}</h5>
+                <p>{{ locale === 'fr' ? 'Veuillez patienter pendant que nous préparons votre document' : 'Please wait while we prepare your document' }}</p>
               </div>
             </div>
           </div>
@@ -307,18 +307,18 @@
                 <i class="bi bi-exclamation-triangle-fill"></i>
               </div>
               <div class="error-text">
-                <h5>Erreur de génération</h5>
+                <h5>{{ locale === 'fr' ? 'Erreur de génération' : 'Generation error' }}</h5>
                 <p>{{ pdfGenerationError }}</p>
                 <div class="error-details" v-if="pdfGenerationError.includes('Erreur:')">
                   <details>
-                    <summary>Détails techniques</summary>
+                    <summary>{{ locale === 'fr' ? 'Détails techniques' : 'Technical details' }}</summary>
                     <pre>{{ pdfGenerationError.split('Erreur:')[1] }}</pre>
                   </details>
                 </div>
               </div>
               <button @click="showFinalPreview" class="retry-btn">
                 <i class="bi bi-arrow-clockwise"></i>
-                Réessayer
+                {{ locale === 'fr' ? 'Réessayer' : 'Retry' }}
               </button>
             </div>
           </div>
@@ -329,7 +329,7 @@
               <iframe 
                 :src="generatedPdfDataUrl" 
                 class="pdf-iframe" 
-                title="Aperçu du document"
+                :title="locale === 'fr' ? 'Aperçu du document' : 'Document preview'"
                 frameborder="0"
               ></iframe>
             </div>
@@ -342,8 +342,8 @@
                 <i class="bi bi-file-earmark-x-fill"></i>
               </div>
               <div class="fallback-text">
-                <h5>Aperçu indisponible</h5>
-                <p>Impossible de générer l'aperçu du document.</p>
+                <h5>{{ locale === 'fr' ? 'Aperçu indisponible' : 'Preview unavailable' }}</h5>
+                <p>{{ locale === 'fr' ? 'Impossible de générer l\'aperçu du document.' : 'Could not generate document preview.' }}</p>
               </div>
             </div>
           </div>
@@ -353,11 +353,11 @@
           <div class="footer-actions">
             <button @click="closePreviewModal" class="footer-btn cancel">
               <i class="bi bi-x-circle"></i>
-              <span>Fermer</span>
+              <span>{{ locale === 'fr' ? 'Fermer' : 'Close' }}</span>
             </button>
             <button @click="confirmAndClosePreview" class="footer-btn confirm" :disabled="!generatedPdfBlob">
               <i class="bi bi-check-circle-fill"></i>
-              <span>Confirmer et continuer</span>
+              <span>{{ locale === 'fr' ? 'Confirmer et continuer' : 'Confirm and continue' }}</span>
             </button>
           </div>
         </div>
@@ -371,6 +371,9 @@ import { ref, reactive, computed, onMounted, onUnmounted, watch, defineEmits, de
 import VuePdfEmbed from 'vue-pdf-embed';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import QRCode from 'qrcode';
+import { useI18n } from '../../composables/useI18n';
+
+const { t, locale } = useI18n();
 
 // Enregistrer le composant VuePdfEmbed
 const VuePdfEmbedComponent = VuePdfEmbed;
@@ -438,11 +441,11 @@ const pageApplication = ref('all');
 const selectedPages = ref([]);
 
 // Tailles du QR code
-const qrSizes = [
-  { name: 'small', label: 'Petit', size: 50 },
-  { name: 'medium', label: 'Moyen', size: 70 },
-  { name: 'large', label: 'Grand', size: 90 }
-];
+const qrSizes = computed(() => [
+  { name: 'small', label: locale.value === 'fr' ? 'Petit' : 'Small', size: 50 },
+  { name: 'medium', label: locale.value === 'fr' ? 'Moyen' : 'Medium', size: 70 },
+  { name: 'large', label: locale.value === 'fr' ? 'Grand' : 'Large', size: 90 }
+]);
 const selectedQrSize = ref('medium');
 
 // Références DOM
@@ -482,11 +485,11 @@ async function handleSignatureUpload(event) {
       // Émettre un événement pour informer le composant parent de l'image de signature
       emit('signature-uploaded', file);
     } else {
-      alert('Format d\'image non supporté. Formats acceptés: PNG, JPEG, JPG, GIF, BMP, WEBP, SVG.');
+      alert(locale.value === 'fr' ? 'Format d\'image non supporté. Formats acceptés: PNG, JPEG, JPG, GIF, BMP, WEBP, SVG.' : 'Unsupported image format. Accepted formats: PNG, JPEG, JPG, GIF, BMP, WEBP, SVG.');
       event.target.value = null;
     }
   } else {
-    alert('Veuillez sélectionner un fichier image valide.');
+    alert(locale.value === 'fr' ? 'Veuillez sélectionner un fichier image valide.' : 'Please select a valid image file.');
     event.target.value = null;
   }
 }

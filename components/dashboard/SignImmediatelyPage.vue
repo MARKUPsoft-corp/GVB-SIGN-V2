@@ -15,18 +15,18 @@
           <div class="header-top-row">
             <div class="page-header">
               <h1 class="page-title">
-                <span class="title-main">Signature</span>
-                <span class="title-accent"> Immédiate</span>
-            </h1>
+                <span class="title-main">{{ t('signImmediately.titleMain') }}</span>
+                <span class="title-accent">{{ t('signImmediately.titleAccent') }}</span>
+              </h1>
               <p class="page-subtitle">
-                Signez vos documents rapidement et en toute sécurité avec votre certificat personnel
+                {{ t('signImmediately.subtitle') }}
               </p>
-          </div>
+            </div>
           </div>
           <div class="header-bottom-row">
             <button @click="goBack" class="mobile-back-btn">
               <i class="bi bi-arrow-left"></i>
-              <span>Retour</span>
+              <span>{{ locale === 'fr' ? 'Retour' : 'Back' }}</span>
             </button>
           </div>
         </div>
@@ -76,10 +76,10 @@
         </div>
         <div class="stepper-info">
           <div class="stepper-title">
-            {{ steps[currentStep - 1]?.title || 'Étape' }}
+            {{ steps[currentStep - 1]?.title || (locale === 'fr' ? 'Étape' : 'Step') }}
           </div>
           <div class="stepper-description">
-            {{ steps[currentStep - 1]?.description || 'Description de l\'étape' }}
+            {{ steps[currentStep - 1]?.description || '' }}
           </div>
         </div>
         <div class="stepper-line stepper-line-right"></div>
@@ -101,8 +101,8 @@
           </div>
           </div>
         <div class="mobile-step-info">
-          <h3 class="mobile-step-title">{{ steps[currentStep - 1]?.title || 'Étape' }}</h3>
-          <p class="mobile-step-description">{{ steps[currentStep - 1]?.description || 'Description de l\'étape' }}</p>
+          <h3 class="mobile-step-title">{{ steps[currentStep - 1]?.title || (locale === 'fr' ? 'Étape' : 'Step') }}</h3>
+          <p class="mobile-step-description">{{ steps[currentStep - 1]?.description || '' }}</p>
         </div>
       </div>
     </div>
@@ -114,9 +114,9 @@
         <div class="step-header">
           <h2>
             <i class="bi bi-cloud-upload-fill"></i>
-            Upload votre document
+            {{ locale === 'fr' ? 'Upload votre document' : 'Upload your document' }}
           </h2>
-          <p>Sélectionnez le document PDF que vous souhaitez signer</p>
+          <p>{{ locale === 'fr' ? 'Sélectionnez le document PDF que vous souhaitez signer' : 'Select the PDF document you wish to sign' }}</p>
         </div>
 
         <div class="upload-section">
@@ -141,9 +141,9 @@
                 <i class="bi bi-file-earmark-pdf-fill"></i>
               </div>
               <div class="upload-text">
-                <h3>Glissez-déposez vos PDF ici</h3>
-                <p>ou <span class="link">cliquez pour sélectionner</span></p>
-                <small>Formats acceptés: PDF uniquement • Taille max: 50MB par fichier</small>
+                <h3>{{ t('signImmediately.dropzone.title') }}</h3>
+                <p>{{ t('signImmediately.dropzone.or') }} <span class="link">{{ t('signImmediately.dropzone.browse') }}</span></p>
+                <small>{{ t('signImmediately.dropzone.hint') }}</small>
               </div>
             </label>
           </div>
@@ -155,7 +155,7 @@
               </div>
               <div class="file-details">
                 <h4>{{ file.name }}</h4>
-                <p>{{ formatFileSize(file.size) }} • {{ file.pages || 'Calcul...' }} page(s)</p>
+                <p>{{ formatFileSize(file.size) }} • {{ file.pages || (locale === 'fr' ? 'Calcul...' : 'Calculating...') }} page(s)</p>
               </div>
               <button @click="removeFile(index)" class="remove-file-btn">
                 <i class="bi bi-x-lg"></i>
@@ -170,7 +170,7 @@
             :disabled="uploadedFiles.length === 0"
             class="action-btn primary"
           >
-            <span>Continuer</span>
+            <span>{{ locale === 'fr' ? 'Continuer' : 'Continue' }}</span>
             <i class="bi bi-arrow-right"></i>
           </button>
         </div>
@@ -181,9 +181,9 @@
         <div class="step-header">
           <h2>
             <i class="bi bi-eye-fill"></i>
-            Aperçu du document
+            {{ locale === 'fr' ? 'Aperçu du document' : 'Document preview' }}
           </h2>
-          <p>Vérifiez le contenu de votre document avant de continuer</p>
+          <p>{{ locale === 'fr' ? 'Vérifiez le contenu de votre document avant de continuer' : 'Review your document before continuing' }}</p>
         </div>
 
         <div class="preview-section">
@@ -203,7 +203,7 @@
               <button 
                 @click.stop="removeFile(index)" 
                 class="tab-close-btn"
-                title="Fermer cet onglet"
+                :title="locale === 'fr' ? 'Fermer cet onglet' : 'Close this tab'"
               >
                 <i class="bi bi-x"></i>
               </button>
@@ -228,14 +228,14 @@
                 <div class="fallback-content">
                   <i class="bi bi-file-earmark-pdf-fill"></i>
                   <h3>{{ uploadedFiles[activeTabIndex]?.name }}</h3>
-                  <p>Cliquez pour télécharger le PDF</p>
+                  <p>{{ locale === 'fr' ? 'Cliquez pour télécharger le PDF' : 'Click to download PDF' }}</p>
                   <a 
                     :href="currentPdfSource" 
                     :download="uploadedFiles[activeTabIndex]?.name"
                     class="download-btn"
                   >
                     <i class="bi bi-download"></i>
-                    Télécharger le PDF
+                    {{ locale === 'fr' ? 'Télécharger le PDF' : 'Download PDF' }}
                   </a>
                   </div>
               </div>
@@ -245,17 +245,17 @@
           <!-- Message si aucun fichier sélectionné -->
           <div v-if="uploadedFiles.length === 0" class="no-files-message">
             <i class="bi bi-file-earmark-pdf"></i>
-            <p>Aucun fichier PDF sélectionné</p>
+            <p>{{ locale === 'fr' ? 'Aucun fichier PDF sélectionné' : 'No PDF file selected' }}</p>
           </div>
         </div>
 
         <div class="step-actions">
           <button @click="previousStep" class="action-btn secondary">
             <i class="bi bi-arrow-left"></i>
-            <span>Retour</span>
+            <span>{{ locale === 'fr' ? 'Retour' : 'Back' }}</span>
           </button>
           <button @click="nextStep" class="action-btn primary">
-            <span>Positionner la signature</span>
+            <span>{{ locale === 'fr' ? 'Positionner la signature' : 'Position signature' }}</span>
             <i class="bi bi-arrow-right"></i>
           </button>
         </div>
@@ -266,9 +266,9 @@
         <div class="step-header compact">
           <h2>
             <i class="bi bi-pen-fill"></i>
-            Positionnement de la signature
+            {{ locale === 'fr' ? 'Positionnement de la signature' : 'Signature positioning' }}
           </h2>
-          <p>Positionnez votre signature et le QR code sur chaque document</p>
+          <p>{{ locale === 'fr' ? 'Positionnez votre signature et le QR code sur chaque document' : 'Position your signature and QR code on each document' }}</p>
           
                       <!-- Indicateur de progrès -->
             <div class="progress-indicator" v-if="uploadedFiles.length > 1">
@@ -367,15 +367,15 @@
         <div class="step-actions">
           <button @click="previousStep" class="action-btn secondary">
             <i class="bi bi-arrow-left"></i>
-            <span>Retour</span>
+            <span>{{ locale === 'fr' ? 'Retour' : 'Back' }}</span>
           </button>
           <button 
             @click="nextStep" 
             :disabled="!allDocumentsProcessed"
             class="action-btn primary"
           >
-            <span v-if="allDocumentsProcessed">Finaliser la signature</span>
-            <span v-else>Traitement en cours... ({{ processedDocuments.size }}/{{ uploadedFiles.length }})</span>
+            <span v-if="allDocumentsProcessed">{{ locale === 'fr' ? 'Finaliser la signature' : 'Finalize signature' }}</span>
+            <span v-else>{{ locale === 'fr' ? 'Traitement en cours...' : 'Processing...' }} ({{ processedDocuments.size }}/{{ uploadedFiles.length }})</span>
             <i class="bi bi-arrow-right"></i>
           </button>
         </div>
@@ -386,9 +386,9 @@
         <div class="step-header">
           <h2>
             <i class="bi bi-pen-fill"></i>
-            Finaliser la signature
+            {{ locale === 'fr' ? 'Finaliser la signature' : 'Finalize signature' }}
           </h2>
-          <p>Vérifiez les informations et procédez à la signature du document</p>
+          <p>{{ locale === 'fr' ? 'Vérifiez les informations et procédez à la signature du document' : 'Review information and proceed with document signing' }}</p>
         </div>
 
         <div class="signature-summary-section">
@@ -562,10 +562,10 @@
         <div class="step-actions">
           <button @click="previousStep" class="action-btn secondary">
             <i class="bi bi-arrow-left"></i>
-            <span>Retour</span>
+            <span>{{ locale === 'fr' ? 'Retour' : 'Back' }}</span>
           </button>
           <button @click="proceedToSignature" class="action-btn primary" :disabled="isSigning">
-            <span v-if="!isSigning">Signer le document</span>
+            <span v-if="!isSigning">{{ locale === 'fr' ? 'Signer le document' : 'Sign document' }}</span>
             <span v-else>{{ signatureProgress }}</span>
             <i v-if="!isSigning" class="bi bi-lightning-charge-fill"></i>
             <i v-else class="bi bi-arrow-clockwise spin"></i>
@@ -578,9 +578,9 @@
         <div class="step-header">
           <h2>
             <i class="bi bi-download"></i>
-            Télécharger vos documents signés
+            {{ locale === 'fr' ? 'Télécharger vos documents signés' : 'Download your signed documents' }}
           </h2>
-          <p>Vos documents ont été signés avec succès. Téléchargez-les individuellement ou en lot.</p>
+          <p>{{ locale === 'fr' ? 'Vos documents ont été signés avec succès. Téléchargez-les individuellement ou en lot.' : 'Your documents have been signed successfully. Download them individually or as a batch.' }}</p>
         </div>
 
         <div class="download-section">
@@ -605,11 +605,11 @@
                 <div class="document-status">
                   <span v-if="result.signed" class="status-badge signed">
                     <i class="bi bi-check-circle-fill"></i>
-                    Signé
+                    {{ t('documents.statsSigned') }}
                   </span>
                   <span v-else class="status-badge processing">
                     <i class="bi bi-arrow-clockwise spin"></i>
-                    En cours
+                    {{ locale === 'fr' ? 'En cours' : 'In progress' }}
                   </span>
             </div>
           </div>
@@ -619,7 +619,7 @@
                 <!-- Barre de progression -->
                 <div class="progress-section">
                   <div class="progress-info">
-                    <span class="progress-label">Progression de signature</span>
+                    <span class="progress-label">{{ locale === 'fr' ? 'Progression de signature' : 'Signing progress' }}</span>
                     <span class="progress-percentage">{{ documentProgress[index] || 0 }}%</span>
                 </div>
                   <div class="progress-bar">
@@ -651,7 +651,7 @@
                   :disabled="!result.signed"
                 >
                   <i :class="result.signed ? 'bi bi-download' : 'bi bi-hourglass-split'"></i>
-                  <span>{{ result.signed ? 'Télécharger' : 'En cours...' }}</span>
+                  <span>{{ result.signed ? (locale === 'fr' ? 'Télécharger' : 'Download') : (locale === 'fr' ? 'En cours...' : 'In progress...') }}</span>
                 </button>
             </div>
             </div>
@@ -665,14 +665,14 @@
               class="download-all-btn"
             >
               <i class="bi bi-download"></i>
-              <span>Télécharger tout (ZIP)</span>
+              <span>{{ t('signImmediately.downloadZip') }}</span>
             </button>
             <button 
               @click="goBackToDocuments"
               class="action-btn secondary"
             >
               <i class="bi bi-arrow-left"></i>
-              <span>Retour aux documents</span>
+              <span>{{ locale === 'fr' ? 'Retour aux documents' : 'Back to documents' }}</span>
             </button>
           </div>
         </div>
@@ -706,6 +706,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, defineEmits } from 'vue'
+import { useI18n } from '../../composables/useI18n'
 import SignBase from './SignBase.vue'
 import { CertificateService } from '../../services/CertificateService.js'
 import { SignatureService } from '../../services/SignatureService.js'
@@ -714,33 +715,35 @@ import { useAuthStore } from '../../stores/auth.js'
 import JSZip from 'jszip'
 import forge from 'node-forge'
 
+const { t, locale } = useI18n()
+
 // Émissions
 const emit = defineEmits(['go-back'])
 
 // État du stepper
 const currentStep = ref(1)
-const steps = [
+const steps = computed(() => [
   {
-    title: 'Documents',
-    description: 'Sélectionnez vos documents PDF'
+    title: t('signImmediately.steps.documents'),
+    description: t('signImmediately.steps.documentsDesc')
   },
   {
-    title: 'Aperçu',
-    description: 'Prévisualisez les documents'
+    title: t('signImmediately.steps.preview'),
+    description: t('signImmediately.steps.previewDesc')
   },
   {
-    title: 'Positionner',
-    description: 'Placez la signature et le QR code'
+    title: t('signImmediately.steps.position'),
+    description: t('signImmediately.steps.positionDesc')
   },
   {
-    title: 'Signer',
-    description: 'Finalisez la signature'
+    title: t('signImmediately.steps.sign'),
+    description: t('signImmediately.steps.signDesc')
   },
   {
-    title: 'Télécharger',
-    description: 'Récupérez vos documents signés'
+    title: t('signImmediately.steps.download'),
+    description: t('signImmediately.steps.downloadDesc')
   }
-]
+])
 
 // État des fichiers PDF
 const uploadedFiles = ref([])

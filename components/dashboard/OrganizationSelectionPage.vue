@@ -5,23 +5,23 @@
       <div class="header-container">
         <div class="header-content">
           <h1 class="section-title">
-            <span class="text-dark">Sélectionnez votre</span>
-            <span class="text-primary-blue"> organisation</span>
+            <span class="text-dark">{{ locale === 'fr' ? 'Sélectionnez votre' : 'Select your' }}</span>
+            <span class="text-primary-blue">{{ locale === 'fr' ? ' organisation' : ' organization' }}</span>
           </h1>
           <p class="section-subtitle">
-            Choisissez l'organisation pour laquelle vous souhaitez accéder au tableau de bord.
+            {{ locale === 'fr' ? 'Choisissez l\'organisation pour laquelle vous souhaitez accéder au tableau de bord.' : 'Choose the organization you want to access the dashboard for.' }}
           </p>
           
           <!-- Boutons d'action rapide -->
           <div class="header-actions">
             <button class="btn-create-org" @click="openCreateOrganizationModal">
               <i class="bi bi-building-add"></i>
-              Créer une organisation
+              {{ locale === 'fr' ? 'Créer une organisation' : 'Create an organization' }}
             </button>
-    <button class="btn-join-org" @click="openJoinOrganizationModal">
-      <i class="bi bi-person-plus"></i>
-      Rejoindre
-    </button>
+            <button class="btn-join-org" @click="openJoinOrganizationModal">
+              <i class="bi bi-person-plus"></i>
+              {{ locale === 'fr' ? 'Rejoindre' : 'Join' }}
+            </button>
           </div>
         </div>
         <div class="header-image">
@@ -46,7 +46,7 @@
             </div>
             <div class="stat-content">
               <h4 class="stat-number">{{ userOrganizations.length }}</h4>
-              <p class="stat-label">Organisations</p>
+              <p class="stat-label">{{ locale === 'fr' ? 'Organisations' : 'Organizations' }}</p>
             </div>
           </div>
         </div>
@@ -57,7 +57,7 @@
             </div>
             <div class="stat-content">
               <h4 class="stat-number">{{ totalMembers }}</h4>
-              <p class="stat-label">Membres total</p>
+              <p class="stat-label">{{ locale === 'fr' ? 'Membres total' : 'Total members' }}</p>
             </div>
           </div>
         </div>
@@ -68,7 +68,7 @@
             </div>
             <div class="stat-content">
               <h4 class="stat-number">{{ totalDocuments }}</h4>
-              <p class="stat-label">Documents</p>
+              <p class="stat-label">{{ locale === 'fr' ? 'Documents' : 'Documents' }}</p>
             </div>
           </div>
         </div>
@@ -79,7 +79,7 @@
             </div>
             <div class="stat-content">
               <h4 class="stat-number">{{ activeOrganizations }}</h4>
-              <p class="stat-label">Actives</p>
+              <p class="stat-label">{{ locale === 'fr' ? 'Actives' : 'Active' }}</p>
             </div>
           </div>
         </div>
@@ -92,11 +92,11 @@
         <div class="col-12">
           <div class="sections-header text-center">
             <h2 class="display-4 fw-bold mb-3 text-dark sections-title">
-              <span class="text-dark">Vos</span> 
-              <span class="text-primary-blue"> Organisations</span>
+              <span class="text-dark">{{ locale === 'fr' ? 'Vos' : 'Your' }}</span> 
+              <span class="text-primary-blue">{{ locale === 'fr' ? ' Organisations' : ' Organizations' }}</span>
             </h2>
             <p class="lead mb-0 text-dark sections-subtitle">
-              Gérez vos organisations et découvrez de nouvelles opportunités.
+              {{ locale === 'fr' ? 'Gérez vos organisations et découvrez de nouvelles opportunités.' : 'Manage your organizations and discover new opportunities.' }}
             </p>
           </div>
         </div>
@@ -111,7 +111,7 @@
             @click="setActiveTab('my-organizations')"
           >
             <i class="bi bi-building me-2"></i>
-            Mes Organisations
+            {{ locale === 'fr' ? 'Mes Organisations' : 'My Organizations' }}
           </button>
           <button 
             class="tab-button" 
@@ -119,7 +119,7 @@
             @click="setActiveTab('search')"
           >
             <i class="bi bi-search me-2"></i>
-            Rechercher
+            {{ locale === 'fr' ? 'Rechercher' : 'Search' }}
           </button>
         </div>
 
@@ -141,7 +141,7 @@
             </div>
             <div class="organization-header-content">
               <h3 class="organization-name">{{ org.name }}</h3>
-              <p class="organization-subtitle">{{ org.role || 'Membre' }}</p>
+              <p class="organization-subtitle">{{ getRoleDisplayName(org.role) }}</p>
             </div>
             <div class="organization-status-badges">
               <!-- Badge de statut d'approbation subtil -->
@@ -156,12 +156,11 @@
           </div>
           
           <div class="card-content">
-            <p class="organization-description">{{ org.description || 'Aucune description' }}</p>
+            <p class="organization-description">{{ org.description || (locale === 'fr' ? 'Aucune description' : 'No description') }}</p>
             
             <div class="organization-meta">
-              <div class="meta-item" @mouseenter="showOrganizationMembers(org, $event)" @mouseleave="closeMembersModal" @click="showOrganizationMembers(org, $event)" style="cursor: pointer;" title="Voir les membres">
+              <div class="meta-item" @mouseenter="showOrganizationMembers(org, $event)" @mouseleave="closeMembersModal" @click="showOrganizationMembers(org, $event)" style="cursor: pointer;" :title="locale === 'fr' ? 'Voir les membres' : 'View members'">
                 <i class="bi bi-people"></i>
-                <!-- <span v-if="org.member_count !== undefined">{{ org.member_count }} membres</span> -->
               </div>
               <div class="meta-item">
                 <i class="bi bi-file-earmark-text"></i>
@@ -175,13 +174,13 @@
               <span class="role-badge" :class="org.role">{{ getRoleDisplayName(org.role) }}</span>
             </div>
             <div class="organization-actions">
-              <button class="btn btn-sm btn-outline-primary" @click.stop="viewOrganizationDetails(org)" @mouseenter="showOrganizationInfo(org, $event)" @mouseleave="closeOrganizationInfo" title="Détails">
+              <button class="btn btn-sm btn-outline-primary" @click.stop="viewOrganizationDetails(org)" @mouseenter="showOrganizationInfo(org, $event)" @mouseleave="closeOrganizationInfo" :title="locale === 'fr' ? 'Détails' : 'Details'">
                 <i class="bi bi-eye"></i>
               </button>
-              <button v-if="org.role === 'chief' || org.role === 'chef'" class="btn btn-sm btn-outline-danger" @click.stop="deleteOrganization(org)" title="Supprimer l'organisation">
+              <button v-if="org.role === 'chief' || org.role === 'chef'" class="btn btn-sm btn-outline-danger" @click.stop="deleteOrganization(org)" :title="locale === 'fr' ? 'Supprimer l\'organisation' : 'Delete organization'">
                 <i class="bi bi-trash"></i>
               </button>
-              <button v-else class="btn btn-sm btn-outline-danger" @click.stop="leaveOrganization(org)" title="Quitter l'organisation">
+              <button v-else class="btn btn-sm btn-outline-danger" @click.stop="leaveOrganization(org)" :title="locale === 'fr' ? 'Quitter l\'organisation' : 'Leave organization'">
                 <i class="bi bi-box-arrow-right"></i>
               </button>
             </div>
@@ -195,10 +194,9 @@
           <div class="no-org-icon">
             <i class="bi bi-building"></i>
           </div>
-          <h3 class="no-org-title">Aucune organisation trouvée</h3>
+          <h3 class="no-org-title">{{ locale === 'fr' ? 'Aucune organisation trouvée' : 'No organization found' }}</h3>
           <p class="no-org-description">
-            Vous n'appartenez à aucune organisation pour le moment. 
-            Créez-en une ou rejoignez une organisation existante.
+            {{ locale === 'fr' ? 'Vous n\'appartenez à aucune organisation pour le moment. Créez-en une ou rejoignez une organisation existante.' : 'You do not belong to any organization yet. Create one or join an existing organization.' }}
           </p>
             </div>
           </div>
@@ -214,7 +212,7 @@
                 <input 
                   type="text" 
                   class="search-input" 
-                  placeholder="Rechercher une organisation..."
+                  :placeholder="locale === 'fr' ? 'Rechercher une organisation...' : 'Search an organization...'"
                   v-model="searchQuery"
                   @input="searchOrganizations"
                 >
@@ -244,7 +242,7 @@
                   </div>
                   <div class="organization-header-content">
                     <h3 class="organization-name">{{ org.name }}</h3>
-                    <p class="organization-subtitle">{{ org.organization_type || 'Organisation' }}</p>
+                    <p class="organization-subtitle">{{ org.organization_type || (locale === 'fr' ? 'Organisation' : 'Organization') }}</p>
                   </div>
                   <div class="organization-status-badges">
                     <!-- Badge de statut d'approbation subtil -->
@@ -259,12 +257,11 @@
                 </div>
                 
                 <div class="card-content">
-                  <p class="organization-description">{{ org.description || 'Aucune description' }}</p>
+                  <p class="organization-description">{{ org.description || (locale === 'fr' ? 'Aucune description' : 'No description') }}</p>
                   
                   <div class="organization-meta">
                     <div class="meta-item">
                       <i class="bi bi-people"></i>
-                      <!-- <span v-if="org.member_count !== undefined">{{ org.member_count }} membres</span> -->
                     </div>
                     <div class="meta-item">
                       <i class="bi bi-calendar"></i>
@@ -275,13 +272,13 @@
                 
                 <div class="card-footer">
                   <div class="organization-info">
-                    <span class="organization-sector">{{ org.sector || 'Secteur non renseigné' }}</span>
+                    <span class="organization-sector">{{ org.sector || (locale === 'fr' ? 'Secteur non renseigné' : 'Unspecified sector') }}</span>
                   </div>
                   <div class="organization-actions">
-                    <button class="btn btn-sm btn-outline-primary" @click="viewOrganizationDetails(org)" @mouseenter="showOrganizationInfo(org, $event)" @mouseleave="closeOrganizationInfo" title="Détails">
+                    <button class="btn btn-sm btn-outline-primary" @click="viewOrganizationDetails(org)" @mouseenter="showOrganizationInfo(org, $event)" @mouseleave="closeOrganizationInfo" :title="locale === 'fr' ? 'Détails' : 'Details'">
                       <i class="bi bi-eye"></i>
                     </button>
-                    <button class="btn btn-sm btn-primary" @click="requestToJoin(org, $event)" title="Demander à rejoindre">
+                    <button class="btn btn-sm btn-primary" @click="requestToJoin(org, $event)" :title="locale === 'fr' ? 'Demander à rejoindre' : 'Request to join'">
                       <i class="bi bi-person-plus"></i>
             </button>
           </div>
@@ -295,13 +292,13 @@
                 <div class="no-results-icon">
                   <i class="bi bi-search"></i>
                 </div>
-                <h3 class="no-results-title">Aucune organisation trouvée</h3>
+                <h3 class="no-results-title">{{ locale === 'fr' ? 'Aucune organisation trouvée' : 'No organization found' }}</h3>
                 <p class="no-results-description">
-                  Aucune organisation ne correspond à votre recherche "{{ searchQuery }}".
+                  {{ locale === 'fr' ? `Aucune organisation ne correspond à votre recherche "${searchQuery}".` : `No organization matches your search "${searchQuery}".` }}
                 </p>
                 <button class="btn btn-outline-primary" @click="clearSearch">
                   <i class="bi bi-arrow-left me-2"></i>
-                  Effacer la recherche
+                  {{ locale === 'fr' ? 'Effacer la recherche' : 'Clear search' }}
                 </button>
               </div>
             </div>
@@ -312,9 +309,9 @@
                 <div class="search-welcome-icon">
                   <i class="bi bi-search"></i>
                 </div>
-                <h3 class="search-welcome-title">Découvrez de nouvelles organisations</h3>
+                <h3 class="search-welcome-title">{{ locale === 'fr' ? 'Découvrez de nouvelles organisations' : 'Discover new organizations' }}</h3>
                 <p class="search-welcome-description">
-                  Utilisez la barre de recherche ci-dessus pour trouver des organisations qui vous intéressent.
+                  {{ locale === 'fr' ? 'Utilisez la barre de recherche ci-dessus pour trouver des organisations qui vous intéressent.' : 'Use the search bar above to find organizations that interest you.' }}
                 </p>
               </div>
             </div>
@@ -322,7 +319,7 @@
             <!-- Indicateur de chargement -->
             <div v-if="isLoading" class="loading-indicator">
               <div class="spinner"></div>
-              <p>Recherche en cours...</p>
+              <p>{{ locale === 'fr' ? 'Recherche en cours...' : 'Searching...' }}</p>
             </div>
           </div>
         </div>
@@ -357,7 +354,7 @@
               <i class="bi bi-person-circle"></i>
             </div>
             <div class="member-info">
-              <div class="member-name">{{ member.displayName || member.name || member.email || 'Utilisateur' }}</div>
+              <div class="member-name">{{ member.displayName || member.name || member.email || (locale === 'fr' ? 'Utilisateur' : 'User') }}</div>
               <div class="member-email text-muted small">{{ member.email }}</div>
             </div>
             <div class="member-role">
@@ -370,7 +367,7 @@
         
         <div v-else class="no-members">
           <i class="bi bi-people text-muted"></i>
-          <p class="text-muted">Aucun membre</p>
+          <p class="text-muted">{{ locale === 'fr' ? 'Aucun membre' : 'No members' }}</p>
         </div>
       </div>
     </div>
@@ -395,50 +392,49 @@
           <div class="info-item">
             <i class="bi bi-envelope me-2"></i>
             <span class="info-label">Email:</span>
-            <span class="info-value">{{ currentOrganizationInfo?.email || 'Non renseigné' }}</span>
+            <span class="info-value">{{ currentOrganizationInfo?.email || (locale === 'fr' ? 'Non renseigné' : 'Not provided') }}</span>
           </div>
           
           <div class="info-item">
             <i class="bi bi-telephone me-2"></i>
-            <span class="info-label">Téléphone:</span>
-            <span class="info-value">{{ currentOrganizationInfo?.phone || 'Non renseigné' }}</span>
+            <span class="info-label">{{ locale === 'fr' ? 'Téléphone :' : 'Phone:' }}</span>
+            <span class="info-value">{{ currentOrganizationInfo?.phone || (locale === 'fr' ? 'Non renseigné' : 'Not provided') }}</span>
           </div>
           
           <div class="info-item">
             <i class="bi bi-geo-alt me-2"></i>
-            <span class="info-label">Adresse:</span>
-            <span class="info-value">{{ currentOrganizationInfo?.address || 'Non renseignée' }}</span>
+            <span class="info-label">{{ locale === 'fr' ? 'Adresse :' : 'Address:' }}</span>
+            <span class="info-value">{{ currentOrganizationInfo?.address || (locale === 'fr' ? 'Non renseignée' : 'Not provided') }}</span>
           </div>
           
           <div class="info-item">
             <i class="bi bi-globe me-2"></i>
-            <span class="info-label">Site web:</span>
-            <span class="info-value">{{ currentOrganizationInfo?.website || 'Non renseigné' }}</span>
+            <span class="info-label">{{ locale === 'fr' ? 'Site web :' : 'Website:' }}</span>
+            <span class="info-value">{{ currentOrganizationInfo?.website || (locale === 'fr' ? 'Non renseigné' : 'Not provided') }}</span>
           </div>
           
           <div class="info-item">
             <i class="bi bi-tag me-2"></i>
             <span class="info-label">Type:</span>
-            <span class="info-value">{{ currentOrganizationInfo?.organization_type || 'Non renseigné' }}</span>
+            <span class="info-value">{{ currentOrganizationInfo?.organization_type || (locale === 'fr' ? 'Non renseigné' : 'Not provided') }}</span>
           </div>
           
           <div class="info-item">
             <i class="bi bi-briefcase me-2"></i>
-            <span class="info-label">Secteur:</span>
-            <span class="info-value">{{ currentOrganizationInfo?.sector || 'Non renseigné' }}</span>
+            <span class="info-label">{{ locale === 'fr' ? 'Secteur :' : 'Sector:' }}</span>
+            <span class="info-value">{{ currentOrganizationInfo?.sector || (locale === 'fr' ? 'Non renseigné' : 'Not provided') }}</span>
           </div>
           
           <div class="info-item">
             <i class="bi bi-people me-2"></i>
-            <span class="info-label">Membres:</span>
-            <!-- <span class="info-value">{{ currentOrganizationInfo?.member_count || 0 }}</span> -->
+            <span class="info-label">{{ locale === 'fr' ? 'Membres :' : 'Members:' }}</span>
           </div>
           
           <div class="info-item">
             <i class="bi bi-check-circle me-2"></i>
-            <span class="info-label">Statut:</span>
+            <span class="info-label">{{ locale === 'fr' ? 'Statut :' : 'Status:' }}</span>
             <span class="info-value" :class="currentOrganizationInfo?.is_active ? 'text-success' : 'text-danger'">
-              {{ currentOrganizationInfo?.is_active ? 'Active' : 'Inactive' }}
+              {{ currentOrganizationInfo?.is_active ? (locale === 'fr' ? 'Active' : 'Active') : (locale === 'fr' ? 'Inactive' : 'Inactive') }}
             </span>
           </div>
         </div>
@@ -454,14 +450,14 @@
         <div class="popup-icon">
           <i class="bi bi-person-badge-fill"></i>
         </div>
-        <h6 class="popup-title">Choisir votre rôle dans {{ organizationToJoin?.name }}</h6>
+        <h6 class="popup-title">{{ locale === 'fr' ? 'Choisir votre rôle dans' : 'Choose your role in' }} {{ organizationToJoin?.name }}</h6>
         <button class="popup-close" @click="closeRoleSelection">
           <i class="bi bi-x"></i>
         </button>
       </div>
       
       <div class="popup-body">
-        <p class="popup-message">Sélectionnez le rôle que vous souhaitez avoir dans cette organisation :</p>
+        <p class="popup-message">{{ locale === 'fr' ? 'Sélectionnez le rôle que vous souhaitez avoir dans cette organisation :' : 'Select the role you wish to have in this organization:' }}</p>
         
         <div class="role-dropdown-container">
           <select 
@@ -488,11 +484,11 @@
       
       <div class="popup-actions">
         <button class="btn btn-sm btn-outline-secondary" @click="closeRoleSelection">
-          Annuler
+          {{ locale === 'fr' ? 'Annuler' : 'Cancel' }}
         </button>
         <button class="btn btn-sm btn-primary" @click="confirmRoleSelection" :disabled="!selectedRole">
           <i class="bi bi-send me-1"></i>
-          Envoyer la demande
+          {{ locale === 'fr' ? 'Envoyer la demande' : 'Send request' }}
         </button>
       </div>
     </div>
@@ -506,23 +502,23 @@
         <div class="popup-icon">
           <i class="bi bi-people-fill"></i>
         </div>
-        <h6 class="popup-title">Rejoindre {{ organizationToJoin?.name }} ?</h6>
+        <h6 class="popup-title">{{ locale === 'fr' ? 'Rejoindre' : 'Join' }} {{ organizationToJoin?.name }} ?</h6>
         <button class="popup-close" @click="closeJoinConfirmation">
           <i class="bi bi-x"></i>
         </button>
       </div>
       
       <div class="popup-body">
-        <p class="popup-message">Vous allez faire une demande d'adhésion à cette organisation. Vous devrez choisir le rôle que vous souhaitez avoir.</p>
+        <p class="popup-message">{{ locale === 'fr' ? 'Vous allez faire une demande d\'adhésion à cette organisation. Vous devrez choisir le rôle que vous souhaitez avoir.' : 'You are about to request to join this organization. You will need to choose the role you wish to have.' }}</p>
       </div>
       
       <div class="popup-actions">
         <button class="btn btn-sm btn-outline-secondary" @click="closeJoinConfirmation">
-          Annuler
+          {{ locale === 'fr' ? 'Annuler' : 'Cancel' }}
         </button>
         <button class="btn btn-sm btn-primary" @click="confirmJoinOrganization">
           <i class="bi bi-arrow-right me-1"></i>
-          Continuer
+          {{ locale === 'fr' ? 'Continuer' : 'Continue' }}
         </button>
       </div>
     </div>
@@ -550,7 +546,7 @@
       <div class="organization-modal-header">
         <h5>
           <i class="bi bi-building-add"></i>
-          Créer une Organisation
+          {{ locale === 'fr' ? 'Créer une Organisation' : 'Create an Organization' }}
         </h5>
         <button class="close-btn" @click="closeCreateOrganizationModal">
           <i class="bi bi-x-lg"></i>
@@ -561,13 +557,13 @@
           <div class="form-group">
             <label for="orgName">
               <i class="bi bi-building"></i>
-              Nom de l'organisation
+              {{ locale === 'fr' ? 'Nom de l\'organisation' : 'Organization name' }}
             </label>
             <input 
               type="text" 
               id="orgName" 
               v-model="newOrganization.name" 
-              placeholder="Entrez le nom de votre organisation"
+              :placeholder="locale === 'fr' ? 'Entrez le nom de votre organisation' : 'Enter your organization name'"
               required
             >
           </div>
@@ -580,7 +576,7 @@
             <textarea 
               id="orgDescription" 
               v-model="newOrganization.description" 
-              placeholder="Décrivez votre organisation..."
+              :placeholder="locale === 'fr' ? 'Décrivez votre organisation...' : 'Describe your organization...'"
               rows="3"
             ></textarea>
           </div>
@@ -588,7 +584,7 @@
           <div class="form-group">
             <label for="orgEmail">
               <i class="bi bi-envelope"></i>
-              Email de contact
+              {{ locale === 'fr' ? 'Email de contact' : 'Contact email' }}
             </label>
             <input 
               type="email" 
@@ -602,7 +598,7 @@
           <div class="form-group">
             <label for="orgPhone">
               <i class="bi bi-telephone"></i>
-              Téléphone
+              {{ locale === 'fr' ? 'Téléphone' : 'Phone' }}
             </label>
             <input 
               type="tel" 
@@ -615,12 +611,12 @@
           <div class="form-group">
             <label for="orgAddress">
               <i class="bi bi-geo-alt"></i>
-              Adresse
+              {{ locale === 'fr' ? 'Adresse' : 'Address' }}
             </label>
             <textarea 
               id="orgAddress" 
               v-model="newOrganization.address" 
-              placeholder="Adresse complète de l'organisation..."
+              :placeholder="locale === 'fr' ? 'Adresse complète de l\'organisation...' : 'Full organization address...'"
               rows="2"
             ></textarea>
           </div>
@@ -628,7 +624,7 @@
           <div class="form-group">
             <label for="orgWebsite">
               <i class="bi bi-globe"></i>
-              Site web
+              {{ locale === 'fr' ? 'Site web' : 'Website' }}
             </label>
             <input 
               type="url" 
@@ -641,40 +637,40 @@
           <div class="form-group">
             <label for="orgType">
               <i class="bi bi-tags"></i>
-              Type d'organisation
+              {{ locale === 'fr' ? 'Type d\'organisation' : 'Organization type' }}
             </label>
             <select id="orgType" v-model="newOrganization.organization_type" required>
-              <option value="">Sélectionnez un type</option>
-              <option value="entreprise">Entreprise</option>
-              <option value="association">Association</option>
-              <option value="administration">Administration</option>
-              <option value="collectivite">Collectivité</option>
-              <option value="autre">Autre</option>
+              <option value="">{{ locale === 'fr' ? 'Sélectionnez un type' : 'Select a type' }}</option>
+              <option value="entreprise">{{ locale === 'fr' ? 'Entreprise' : 'Company' }}</option>
+              <option value="association">{{ locale === 'fr' ? 'Association' : 'Nonprofit / Association' }}</option>
+              <option value="administration">{{ locale === 'fr' ? 'Administration' : 'Administration' }}</option>
+              <option value="collectivite">{{ locale === 'fr' ? 'Collectivité' : 'Local authority' }}</option>
+              <option value="autre">{{ locale === 'fr' ? 'Autre' : 'Other' }}</option>
             </select>
           </div>
 
           <div class="form-group">
             <label for="orgSector">
               <i class="bi bi-briefcase"></i>
-              Secteur d'activité
+              {{ locale === 'fr' ? 'Secteur d\'activité' : 'Industry / Sector' }}
             </label>
             <input 
               type="text" 
               id="orgSector" 
               v-model="newOrganization.sector" 
-              placeholder="Ex: Technologies, Santé, Éducation..."
+              :placeholder="locale === 'fr' ? 'Ex: Technologies, Santé, Éducation...' : 'E.g. Technology, Healthcare, Education...'"
             >
           </div>
 
           <div class="form-actions">
             <button type="button" class="btn-cancel" @click="closeCreateOrganizationModal">
               <i class="bi bi-x-circle"></i>
-              Annuler
+              {{ locale === 'fr' ? 'Annuler' : 'Cancel' }}
             </button>
             <button type="submit" class="btn-create" :disabled="isCreatingOrganization">
               <i class="bi bi-check-circle" v-if="!isCreatingOrganization"></i>
               <i class="bi bi-hourglass-split" v-else></i>
-              {{ isCreatingOrganization ? 'Création...' : 'Créer l\'organisation' }}
+              {{ isCreatingOrganization ? (locale === 'fr' ? 'Création...' : 'Creating...') : (locale === 'fr' ? 'Créer l\'organisation' : 'Create organization') }}
             </button>
           </div>
         </form>
@@ -688,7 +684,7 @@
       <div class="organization-modal-header">
         <h5>
           <i class="bi bi-person-plus"></i>
-          Rejoindre une Organisation
+          {{ locale === 'fr' ? 'Rejoindre une Organisation' : 'Join an Organization' }}
         </h5>
         <button class="close-btn" @click="closeJoinOrganizationModal">
           <i class="bi bi-x-lg"></i>
@@ -699,31 +695,31 @@
           <div class="form-group">
             <label for="inviteCode">
               <i class="bi bi-key"></i>
-              Code d'invitation
+              {{ locale === 'fr' ? 'Code d\'invitation' : 'Invitation code' }}
             </label>
             <input 
               type="text" 
               id="inviteCode" 
               v-model="inviteCode" 
               class="form-control" 
-              placeholder="Entrez le code d'invitation"
+              :placeholder="locale === 'fr' ? 'Entrez le code d\'invitation' : 'Enter invitation code'"
               required
             >
             <small class="form-help">
               <i class="bi bi-info-circle"></i>
-              Saisissez le code d'invitation fourni par l'administrateur de l'organisation
+              {{ locale === 'fr' ? 'Saisissez le code d\'invitation fourni par l\'administrateur de l\'organisation' : 'Enter the invitation code provided by the organization administrator' }}
             </small>
           </div>
 
           <div class="form-actions">
             <button type="button" class="btn-cancel" @click="closeJoinOrganizationModal">
               <i class="bi bi-x-circle"></i>
-              Annuler
+              {{ locale === 'fr' ? 'Annuler' : 'Cancel' }}
             </button>
             <button type="submit" class="btn-create" :disabled="isJoiningOrganization">
               <i class="bi bi-check-circle" v-if="!isJoiningOrganization"></i>
               <i class="bi bi-hourglass-split" v-else></i>
-              {{ isJoiningOrganization ? 'Rejoindre...' : 'Rejoindre l\'organisation' }}
+              {{ isJoiningOrganization ? (locale === 'fr' ? 'Rejoindre...' : 'Joining...') : (locale === 'fr' ? 'Rejoindre l\'organisation' : 'Join organization') }}
             </button>
           </div>
         </form>
@@ -737,6 +733,9 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useAuthStore } from '../../stores/auth'
 import { useRouter } from 'vue-router'
 import OrganizationApiService from '../../services/OrganizationApiService'
+import { useI18n } from '../../composables/useI18n'
+
+const { t, locale } = useI18n()
 
 // Store d'authentification et router
 const authStore = useAuthStore()
@@ -777,12 +776,32 @@ const notificationData = ref({ type: '', title: '', message: '' })
 // Gestion de la sélection de rôle
 const showRoleSelectionPopup = ref(false)
 const selectedRole = ref('secretaire') // Rôle par défaut
-const availableRoles = ref([
-  { value: 'secretaire', label: 'Secrétaire', description: 'Gestion administrative et secrétariat' },
-  { value: 'chef', label: 'Chef', description: 'Responsable d\'équipe ou de service' },
-  { value: 'chef+1', label: 'Chef+1', description: 'Responsable de niveau supérieur' },
-  { value: 'chef+2', label: 'Chef+2', description: 'Responsable de niveau élevé' },
-  { value: 'chef+n', label: 'Chef+n', description: 'Responsable de niveau exécutif' }
+const availableRoles = computed(() => [
+  { 
+    value: 'secretaire', 
+    label: locale.value === 'fr' ? 'Secrétaire' : 'Secretary', 
+    description: locale.value === 'fr' ? 'Gestion administrative et secrétariat' : 'Administrative management and secretariat' 
+  },
+  { 
+    value: 'chef', 
+    label: locale.value === 'fr' ? 'Chef' : 'Lead / Head', 
+    description: locale.value === 'fr' ? 'Responsable d\'équipe ou de service' : 'Team or department lead' 
+  },
+  { 
+    value: 'chef+1', 
+    label: 'Chef+1', 
+    description: locale.value === 'fr' ? 'Responsable de niveau supérieur' : 'Senior management level' 
+  },
+  { 
+    value: 'chef+2', 
+    label: 'Chef+2', 
+    description: locale.value === 'fr' ? 'Responsable de niveau élevé' : 'High executive management' 
+  },
+  { 
+    value: 'chef+n', 
+    label: 'Chef+n', 
+    description: locale.value === 'fr' ? 'Responsable de niveau exécutif' : 'Executive board level' 
+  }
 ])
 
 // Variables pour les modales d'organisation
@@ -851,7 +870,7 @@ const selectOrganization = (organization) => {
   
   // Vérifier si l'organisation est approuvée
   if (organization.approval_status !== 'approved') {
-    displayNotification('warning', 'Accès restreint', 'Cette organisation est en attente d\'approbation. Vous ne pouvez pas y accéder pour le moment.')
+    displayNotification('warning', locale.value === 'fr' ? 'Accès restreint' : 'Access restricted', locale.value === 'fr' ? 'Cette organisation est en attente d\'approbation. Vous ne pouvez pas y accéder pour le moment.' : 'This organization is pending approval. You cannot access it at this time.')
     return
   }
   
@@ -870,7 +889,7 @@ const selectOrganization = (organization) => {
 
 // Obtenir le nom d'affichage du rôle
 const getRoleDisplayName = (role) => {
-  const roleNames = {
+  const roleNamesFr = {
     'admin': 'Administrateur',
     'chief': 'Chef (Propriétaire)',
     'chef': 'Chef',
@@ -880,6 +899,17 @@ const getRoleDisplayName = (role) => {
     'secretaire': 'Secrétaire',
     'member': 'Membre'
   }
+  const roleNamesEn = {
+    'admin': 'Administrator',
+    'chief': 'Lead (Owner)',
+    'chef': 'Lead',
+    'chef+1': 'Lead+1',
+    'chef+2': 'Lead+2',
+    'chef+n': 'Lead+n',
+    'secretaire': 'Secretary',
+    'member': 'Member'
+  }
+  const roleNames = locale.value === 'fr' ? roleNamesFr : roleNamesEn
   return roleNames[role] || role
 }
 
@@ -897,11 +927,11 @@ const getStatusClass = (org) => {
 // Obtenir le texte du statut d'approbation
 const getApprovalStatusText = (approvalStatus) => {
   const statusTexts = {
-    'approved': 'Approuvée',
-    'pending': 'En attente',
-    'rejected': 'Rejetée'
+    'approved': locale.value === 'fr' ? 'Approuvée' : 'Approved',
+    'pending': locale.value === 'fr' ? 'En attente' : 'Pending',
+    'rejected': locale.value === 'fr' ? 'Rejetée' : 'Rejected'
   }
-  return statusTexts[approvalStatus] || 'En attente'
+  return statusTexts[approvalStatus] || (locale.value === 'fr' ? 'En attente' : 'Pending')
 }
 
 // Actions sur les organisations

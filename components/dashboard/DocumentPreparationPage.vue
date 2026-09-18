@@ -33,18 +33,18 @@
           <div class="header-top-row">
             <div class="page-header">
               <h1 class="page-title">
-                <span class="title-main">Préparation</span>
-                <span class="title-accent"> de Document</span>
+                <span class="title-main">{{ t('documentPreparation.titleMain') }}</span>
+                <span class="title-accent">{{ t('documentPreparation.titleAccent') }}</span>
               </h1>
               <p class="page-subtitle">
-                Préparez votre document pour la signature hiérarchique et soumettez-le au chef
+                {{ t('documentPreparation.subtitle') }}
               </p>
             </div>
           </div>
           <div class="header-bottom-row">
             <button @click="goBack" class="mobile-back-btn">
               <i class="bi bi-arrow-left"></i>
-              <span>Retour</span>
+              <span>{{ t('common.back') }}</span>
             </button>
           </div>
         </div>
@@ -94,10 +94,10 @@
         </div>
         <div class="stepper-info">
           <div class="stepper-title">
-            {{ steps[currentStep - 1]?.title || 'Étape' }}
+            {{ steps[currentStep - 1]?.title || (locale === 'fr' ? 'Étape' : 'Step') }}
           </div>
           <div class="stepper-description">
-            {{ steps[currentStep - 1]?.description || 'Description de l\'étape' }}
+            {{ steps[currentStep - 1]?.description || '' }}
           </div>
         </div>
         <div class="stepper-line stepper-line-right"></div>
@@ -119,8 +119,8 @@
           </div>
         </div>
         <div class="mobile-step-info">
-          <h3 class="mobile-step-title">{{ steps[currentStep - 1]?.title || 'Étape' }}</h3>
-          <p class="mobile-step-description">{{ steps[currentStep - 1]?.description || 'Description de l\'étape' }}</p>
+          <h3 class="mobile-step-title">{{ steps[currentStep - 1]?.title || (locale === 'fr' ? 'Étape' : 'Step') }}</h3>
+          <p class="mobile-step-description">{{ steps[currentStep - 1]?.description || '' }}</p>
         </div>
       </div>
     </div>
@@ -132,9 +132,9 @@
         <div class="step-header">
           <h2>
             <i class="bi bi-cloud-upload-fill"></i>
-            Upload votre document
+            {{ locale === 'fr' ? 'Upload votre document' : 'Upload your document' }}
           </h2>
-          <p>Sélectionnez le document PDF que vous souhaitez préparer pour la signature</p>
+          <p>{{ locale === 'fr' ? 'Sélectionnez le document PDF que vous souhaitez préparer pour la signature' : 'Select the PDF document you want to prepare for signing' }}</p>
         </div>
 
         <div class="upload-section">
@@ -160,9 +160,9 @@
                 <i class="bi bi-file-earmark-pdf-fill"></i>
               </div>
               <div class="upload-text">
-                <h3>Glissez-déposez vos PDF ici</h3>
-                <p>ou <span class="link">cliquez pour sélectionner</span></p>
-                <small>Formats acceptés: PDF uniquement • Taille max: 50MB par fichier</small>
+                <h3>{{ t('signImmediately.dropzone.title') }}</h3>
+                <p>{{ t('signImmediately.dropzone.or') }} <span class="link">{{ t('signImmediately.dropzone.browse') }}</span></p>
+                <small>{{ t('signImmediately.dropzone.hint') }}</small>
               </div>
             </div>
           </div>
@@ -174,7 +174,7 @@
               </div>
               <div class="file-details">
                 <h4>{{ file.name }}</h4>
-                <p>{{ formatFileSize(file.size) }} • {{ file.pages || 'Calcul...' }} page(s)</p>
+                <p>{{ formatFileSize(file.size) }} • {{ file.pages || (locale === 'fr' ? 'Calcul...' : 'Calculating...') }} page(s)</p>
               </div>
               <button @click="removeFile(index)" class="remove-file-btn">
                 <i class="bi bi-x-lg"></i>
@@ -189,7 +189,7 @@
             :disabled="uploadedFiles.length === 0"
             class="action-btn primary"
           >
-            <span>Continuer</span>
+            <span>{{ locale === 'fr' ? 'Continuer' : 'Continue' }}</span>
             <i class="bi bi-arrow-right"></i>
           </button>
         </div>
@@ -200,9 +200,9 @@
         <div class="step-header">
           <h2>
             <i class="bi bi-eye-fill"></i>
-            Aperçu du document
+            {{ locale === 'fr' ? 'Aperçu du document' : 'Document preview' }}
           </h2>
-          <p>Vérifiez le contenu de votre document avant de continuer</p>
+          <p>{{ locale === 'fr' ? 'Vérifiez le contenu de votre document avant de continuer' : 'Check your document content before continuing' }}</p>
         </div>
 
         <div class="preview-section">
@@ -222,7 +222,7 @@
               <button 
                 @click.stop="removeFile(index)" 
                 class="tab-close-btn"
-                title="Fermer cet onglet"
+                :title="locale === 'fr' ? 'Fermer cet onglet' : 'Close this tab'"
               >
                 <i class="bi bi-x"></i>
               </button>
@@ -247,14 +247,14 @@
                 <div class="fallback-content">
                   <i class="bi bi-file-earmark-pdf-fill"></i>
                   <h3>{{ uploadedFiles[activeTabIndex]?.name }}</h3>
-                  <p>Cliquez pour télécharger le PDF</p>
+                  <p>{{ locale === 'fr' ? 'Cliquez pour télécharger le PDF' : 'Click to download PDF' }}</p>
                   <a 
                     :href="currentPdfSource" 
                     :download="uploadedFiles[activeTabIndex]?.name"
                     class="download-btn"
                   >
                     <i class="bi bi-download"></i>
-                    Télécharger le PDF
+                    {{ locale === 'fr' ? 'Télécharger le PDF' : 'Download PDF' }}
                   </a>
                 </div>
               </div>
@@ -264,17 +264,17 @@
           <!-- Message si aucun fichier sélectionné -->
           <div v-if="uploadedFiles.length === 0" class="no-files-message">
             <i class="bi bi-file-earmark-pdf"></i>
-            <p>Aucun fichier PDF sélectionné</p>
+            <p>{{ locale === 'fr' ? 'Aucun fichier PDF sélectionné' : 'No PDF file selected' }}</p>
           </div>
         </div>
 
         <div class="step-actions">
           <button @click="previousStep" class="action-btn secondary">
             <i class="bi bi-arrow-left"></i>
-            <span>Retour</span>
+            <span>{{ t('common.back') }}</span>
           </button>
           <button @click="nextStep" class="action-btn primary">
-            <span>Positionner les éléments</span>
+            <span>{{ locale === 'fr' ? 'Positionner les éléments' : 'Place elements' }}</span>
             <i class="bi bi-arrow-right"></i>
           </button>
         </div>
@@ -285,9 +285,9 @@
         <div class="step-header compact">
           <h2>
             <i class="bi bi-pen-fill"></i>
-            Positionnement des éléments
+            {{ locale === 'fr' ? 'Positionnement des éléments' : 'Element placement' }}
           </h2>
-          <p>Positionnez la signature et le QR code sur chaque document</p>
+          <p>{{ locale === 'fr' ? 'Positionnez la signature et le QR code sur chaque document' : 'Position signature and QR code on each document' }}</p>
           
           <!-- Indicateur de progrès -->
           <div class="progress-indicator" v-if="uploadedFiles.length > 1">
@@ -330,10 +330,10 @@
               </div>
               <div class="progress-info">
                 <div class="progress-text">
-                  Document {{ activeSignBaseTabIndex + 1 }} sur {{ uploadedFiles.length }}
+                  {{ locale === 'fr' ? 'Document' : 'Document' }} {{ activeSignBaseTabIndex + 1 }} {{ locale === 'fr' ? 'sur' : 'of' }} {{ uploadedFiles.length }}
                 </div>
                 <div class="progress-status">
-                  {{ processedDocuments.size }} document(s) traité(s)
+                  {{ processedDocuments.size }} {{ locale === 'fr' ? 'document(s) traité(s)' : 'document(s) processed' }}
                 </div>
               </div>
             </div>
@@ -357,7 +357,7 @@
               <button 
                 @click.stop="removeFile(index)" 
                 class="tab-close-btn"
-                title="Fermer cet onglet"
+                :title="locale === 'fr' ? 'Fermer cet onglet' : 'Close this tab'"
               >
                 <i class="bi bi-x"></i>
               </button>
@@ -378,7 +378,7 @@
             <template #fallback>
               <div class="loading-placeholder">
                 <div class="loading-spinner"></div>
-                <p>Chargement de l'outil de positionnement...</p>
+                <p>{{ locale === 'fr' ? 'Chargement de l\'outil de positionnement...' : 'Loading placement tool...' }}</p>
               </div>
             </template>
           </ClientOnly>
@@ -387,15 +387,15 @@
         <div class="step-actions">
           <button @click="previousStep" class="action-btn secondary">
             <i class="bi bi-arrow-left"></i>
-            <span>Retour</span>
+            <span>{{ t('common.back') }}</span>
           </button>
           <button 
             @click="nextStep" 
             :disabled="!allDocumentsProcessed"
             class="action-btn primary"
           >
-            <span v-if="allDocumentsProcessed">Finaliser la préparation</span>
-            <span v-else>Traitement en cours... ({{ processedDocuments.size }}/{{ uploadedFiles.length }})</span>
+            <span v-if="allDocumentsProcessed">{{ locale === 'fr' ? 'Finaliser la préparation' : 'Finalize preparation' }}</span>
+            <span v-else>{{ locale === 'fr' ? 'Traitement en cours...' : 'Processing in progress...' }} ({{ processedDocuments.size }}/{{ uploadedFiles.length }})</span>
             <i class="bi bi-arrow-right"></i>
           </button>
         </div>
@@ -406,9 +406,9 @@
         <div class="step-header">
           <h2>
             <i class="bi bi-person-check-fill"></i>
-            Validation du destinataire
+            {{ locale === 'fr' ? 'Validation du destinataire' : 'Recipient validation' }}
           </h2>
-          <p>Vérification de la présence d'un chef pour signer le document</p>
+          <p>{{ locale === 'fr' ? 'Vérification de la présence d\'un chef pour signer le document' : 'Verifying presence of an approver to sign the document' }}</p>
         </div>
 
         <div class="workflow-validation-section">
@@ -419,9 +419,9 @@
                 <i class="bi bi-file-earmark-pdf-fill"></i>
               </div>
               <div class="summary-title">
-                <h6 class="mb-0">Documents préparés</h6>
+                <h6 class="mb-0">{{ locale === 'fr' ? 'Documents préparés' : 'Prepared documents' }}</h6>
                 <span class="summary-subtitle text-primary">
-                  {{ uploadedFiles.length }} document(s) sélectionné(s)
+                  {{ uploadedFiles.length }} {{ locale === 'fr' ? 'document(s) sélectionné(s)' : 'selected document(s)' }}
                 </span>
               </div>
               <div class="summary-status-badge">
@@ -440,10 +440,10 @@
                     </div>
                     <div class="document-details">
                       <span class="detail-item">
-                        <strong>Taille:</strong> {{ formatFileSize(config.file.size) }}
+                        <strong>{{ locale === 'fr' ? 'Taille :' : 'Size:' }}</strong> {{ formatFileSize(config.file.size) }}
                       </span>
                       <span class="detail-item">
-                        <strong>Mode:</strong> {{ getPositionModeLabel(config.positionMode) }}
+                        <strong>{{ locale === 'fr' ? 'Mode :' : 'Mode:' }}</strong> {{ getPositionModeLabel(config.positionMode) }}
                       </span>
                     </div>
                   </div>
@@ -457,15 +457,15 @@
             <div class="validation-header">
               <h5>
                 <i class="bi bi-person-check"></i>
-                Validation du destinataire
+                {{ locale === 'fr' ? 'Validation du destinataire' : 'Recipient validation' }}
               </h5>
-              <p>Vérification de la présence d'un chef pour signer le document</p>
+              <p>{{ locale === 'fr' ? 'Vérification de la présence d\'un chef pour signer le document' : 'Verifying presence of an approver to sign the document' }}</p>
             </div>
             
             <!-- Loading state -->
             <div v-if="workflowValidation.isLoading" class="validation-loading">
               <div class="loading-spinner"></div>
-              <p>Vérification de la présence d'un chef...</p>
+              <p>{{ locale === 'fr' ? 'Vérification de la présence d\'un chef...' : 'Verifying presence of an approver...' }}</p>
             </div>
             
             <!-- Chef trouvé -->
@@ -484,7 +484,7 @@
                 </div>
                 <div class="chief-status">
                   <i class="bi bi-check-circle-fill text-success"></i>
-                  <span>Disponible pour signature</span>
+                  <span>{{ locale === 'fr' ? 'Disponible pour signature' : 'Available for signing' }}</span>
                 </div>
               </div>
               
@@ -494,9 +494,9 @@
                     <i class="bi bi-person-fill"></i>
                   </div>
                   <div class="step-content">
-                    <h6>Secrétaire (Vous)</h6>
-                    <p>Préparation du document et positionnement des éléments</p>
-                    <span class="step-status completed">Terminé</span>
+                    <h6>{{ locale === 'fr' ? 'Secrétaire (Vous)' : 'Secretary (You)' }}</h6>
+                    <p>{{ locale === 'fr' ? 'Préparation du document et positionnement des éléments' : 'Document preparation and element placement' }}</p>
+                    <span class="step-status completed">{{ locale === 'fr' ? 'Terminé' : 'Completed' }}</span>
                   </div>
                 </div>
                 <div class="workflow-arrow">
@@ -508,8 +508,8 @@
                   </div>
                   <div class="step-content">
                     <h6>{{ workflowValidation.chiefInfo.name }}</h6>
-                    <p>Signature et validation du document</p>
-                    <span class="step-status pending">En attente</span>
+                    <p>{{ locale === 'fr' ? 'Signature et validation du document' : 'Document signing and validation' }}</p>
+                    <span class="step-status pending">{{ locale === 'fr' ? 'En attente' : 'Pending' }}</span>
                   </div>
                 </div>
               </div>
@@ -521,12 +521,11 @@
                 <i class="bi bi-exclamation-triangle-fill"></i>
               </div>
               <div class="error-content">
-                <h6>Impossible de préparer le document</h6>
-                <p>{{ workflowValidation.error || 'Aucun chef trouvé dans cette organisation' }}</p>
+                <h6>{{ locale === 'fr' ? 'Impossible de préparer le document' : 'Unable to prepare document' }}</h6>
+                <p>{{ workflowValidation.error || (locale === 'fr' ? 'Aucun chef trouvé dans cette organisation' : 'No approver found in this organization') }}</p>
                 <p class="error-solution">
                   <i class="bi bi-info-circle"></i>
-                  Le document ne peut pas être préparé car il n'y a personne pour le signer.
-                  Contactez l'administrateur de l'organisation pour ajouter un chef.
+                  {{ locale === 'fr' ? 'Le document ne peut pas être préparé car il n\'y a personne pour le signer. Contactez l\'administrateur de l\'organisation pour ajouter un chef.' : 'The document cannot be prepared because there is no one to sign it. Contact the organization administrator to add an approver.' }}
                 </p>
               </div>
             </div>
@@ -537,7 +536,7 @@
                 <i class="bi bi-x-circle-fill"></i>
               </div>
               <div class="error-content">
-                <h6>Erreur de validation</h6>
+                <h6>{{ locale === 'fr' ? 'Erreur de validation' : 'Validation error' }}</h6>
                 <p>{{ workflowValidation.error }}</p>
               </div>
             </div>
@@ -547,7 +546,7 @@
         <!-- Barre de progression globale -->
         <div v-if="isSubmitting" class="submission-progress-section">
           <div class="progress-header">
-            <h4>Préparation en cours...</h4>
+            <h4>{{ locale === 'fr' ? 'Préparation en cours...' : 'Preparation in progress...' }}</h4>
             <span class="progress-counter">{{ completedDocuments }}/{{ totalDocuments }} documents</span>
           </div>
           
@@ -601,15 +600,15 @@
         <div class="step-actions">
           <button @click="previousStep" class="action-btn secondary" :disabled="isSubmitting">
             <i class="bi bi-arrow-left"></i>
-            <span>Retour</span>
+            <span>{{ t('common.back') }}</span>
           </button>
           <button 
             @click="submitForSignature" 
             class="action-btn primary" 
             :disabled="isSubmitting || !workflowValidation.hasChief"
           >
-            <span v-if="!isSubmitting">Soumettre pour signature</span>
-            <span v-else>Préparation en cours...</span>
+            <span v-if="!isSubmitting">{{ locale === 'fr' ? 'Soumettre pour signature' : 'Submit for signature' }}</span>
+            <span v-else>{{ locale === 'fr' ? 'Préparation en cours...' : 'Preparation in progress...' }}</span>
             <i v-if="!isSubmitting" class="bi bi-send-fill"></i>
             <i v-else class="bi bi-arrow-clockwise spin"></i>
           </button>
@@ -621,9 +620,9 @@
         <div class="step-header">
           <h2>
             <i class="bi bi-check-circle-fill"></i>
-            Document soumis avec succès
+            {{ locale === 'fr' ? 'Document soumis avec succès' : 'Document submitted successfully' }}
           </h2>
-          <p>Votre document a été préparé et soumis au chef pour signature</p>
+          <p>{{ locale === 'fr' ? 'Votre document a été préparé et soumis au chef pour signature' : 'Your document has been prepared and submitted to the approver for signature' }}</p>
         </div>
 
         <div class="submission-success-section">
@@ -635,21 +634,21 @@
                   <i class="bi bi-file-earmark-check-fill"></i>
                 </div>
                 <div class="document-details">
-                  <h3 class="document-name">{{ uploadedFiles[0]?.name || 'Document' }}</h3>
+                  <h3 class="document-name">{{ uploadedFiles[0]?.name || (locale === 'fr' ? 'Document' : 'Document') }}</h3>
                   <span class="document-size">{{ formatFileSize(uploadedFiles[0]?.size || 0) }}</span>
                 </div>
               </div>
               <div class="document-status">
                 <span class="status-badge success">
                   <i class="bi bi-check-circle-fill"></i>
-                  Préparé
+                  {{ locale === 'fr' ? 'Préparé' : 'Prepared' }}
                 </span>
               </div>
             </div>
             <div class="document-success-content">
               <div class="success-message">
                 <i class="bi bi-check-circle-fill"></i>
-                <span>Votre document a été préparé et transmis au chef pour signature</span>
+                <span>{{ locale === 'fr' ? 'Votre document a été préparé et transmis au chef pour signature' : 'Your document has been prepared and forwarded to the approver for signing' }}</span>
               </div>
             </div>
           </div>
@@ -657,7 +656,7 @@
           <!-- Statut du workflow - Cartes sur la même ligne -->
           <div class="workflow-status-section">
             <div class="section-header">
-              <h4 class="section-title">Statut du workflow</h4>
+              <h4 class="section-title">{{ locale === 'fr' ? 'Statut du workflow' : 'Workflow status' }}</h4>
             </div>
             
             <div class="workflow-cards-grid">
@@ -669,14 +668,14 @@
                       <i class="bi bi-check-circle-fill"></i>
                     </div>
                     <div class="workflow-details">
-                      <h5 class="workflow-title">Préparation terminée</h5>
-                      <p class="workflow-description">Document préparé par le secrétaire</p>
+                      <h5 class="workflow-title">{{ locale === 'fr' ? 'Préparation terminée' : 'Preparation completed' }}</h5>
+                      <p class="workflow-description">{{ locale === 'fr' ? 'Document préparé par le secrétaire' : 'Document prepared by secretary' }}</p>
                     </div>
                   </div>
                   <div class="workflow-status">
                     <span class="status-badge completed">
                       <i class="bi bi-check-circle-fill"></i>
-                      Terminé
+                      {{ locale === 'fr' ? 'Terminé' : 'Completed' }}
                     </span>
                   </div>
                 </div>
@@ -700,21 +699,21 @@
                       <i class="bi bi-hourglass-split"></i>
                     </div>
                     <div class="workflow-details">
-                      <h5 class="workflow-title">En attente de signature</h5>
-                      <p class="workflow-description">En attente de signature par le chef</p>
+                      <h5 class="workflow-title">{{ locale === 'fr' ? 'En attente de signature' : 'Awaiting signature' }}</h5>
+                      <p class="workflow-description">{{ locale === 'fr' ? 'En attente de signature par le chef' : 'Awaiting signature by approver' }}</p>
                     </div>
                   </div>
                   <div class="workflow-status">
                     <span class="status-badge pending">
                       <i class="bi bi-hourglass-split"></i>
-                      En attente
+                      {{ locale === 'fr' ? 'En attente' : 'Pending' }}
                     </span>
                   </div>
                 </div>
                 <div class="workflow-meta">
                   <div class="meta-item">
                     <i class="bi bi-person"></i>
-                    <span>{{ workflowValidation.chiefInfo?.name || 'Chef' }}</span>
+                    <span>{{ workflowValidation.chiefInfo?.name || (locale === 'fr' ? 'Chef' : 'Approver') }}</span>
                   </div>
                   <div class="meta-item">
                     <i class="bi bi-envelope"></i>
@@ -729,7 +728,7 @@
         <div class="step-actions">
           <button @click="goBackToDocuments" class="action-btn primary">
             <i class="bi bi-arrow-left"></i>
-            <span>Retour aux documents</span>
+            <span>{{ locale === 'fr' ? 'Retour aux documents' : 'Back to documents' }}</span>
           </button>
         </div>
       </div>
@@ -769,6 +768,9 @@ import SignBase from './SignBase.vue'
 import { SignatureApiService } from '../../services/SignatureApiService'
 import OrganizationApiService from '../../services/OrganizationApiService'
 import CloudinaryService from '../../services/CloudinaryService'
+import { useI18n } from '../../composables/useI18n'
+
+const { t, locale } = useI18n()
 
 // Store d'authentification
 const authStore = useAuthStore()
@@ -782,28 +784,28 @@ const signBaseRef = ref(null)
 
 // État du stepper
 const currentStep = ref(1)
-const steps = [
+const steps = computed(() => [
   {
-    title: 'Documents',
-    description: 'Sélectionnez vos documents PDF'
+    title: t('documentPreparation.steps.documents'),
+    description: t('documentPreparation.steps.documentsDesc')
   },
   {
-    title: 'Aperçu',
-    description: 'Prévisualisez les documents'
+    title: t('documentPreparation.steps.preview'),
+    description: t('documentPreparation.steps.previewDesc')
   },
   {
-    title: 'Positionner',
-    description: 'Placez la signature et le QR code'
+    title: t('documentPreparation.steps.position'),
+    description: t('documentPreparation.steps.positionDesc')
   },
   {
-    title: 'Workflow',
-    description: 'Configurez la chaîne de signature'
+    title: t('documentPreparation.steps.workflow'),
+    description: t('documentPreparation.steps.workflowDesc')
   },
   {
-    title: 'Soumettre',
-    description: 'Transmettez au chef pour signature'
+    title: t('documentPreparation.steps.submit'),
+    description: t('documentPreparation.steps.submitDesc')
   }
-]
+])
 
 // État des fichiers PDF
 const uploadedFiles = ref([])
@@ -1308,11 +1310,11 @@ const truncateFileName = (fileName, maxLength) => {
 
 const getPositionModeLabel = (mode) => {
   const modes = {
-    'manual': 'Manuel',
-    'auto': 'Automatique',
-    'template': 'Modèle'
+    'manual': locale.value === 'fr' ? 'Manuel' : 'Manual',
+    'auto': locale.value === 'fr' ? 'Automatique' : 'Automatic',
+    'template': locale.value === 'fr' ? 'Modèle' : 'Template'
   }
-  return modes[mode] || 'Inconnu'
+  return modes[mode] || (locale.value === 'fr' ? 'Inconnu' : 'Unknown')
 }
 
 // Validation du workflow

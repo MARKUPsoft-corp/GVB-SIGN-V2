@@ -1,7 +1,7 @@
 <template>
   <div class="organization-secretary-page">
     <!-- Bouton de fermeture -->
-    <button class="close-organization-btn" @click="closeOrganizationDashboard" title="Fermer et retourner à la sélection d'organisation">
+    <button class="close-organization-btn" @click="closeOrganizationDashboard" :title="locale === 'fr' ? 'Fermer et retourner à la sélection d\'organisation' : 'Close and return to organization selection'">
       <i class="bi bi-x"></i>
     </button>
     
@@ -10,24 +10,24 @@
       <div class="header-container">
         <div class="header-content">
           <h1 class="display-4 fw-bold mb-3 text-dark header-title">
-            <span class="text-dark">Espace Secrétaire de </span>
-            <span class="text-primary-blue">l'organisation </span> 
+            <span class="text-dark">{{ locale === 'fr' ? 'Espace Secrétaire de ' : 'Secretary Space of ' }}</span>
+            <span class="text-primary-blue">{{ locale === 'fr' ? 'l\'organisation ' : 'the organization ' }}</span> 
             <span class="text-primary-blue" v-if="organizationName"> {{ organizationName }}</span>
           </h1>
           <p class="lead mb-0 text-dark sections-subtitle" v-if="organizationName">
-            Gérez les documents, les signatures et l'organisation {{ organizationName }}.
+            {{ locale === 'fr' ? `Gérez les documents, les signatures et l'organisation ${organizationName}.` : `Manage documents, signatures, and the organization ${organizationName}.` }}
           </p>
           <p class="lead mb-0 text-dark sections-subtitle" v-else>
-            Vous êtes secrétaire d'une organisation. Gérez les documents et les signatures.
+            {{ locale === 'fr' ? 'Vous êtes secrétaire d\'une organisation. Gérez les documents et les signatures.' : 'You are secretary of an organization. Manage documents and signatures.' }}
           </p>
           <div class="header-actions mt-4">
             <button class="btn btn-primary-custom create-doc-btn" @click="toggleCreateDocumentModal" ref="createDocBtn">
               <i class="bi bi-file-earmark-plus me-2"></i>
-              Créer un document
+              {{ locale === 'fr' ? 'Créer un document' : 'Create a document' }}
             </button>
             <button class="btn btn-outline-primary manage-docs-btn" @click="toggleManageDocuments">
               <i class="bi bi-gear me-2"></i>
-              Gérer les documents
+              {{ locale === 'fr' ? 'Gérer les documents' : 'Manage documents' }}
             </button>
           </div>
         </div>
@@ -53,7 +53,7 @@
             </div>
             <div class="stat-content">
               <h4 class="stat-number">{{ secretaryStats.totalDocuments || 0 }}</h4>
-              <p class="stat-label">Total documents</p>
+              <p class="stat-label">{{ locale === 'fr' ? 'Total documents' : 'Total documents' }}</p>
             </div>
           </div>
         </div>
@@ -64,7 +64,7 @@
             </div>
             <div class="stat-content">
               <h4 class="stat-number">{{ secretaryStats.signedDocuments || 0 }}</h4>
-              <p class="stat-label">Signés</p>
+              <p class="stat-label">{{ locale === 'fr' ? 'Signés' : 'Signed' }}</p>
             </div>
           </div>
         </div>
@@ -75,7 +75,7 @@
             </div>
             <div class="stat-content">
               <h4 class="stat-number">{{ secretaryStats.pendingDocuments || 0 }}</h4>
-              <p class="stat-label">En attente</p>
+              <p class="stat-label">{{ locale === 'fr' ? 'En attente' : 'Pending' }}</p>
             </div>
           </div>
         </div>
@@ -86,7 +86,7 @@
             </div>
             <div class="stat-content">
               <h4 class="stat-number">{{ secretaryStats.organizationMembers || 0 }}</h4>
-              <p class="stat-label">Membres</p>
+              <p class="stat-label">{{ locale === 'fr' ? 'Membres' : 'Members' }}</p>
             </div>
           </div>
         </div>
@@ -100,11 +100,11 @@
         <div class="col-12">
           <div class="sections-header text-center">
             <h2 class="display-4 fw-bold mb-3 text-dark sections-title">
-              <span class="text-dark">Gestion</span> 
-              <span class="text-primary-blue"> Documentaire</span>
+              <span class="text-dark">{{ locale === 'fr' ? 'Gestion' : 'Document' }}</span> 
+              <span class="text-primary-blue">{{ locale === 'fr' ? ' Documentaire' : ' Management' }}</span>
             </h2>
             <p class="lead mb-0 text-dark sections-subtitle">
-              Gérez les documents de l'organisation et supervisez les signatures.
+              {{ locale === 'fr' ? 'Gérez les documents de l\'organisation et supervisez les signatures.' : 'Manage organization documents and supervise signatures.' }}
             </p>
           </div>
         </div>
@@ -119,7 +119,7 @@
             @click="setActiveDocumentTab('models')"
           >
             <i class="bi bi-file-earmark-text me-2"></i>
-            Modèles
+            {{ locale === 'fr' ? 'Modèles' : 'Templates' }}
           </button>
           <button 
             class="tab-button" 
@@ -127,7 +127,7 @@
             @click="setActiveDocumentTab('prepared-with-model')"
           >
             <i class="bi bi-file-earmark-check me-2"></i>
-            Documents préparés avec modèle
+            {{ locale === 'fr' ? 'Documents préparés avec modèle' : 'Documents prepared with template' }}
           </button>
           <button 
             class="tab-button" 
@@ -135,7 +135,7 @@
             @click="setActiveDocumentTab('prepared-immediate')"
           >
             <i class="bi bi-file-earmark-arrow-up me-2"></i>
-            Documents préparés immédiatement
+            {{ locale === 'fr' ? 'Documents préparés immédiatement' : 'Documents prepared immediately' }}
           </button>
         </div>
 
@@ -144,11 +144,11 @@
           <div class="text-center py-5">
             <div class="tab-placeholder">
               <i class="bi bi-file-earmark-text fs-1 text-primary-blue mb-3"></i>
-              <h4 class="text-dark mb-3">Gestion des Modèles</h4>
-              <p class="text-muted mb-4">Créez et gérez vos modèles de documents réutilisables</p>
+              <h4 class="text-dark mb-3">{{ locale === 'fr' ? 'Gestion des Modèles' : 'Template Management' }}</h4>
+              <p class="text-muted mb-4">{{ locale === 'fr' ? 'Créez et gérez vos modèles de documents réutilisables' : 'Create and manage reusable document templates' }}</p>
               <button class="btn btn-primary-blue">
                 <i class="bi bi-plus-circle me-2"></i>
-                Créer un modèle
+                {{ locale === 'fr' ? 'Créer un modèle' : 'Create a template' }}
               </button>
             </div>
           </div>
@@ -159,11 +159,11 @@
           <div class="text-center py-5">
             <div class="tab-placeholder">
               <i class="bi bi-file-earmark-check fs-1 text-primary-blue mb-3"></i>
-              <h4 class="text-dark mb-3">Documents Préparés avec Modèle</h4>
-              <p class="text-muted mb-4">Documents créés à partir de vos modèles personnalisés</p>
+              <h4 class="text-dark mb-3">{{ locale === 'fr' ? 'Documents Préparés avec Modèle' : 'Documents Prepared with Template' }}</h4>
+              <p class="text-muted mb-4">{{ locale === 'fr' ? 'Documents créés à partir de vos modèles personnalisés' : 'Documents created from your custom templates' }}</p>
               <button class="btn btn-primary-blue">
                 <i class="bi bi-file-earmark-plus me-2"></i>
-                Nouveau document avec modèle
+                {{ locale === 'fr' ? 'Nouveau document avec modèle' : 'New document with template' }}
               </button>
             </div>
           </div>
@@ -180,7 +180,7 @@
                 <input 
                   type="text" 
                   class="search-input" 
-                  placeholder="Rechercher dans les documents..."
+                  :placeholder="locale === 'fr' ? 'Rechercher dans les documents...' : 'Search in documents...'"
                   v-model="searchQuery"
                   @input="searchDocuments"
                 >
@@ -195,16 +195,16 @@
             </div>
             <button class="btn btn-primary-blue" @click="navigateToDocumentPreparation">
               <i class="bi bi-upload me-2"></i>
-              Nouvelle préparation
+              {{ locale === 'fr' ? 'Nouvelle préparation' : 'New preparation' }}
             </button>
           </div>
 
           <!-- Loading state -->
           <div v-if="isLoadingDocuments" class="text-center py-5">
             <div class="spinner-border text-primary-blue" role="status">
-              <span class="visually-hidden">Chargement...</span>
+              <span class="visually-hidden">{{ locale === 'fr' ? 'Chargement...' : 'Loading...' }}</span>
             </div>
-            <p class="text-muted mt-3">Chargement des documents...</p>
+            <p class="text-muted mt-3">{{ locale === 'fr' ? 'Chargement des documents...' : 'Loading documents...' }}</p>
           </div>
 
           <!-- Error state -->
@@ -215,7 +215,7 @@
             </div>
             <button class="btn btn-outline-primary" @click="fetchPreparedDocuments">
               <i class="bi bi-arrow-clockwise me-2"></i>
-              Réessayer
+              {{ locale === 'fr' ? 'Réessayer' : 'Retry' }}
             </button>
           </div>
 
@@ -242,13 +242,13 @@
               
               <!-- Contenu de la carte -->
               <div class="card-content">
-                <p class="document-description">{{ document.document_description || 'Aucune description' }}</p>
+                <p class="document-description">{{ document.document_description || (locale === 'fr' ? 'Aucune description' : 'No description') }}</p>
                 
                 <!-- Hiérarchie de signature -->
                 <div class="signature-hierarchy">
                   <h6 class="hierarchy-title">
                     <i class="bi bi-diagram-3 me-2"></i>
-                    Hiérarchie de signature
+                    {{ locale === 'fr' ? 'Hiérarchie de signature' : 'Signature hierarchy' }}
                   </h6>
                   <div class="signature-steps">
                     <!-- Étapes précédentes (complétées) -->
@@ -257,7 +257,7 @@
                         <i class="bi bi-check-circle-fill"></i>
                       </div>
                       <div class="step-content">
-                        <span class="step-title">Préparé par</span>
+                        <span class="step-title">{{ locale === 'fr' ? 'Préparé par' : 'Prepared by' }}</span>
                         <span class="step-person">{{ document.prepared_by_name }}</span>
                       </div>
                     </div>
@@ -268,8 +268,8 @@
                         <i class="bi bi-clock"></i>
                       </div>
                       <div class="step-content">
-                        <span class="step-title">En attente de signature</span>
-                        <span class="step-person">{{ document.current_signer_name || 'Non assigné' }}</span>
+                        <span class="step-title">{{ locale === 'fr' ? 'En attente de signature' : 'Awaiting signature' }}</span>
+                        <span class="step-person">{{ document.current_signer_name || (locale === 'fr' ? 'Non assigné' : 'Unassigned') }}</span>
                       </div>
                     </div>
                     
@@ -279,8 +279,8 @@
                         <i class="bi bi-circle"></i>
                       </div>
                       <div class="step-content">
-                        <span class="step-title">Étapes restantes</span>
-                        <span class="step-person">{{ document.total_steps - document.current_step }} étape(s)</span>
+                        <span class="step-title">{{ locale === 'fr' ? 'Étapes restantes' : 'Remaining steps' }}</span>
+                        <span class="step-person">{{ document.total_steps - document.current_step }} {{ locale === 'fr' ? 'étape(s)' : 'step(s)' }}</span>
                       </div>
                     </div>
                   </div>
@@ -298,22 +298,22 @@
                     </div>
                     <div class="meta-item">
                       <i class="bi bi-bar-chart"></i>
-                      <span>{{ document.progress_percentage || 0 }}% complété</span>
+                      <span>{{ document.progress_percentage || 0 }}% {{ locale === 'fr' ? 'complété' : 'completed' }}</span>
                     </div>
                   </div>
-                  <span class="document-step">Étape {{ document.current_step || 1 }}/{{ document.total_steps || 1 }}</span>
+                  <span class="document-step">{{ locale === 'fr' ? 'Étape' : 'Step' }} {{ document.current_step || 1 }}/{{ document.total_steps || 1 }}</span>
                 </div>
                  <div class="document-actions">
                    <button 
                      class="btn btn-sm btn-outline-primary" 
-                     title="Aperçu du document"
+                     :title="locale === 'fr' ? 'Aperçu du document' : 'Document preview'"
                      @click="showDocumentPreview(document, 'current', $event)"
                    >
                      <i class="bi bi-eye"></i>
                    </button>
                    <button 
                      class="btn btn-sm btn-outline-info" 
-                     title="Aperçu final (PDF généré)" 
+                     :title="locale === 'fr' ? 'Aperçu final (PDF généré)' : 'Final preview (generated PDF)'" 
                      v-if="document.generated_pdf"
                      @click="showDocumentPreview(document, 'generated', $event)"
                    >
@@ -321,7 +321,7 @@
                    </button>
                    <button 
                      class="btn btn-sm btn-outline-success" 
-                     title="Télécharger"
+                     :title="locale === 'fr' ? 'Télécharger' : 'Download'"
                      @click="downloadDocument(document)"
                    >
                      <i class="bi bi-download"></i>
@@ -335,11 +335,11 @@
           <div v-else-if="preparedDocuments.length === 0" class="text-center py-5">
             <div class="tab-placeholder">
               <i class="bi bi-file-earmark-arrow-up fs-1 text-primary-blue mb-3"></i>
-              <h4 class="text-dark mb-3">Aucun document préparé</h4>
-              <p class="text-muted mb-4">Vous n'avez pas encore préparé de documents immédiatement</p>
+              <h4 class="text-dark mb-3">{{ locale === 'fr' ? 'Aucun document préparé' : 'No prepared document' }}</h4>
+              <p class="text-muted mb-4">{{ locale === 'fr' ? 'Vous n\'avez pas encore préparé de documents immédiatement' : 'You have not prepared any documents yet' }}</p>
               <button class="btn btn-primary-blue" @click="navigateToDocumentPreparation">
                 <i class="bi bi-upload me-2"></i>
-                Créer votre premier document
+                {{ locale === 'fr' ? 'Créer votre premier document' : 'Create your first document' }}
               </button>
             </div>
           </div>
@@ -348,11 +348,11 @@
           <div v-else-if="searchQuery && filteredDocuments.length === 0" class="text-center py-5">
             <div class="tab-placeholder">
               <i class="bi bi-search fs-1 text-muted mb-3"></i>
-              <h4 class="text-dark mb-3">Aucun document trouvé</h4>
-              <p class="text-muted mb-4">Aucun document ne correspond à votre recherche "{{ searchQuery }}".</p>
+              <h4 class="text-dark mb-3">{{ locale === 'fr' ? 'Aucun document trouvé' : 'No document found' }}</h4>
+              <p class="text-muted mb-4">{{ locale === 'fr' ? `Aucun document ne correspond à votre recherche "${searchQuery}".` : `No document matches your search "${searchQuery}".` }}</p>
               <button class="btn btn-outline-primary" @click="clearSearch">
                 <i class="bi bi-arrow-left me-2"></i>
-                Effacer la recherche
+                {{ locale === 'fr' ? 'Effacer la recherche' : 'Clear search' }}
               </button>
             </div>
           </div>
@@ -365,15 +365,15 @@
       <div class="row mb-4">
         <div class="col-12">
           <div class="d-flex justify-content-between align-items-center">
-            <h3 class="mb-0">Gestion des documents</h3>
+            <h3 class="mb-0">{{ locale === 'fr' ? 'Gestion des documents' : 'Document Management' }}</h3>
             <div class="d-flex gap-2">
               <button class="btn btn-primary" @click="toggleCreateDocumentModal">
                 <i class="bi bi-plus me-2"></i>
-                Nouveau document
+                {{ locale === 'fr' ? 'Nouveau document' : 'New document' }}
               </button>
               <button class="btn btn-outline-primary" @click="toggleAllDocuments">
                 <i class="bi bi-arrow-left me-2"></i>
-                Retour aux sections
+                {{ locale === 'fr' ? 'Retour aux sections' : 'Back to sections' }}
               </button>
             </div>
           </div>
@@ -386,11 +386,11 @@
           <!-- En-tête du tableau -->
           <div class="table-header">
             <div class="table-row header-row">
-              <div class="table-cell document-cell">Document</div>
-              <div class="table-cell">Assigné à</div>
-              <div class="table-cell">Date</div>
-              <div class="table-cell">Statut</div>
-              <div class="table-cell">Actions</div>
+              <div class="table-cell document-cell">{{ locale === 'fr' ? 'Document' : 'Document' }}</div>
+              <div class="table-cell">{{ locale === 'fr' ? 'Assigné à' : 'Assigned to' }}</div>
+              <div class="table-cell">{{ locale === 'fr' ? 'Date' : 'Date' }}</div>
+              <div class="table-cell">{{ locale === 'fr' ? 'Statut' : 'Status' }}</div>
+              <div class="table-cell">{{ locale === 'fr' ? 'Actions' : 'Actions' }}</div>
       </div>
     </div>
 
@@ -415,16 +415,16 @@
               </div>
               <div class="table-cell">
                 <div class="document-actions-full">
-                  <button class="btn btn-sm btn-outline-primary" @click.stop="viewDocument(document)" title="Voir">
+                  <button class="btn btn-sm btn-outline-primary" @click.stop="viewDocument(document)" :title="locale === 'fr' ? 'Voir' : 'View'">
                     <i class="bi bi-eye"></i>
                   </button>
-                  <button class="btn btn-sm btn-outline-success" @click.stop="editDocument(document)" title="Éditer">
+                  <button class="btn btn-sm btn-outline-success" @click.stop="editDocument(document)" :title="locale === 'fr' ? 'Éditer' : 'Edit'">
                     <i class="bi bi-pencil"></i>
                   </button>
-                  <button class="btn btn-sm btn-outline-warning" @click.stop="assignDocument(document)" title="Assigner">
+                  <button class="btn btn-sm btn-outline-warning" @click.stop="assignDocument(document)" :title="locale === 'fr' ? 'Assigner' : 'Assign'">
                     <i class="bi bi-person-plus"></i>
                   </button>
-                  <button class="btn btn-sm btn-outline-danger" @click.stop="deleteDocument(document)" title="Supprimer">
+                  <button class="btn btn-sm btn-outline-danger" @click.stop="deleteDocument(document)" :title="locale === 'fr' ? 'Supprimer' : 'Delete'">
                     <i class="bi bi-trash"></i>
               </button>
             </div>
@@ -441,7 +441,7 @@
         <div class="signature-modal-header">
           <h5>
             <i class="bi bi-file-earmark-plus"></i>
-            Créer un Document
+            {{ locale === 'fr' ? 'Créer un Document' : 'Create a Document' }}
           </h5>
           <button class="close-btn" @click="closeCreateDocumentModal">
             <i class="bi bi-x-lg"></i>
@@ -453,8 +453,8 @@
               <i class="bi bi-lightning-fill"></i>
             </div>
             <div class="option-content">
-              <span class="option-title">Créer immédiatement</span>
-              <span class="option-desc">Créez un nouveau document à partir de zéro</span>
+              <span class="option-title">{{ locale === 'fr' ? 'Créer immédiatement' : 'Create immediately' }}</span>
+              <span class="option-desc">{{ locale === 'fr' ? 'Créez un nouveau document à partir de zéro' : 'Create a new document from scratch' }}</span>
             </div>
           </div>
           
@@ -463,8 +463,8 @@
               <i class="bi bi-file-earmark-text"></i>
             </div>
             <div class="option-content">
-              <span class="option-title">À partir d'un modèle</span>
-              <span class="option-desc">Choisissez parmi nos modèles de documents</span>
+              <span class="option-title">{{ locale === 'fr' ? 'À partir d\'un modèle' : 'From a template' }}</span>
+              <span class="option-desc">{{ locale === 'fr' ? 'Choisissez parmi nos modèles de documents' : 'Choose from our document templates' }}</span>
             </div>
           </div>
         </div>
@@ -486,7 +486,7 @@
        <div class="tooltip-header">
           <h4 class="tooltip-title">
             <i class="bi bi-file-earmark-pdf me-2"></i>
-            {{ previewType === 'current' ? 'Document actuel (workflow)' : 'PDF généré (avec éléments)' }} - {{ currentPreviewDocument?.document_title || currentPreviewDocument?.original_filename }}
+            {{ previewType === 'current' ? (locale === 'fr' ? 'Document actuel (workflow)' : 'Current document (workflow)') : (locale === 'fr' ? 'PDF généré (avec éléments)' : 'Generated PDF (with elements)') }} - {{ currentPreviewDocument?.document_title || currentPreviewDocument?.original_filename }}
           </h4>
          <button class="tooltip-close" @click="closePreviewTooltip">
            <i class="bi bi-x"></i>
@@ -512,13 +512,13 @@
              <div v-else-if="previewPdfSource && pdfLoadError" class="pdf-fallback">
                <div class="fallback-content">
                  <i class="bi bi-file-earmark-pdf-fill"></i>
-                 <h3>{{ currentPreviewDocument?.document_title || currentPreviewDocument?.original_filename || 'Document PDF' }}</h3>
+                 <h3>{{ currentPreviewDocument?.document_title || currentPreviewDocument?.original_filename || (locale === 'fr' ? 'Document PDF' : 'PDF Document') }}</h3>
                  <p class="fallback-description">
                    <i class="bi bi-info-circle me-2"></i>
-                   Aperçu non disponible dans cette vue
+                   {{ locale === 'fr' ? 'Aperçu non disponible dans cette vue' : 'Preview not available in this view' }}
                  </p>
                  <p class="fallback-subtitle">
-                   Cliquez sur "Ouvrir dans un nouvel onglet" pour voir le contenu complet
+                   {{ locale === 'fr' ? 'Cliquez sur "Ouvrir le PDF" pour voir le contenu complet' : 'Click "Open PDF" to view complete content' }}
                  </p>
                  <div class="fallback-actions">
                    <button 
@@ -526,7 +526,7 @@
                      @click="openDocumentDirectly"
                    >
                      <i class="bi bi-box-arrow-up-right me-2"></i>
-                     Ouvrir le PDF
+                     {{ locale === 'fr' ? 'Ouvrir le PDF' : 'Open PDF' }}
                    </button>
                    <a 
                      :href="previewPdfSource" 
@@ -534,7 +534,7 @@
                      class="btn btn-outline-primary"
                    >
                      <i class="bi bi-download me-2"></i>
-                     Télécharger
+                     {{ locale === 'fr' ? 'Télécharger' : 'Download' }}
                    </a>
                  </div>
                </div>
@@ -543,16 +543,16 @@
              <!-- État de chargement -->
              <div v-else-if="!previewPdfSource && !pdfLoadError" class="pdf-loading-state">
                <i class="bi bi-file-earmark-pdf-fill fs-1 text-primary mb-3"></i>
-               <p>Chargement du document...</p>
+               <p>{{ locale === 'fr' ? 'Chargement du document...' : 'Loading document...' }}</p>
              </div>
              
              <!-- État d'erreur -->
              <div v-else-if="pdfLoadError" class="pdf-error-state">
                <i class="bi bi-exclamation-triangle fs-1 text-warning mb-3"></i>
-               <p>Impossible de charger le PDF</p>
+               <p>{{ locale === 'fr' ? 'Impossible de charger le PDF' : 'Could not load PDF' }}</p>
                <button class="btn btn-sm btn-outline-primary mt-2" @click="retryPdfLoad">
                  <i class="bi bi-arrow-clockwise me-1"></i>
-                 Réessayer
+                 {{ locale === 'fr' ? 'Réessayer' : 'Retry' }}
                </button>
              </div>
            </div>
@@ -568,6 +568,9 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useAuthStore } from '../../stores/auth'
 import { SignatureApiService } from '../../services/SignatureApiService'
 import OrganizationApiService from '../../services/OrganizationApiService'
+import { useI18n } from '../../composables/useI18n'
+
+const { t, locale } = useI18n()
 
 // Store d'authentification
 const authStore = useAuthStore()

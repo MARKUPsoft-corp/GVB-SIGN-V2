@@ -1,7 +1,7 @@
 <template>
   <div class="organization-member-page">
     <!-- Bouton de fermeture -->
-    <button class="close-organization-btn" @click="closeOrganizationDashboard" title="Fermer et retourner à la sélection d'organisation">
+    <button class="close-organization-btn" @click="closeOrganizationDashboard" :title="locale === 'fr' ? 'Fermer et retourner à la sélection d\'organisation' : 'Close and return to organization selection'">
       <i class="bi bi-x"></i>
     </button>
     
@@ -10,20 +10,20 @@
       <div class="header-container">
         <div class="header-content">
           <h1 class="section-title">
-            <span class="text-dark">Espace Membre de l'</span>
-            <span class="text-primary-blue">organisation </span>
+            <span class="text-dark">{{ locale === 'fr' ? 'Espace Membre de l\'' : 'Member Space of the ' }}</span>
+            <span class="text-primary-blue">{{ locale === 'fr' ? 'organisation ' : 'organization ' }}</span>
             <span class="text-primary-blue" v-if="userOrganization && userOrganization.organization"> {{ userOrganization.organization.name }}</span>
           </h1>
           <p class="section-subtitle" v-if="userOrganization && userOrganization.organization">
-            Bienvenue dans l'organisation {{ userOrganization.organization.name }}. Gérez vos documents et signatures.
+            {{ locale === 'fr' ? `Bienvenue dans l'organisation ${userOrganization.organization.name}. Gérez vos documents et signatures.` : `Welcome to the organization ${userOrganization.organization.name}. Manage your documents and signatures.` }}
           </p>
           <p class="section-subtitle" v-else>
-            Vous êtes membre d'une organisation. Accédez à vos documents et signatures.
+            {{ locale === 'fr' ? 'Vous êtes membre d\'une organisation. Accédez à vos documents et signatures.' : 'You are a member of an organization. Access your documents and signatures.' }}
           </p>
           <div class="header-actions">
             <button class="btn btn-primary-custom sign-now-btn" @click="toggleSignatureModal" ref="signBtn">
               <i class="bi bi-pen me-2"></i>
-              Signer un document
+              {{ locale === 'fr' ? 'Signer un document' : 'Sign a document' }}
             </button>
           </div>
         </div>
@@ -34,7 +34,7 @@
           <div class="bubble bubble-3"></div>
           <div class="bubble bubble-4"></div>
           
-          <img src="/organisation.svg" alt="Organisation Membre" class="organization-illustration">
+          <img src="/organisation.svg" :alt="locale === 'fr' ? 'Organisation Membre' : 'Organization Member'" class="organization-illustration">
         </div>
       </div>
     </div>
@@ -49,7 +49,7 @@
             </div>
             <div class="stat-content">
               <h4 class="stat-number">{{ memberStats.totalDocuments || 0 }}</h4>
-              <p class="stat-label">Mes documents</p>
+              <p class="stat-label">{{ locale === 'fr' ? 'Mes documents' : 'My documents' }}</p>
             </div>
           </div>
         </div>
@@ -60,7 +60,7 @@
             </div>
             <div class="stat-content">
               <h4 class="stat-number">{{ memberStats.signedDocuments || 0 }}</h4>
-              <p class="stat-label">Signés</p>
+              <p class="stat-label">{{ locale === 'fr' ? 'Signés' : 'Signed' }}</p>
             </div>
           </div>
         </div>
@@ -71,7 +71,7 @@
             </div>
             <div class="stat-content">
               <h4 class="stat-number">{{ memberStats.pendingDocuments || 0 }}</h4>
-              <p class="stat-label">En attente</p>
+              <p class="stat-label">{{ locale === 'fr' ? 'En attente' : 'Pending' }}</p>
             </div>
           </div>
         </div>
@@ -85,11 +85,11 @@
         <div class="col-12">
           <div class="sections-header text-center">
             <h2 class="display-4 fw-bold mb-3 text-dark sections-title">
-              <span class="text-dark">Mes</span> 
-              <span class="text-primary-blue"> Documents</span>
+              <span class="text-dark">{{ locale === 'fr' ? 'Mes' : 'My' }}</span> 
+              <span class="text-primary-blue">{{ locale === 'fr' ? ' Documents' : ' Documents' }}</span>
             </h2>
             <p class="lead mb-0 text-dark sections-subtitle">
-              Gérez vos documents personnels et suivez vos signatures.
+              {{ locale === 'fr' ? 'Gérez vos documents personnels et suivez vos signatures.' : 'Manage your personal documents and track your signatures.' }}
             </p>
           </div>
         </div>
@@ -104,8 +104,8 @@
                 <i class="bi bi-file-earmark-text text-primary-blue"></i>
               </div>
               <div class="section-header-content">
-                <h3 class="section-card-title">Documents Récents</h3>
-                <p class="section-card-subtitle">Vos derniers documents</p>
+                <h3 class="section-card-title">{{ locale === 'fr' ? 'Documents Récents' : 'Recent Documents' }}</h3>
+                <p class="section-card-subtitle">{{ locale === 'fr' ? 'Vos derniers documents' : 'Your latest documents' }}</p>
               </div>
             </div>
             
@@ -119,11 +119,11 @@
                   <h5 class="document-name">{{ document.name }}</h5>
                   <p class="document-details">
                     <span class="document-date">{{ document.date }}</span>
-                    <span class="document-status" :class="document.status">{{ document.statusText }}</span>
+                    <span class="document-status" :class="document.status">{{ document.status === 'signed' ? (locale === 'fr' ? 'Signé' : 'Signed') : (locale === 'fr' ? 'En attente' : 'Pending') }}</span>
                   </p>
                 </div>
                 <div class="document-actions">
-                  <button class="btn btn-sm btn-outline-primary" @click="viewDocument(document)" title="Voir">
+                  <button class="btn btn-sm btn-outline-primary" @click="viewDocument(document)" :title="locale === 'fr' ? 'Voir' : 'View'">
                     <i class="bi bi-eye"></i>
                   </button>
                 </div>
@@ -132,7 +132,7 @@
 
             <div class="section-footer">
               <button class="btn btn-primary-blue btn-sm" @click="toggleAllDocuments">
-                Voir tous mes documents
+                {{ locale === 'fr' ? 'Voir tous mes documents' : 'View all my documents' }}
                 <i class="bi bi-arrow-right ms-2"></i>
               </button>
             </div>
@@ -147,8 +147,8 @@
                 <i class="bi bi-plus-circle text-primary-blue"></i>
               </div>
               <div class="section-header-content">
-                <h3 class="section-card-title">Actions Rapides</h3>
-                <p class="section-card-subtitle">Créez et gérez vos documents</p>
+                <h3 class="section-card-title">{{ locale === 'fr' ? 'Actions Rapides' : 'Quick Actions' }}</h3>
+                <p class="section-card-subtitle">{{ locale === 'fr' ? 'Créez et gérez vos documents' : 'Create and manage your documents' }}</p>
               </div>
             </div>
             
@@ -160,8 +160,8 @@
                     <i class="bi bi-pen"></i>
                   </div>
                   <div class="action-content">
-                    <h5 class="action-title">Signer un document</h5>
-                    <p class="action-description">Signez un document existant</p>
+                    <h5 class="action-title">{{ locale === 'fr' ? 'Signer un document' : 'Sign a document' }}</h5>
+                    <p class="action-description">{{ locale === 'fr' ? 'Signez un document existant' : 'Sign an existing document' }}</p>
                   </div>
                   <div class="action-arrow">
                     <i class="bi bi-arrow-right"></i>
@@ -176,8 +176,8 @@
                     <i class="bi bi-download"></i>
                   </div>
                   <div class="action-content">
-                    <h5 class="action-title">Télécharger</h5>
-                    <p class="action-description">Téléchargez vos documents</p>
+                    <h5 class="action-title">{{ locale === 'fr' ? 'Télécharger' : 'Download' }}</h5>
+                    <p class="action-description">{{ locale === 'fr' ? 'Téléchargez vos documents' : 'Download your documents' }}</p>
                   </div>
                   <div class="action-arrow">
                     <i class="bi bi-arrow-right"></i>
@@ -192,8 +192,8 @@
                     <i class="bi bi-clock-history"></i>
                   </div>
                   <div class="action-content">
-                    <h5 class="action-title">Historique</h5>
-                    <p class="action-description">Consultez vos signatures</p>
+                    <h5 class="action-title">{{ locale === 'fr' ? 'Historique' : 'History' }}</h5>
+                    <p class="action-description">{{ locale === 'fr' ? 'Consultez vos signatures' : 'View your signatures' }}</p>
                   </div>
                   <div class="action-arrow">
                     <i class="bi bi-arrow-right"></i>
@@ -208,8 +208,8 @@
                     <i class="bi bi-person"></i>
                   </div>
                   <div class="action-content">
-                    <h5 class="action-title">Mon Profil</h5>
-                    <p class="action-description">Gérez vos informations</p>
+                    <h5 class="action-title">{{ locale === 'fr' ? 'Mon Profil' : 'My Profile' }}</h5>
+                    <p class="action-description">{{ locale === 'fr' ? 'Gérez vos informations' : 'Manage your information' }}</p>
                   </div>
                   <div class="action-arrow">
                     <i class="bi bi-arrow-right"></i>
@@ -227,10 +227,10 @@
       <div class="row mb-4">
         <div class="col-12">
           <div class="d-flex justify-content-between align-items-center">
-            <h3 class="mb-0">Tous mes documents</h3>
+            <h3 class="mb-0">{{ locale === 'fr' ? 'Tous mes documents' : 'All my documents' }}</h3>
             <button class="btn btn-outline-primary" @click="toggleAllDocuments">
               <i class="bi bi-arrow-left me-2"></i>
-              Retour aux sections
+              {{ locale === 'fr' ? 'Retour aux sections' : 'Back to sections' }}
             </button>
           </div>
         </div>
@@ -242,10 +242,10 @@
           <!-- En-tête du tableau -->
           <div class="table-header">
             <div class="table-row header-row">
-              <div class="table-cell document-cell">Document</div>
-              <div class="table-cell">Date</div>
-              <div class="table-cell">Statut</div>
-              <div class="table-cell">Actions</div>
+              <div class="table-cell document-cell">{{ locale === 'fr' ? 'Document' : 'Document' }}</div>
+              <div class="table-cell">{{ locale === 'fr' ? 'Date' : 'Date' }}</div>
+              <div class="table-cell">{{ locale === 'fr' ? 'Statut' : 'Status' }}</div>
+              <div class="table-cell">{{ locale === 'fr' ? 'Actions' : 'Actions' }}</div>
             </div>
           </div>
 
@@ -265,14 +265,14 @@
               </div>
               <div class="table-cell">{{ document.date }}</div>
               <div class="table-cell">
-                <span class="status-badge" :class="document.status">{{ document.statusText }}</span>
+                <span class="status-badge" :class="document.status">{{ document.status === 'signed' ? (locale === 'fr' ? 'Signé' : 'Signed') : (locale === 'fr' ? 'En attente' : 'Pending') }}</span>
               </div>
               <div class="table-cell">
                 <div class="document-actions-full">
-                  <button class="btn btn-sm btn-outline-primary" @click.stop="viewDocument(document)" title="Voir">
+                  <button class="btn btn-sm btn-outline-primary" @click.stop="viewDocument(document)" :title="locale === 'fr' ? 'Voir' : 'View'">
                     <i class="bi bi-eye"></i>
                   </button>
-                  <button class="btn btn-sm btn-outline-success" @click.stop="downloadDocument(document)" title="Télécharger">
+                  <button class="btn btn-sm btn-outline-success" @click.stop="downloadDocument(document)" :title="locale === 'fr' ? 'Télécharger' : 'Download'">
                     <i class="bi bi-download"></i>
                   </button>
                 </div>
@@ -287,7 +287,7 @@
     <div v-if="showSignatureModal" class="modal-overlay" @click="closeSignatureModal">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
-          <h5 class="modal-title">Choisir le type de signature</h5>
+          <h5 class="modal-title">{{ locale === 'fr' ? 'Choisir le type de signature' : 'Choose signature type' }}</h5>
           <button class="btn-close" @click="closeSignatureModal">
             <i class="bi bi-x"></i>
           </button>
@@ -299,8 +299,8 @@
                 <i class="bi bi-upload"></i>
               </div>
               <div class="option-content">
-                <h6 class="option-title">Télécharger un document</h6>
-                <p class="option-description">Signez un document existant</p>
+                <h6 class="option-title">{{ locale === 'fr' ? 'Télécharger un document' : 'Upload a document' }}</h6>
+                <p class="option-description">{{ locale === 'fr' ? 'Signez un document existant' : 'Sign an existing document' }}</p>
               </div>
             </div>
             <div class="signature-option" @click="selectSignatureType('create')">
@@ -308,8 +308,8 @@
                 <i class="bi bi-file-earmark-plus"></i>
               </div>
               <div class="option-content">
-                <h6 class="option-title">Créer un document</h6>
-                <p class="option-description">Créez un nouveau document à signer</p>
+                <h6 class="option-title">{{ locale === 'fr' ? 'Créer un document' : 'Create a document' }}</h6>
+                <p class="option-description">{{ locale === 'fr' ? 'Créez un nouveau document à signer' : 'Create a new document to sign' }}</p>
               </div>
             </div>
           </div>
@@ -323,6 +323,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '../../stores/auth'
 import OrganizationApiService from '../../services/OrganizationApiService'
+import { useI18n } from '../../composables/useI18n'
+
+const { t, locale } = useI18n()
 
 // Store d'authentification
 const authStore = useAuthStore()

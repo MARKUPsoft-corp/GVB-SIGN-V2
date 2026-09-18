@@ -4,16 +4,16 @@
       <div class="header-container d-flex justify-content-between align-items-center">
         <div class="header-content">
           <h1 class="display-5 fw-bold text-dark mb-2">
-            Super <span class="text-primary-blue">Administration</span>
+            {{ locale === 'fr' ? 'Super' : 'Super' }} <span class="text-primary-blue">{{ locale === 'fr' ? 'Administration' : 'Administration' }}</span>
           </h1>
           <p class="lead text-muted">
-            Supervisez l'intégralité de la plateforme.
+            {{ locale === 'fr' ? 'Supervisez l\'intégralité de la plateforme.' : 'Supervise the entire platform.' }}
           </p>
         </div>
         <div class="header-actions">
           <div class="pulse-indicator bg-light text-primary-blue px-3 py-2 rounded-pill shadow-sm d-flex align-items-center border">
             <span class="spinner-grow spinner-grow-sm me-2 text-primary-blue" role="status" aria-hidden="true" style="width: 1rem; height: 1rem;"></span>
-            Système en ligne
+            {{ locale === 'fr' ? 'Système en ligne' : 'System online' }}
           </div>
         </div>
       </div>
@@ -23,22 +23,22 @@
     <ul class="nav nav-pills custom-tabs mb-5 d-flex gap-2">
       <li class="nav-item">
         <button class="nav-link px-4 py-2" :class="{ active: activeSection === 'overview' }" @click="activeSection = 'overview'">
-          <i class="bi bi-grid-1x2 me-2"></i> Vue d'ensemble
+          <i class="bi bi-grid-1x2 me-2"></i> {{ locale === 'fr' ? 'Vue d\'ensemble' : 'Overview' }}
         </button>
       </li>
       <li class="nav-item">
         <button class="nav-link px-4 py-2" :class="{ active: activeSection === 'organizations' }" @click="activeSection = 'organizations'">
-          <i class="bi bi-building me-2"></i> Organisations
+          <i class="bi bi-building me-2"></i> {{ locale === 'fr' ? 'Organisations' : 'Organizations' }}
         </button>
       </li>
       <li class="nav-item">
         <button class="nav-link px-4 py-2" :class="{ active: activeSection === 'users' }" @click="activeSection = 'users'">
-          <i class="bi bi-people me-2"></i> Utilisateurs
+          <i class="bi bi-people me-2"></i> {{ locale === 'fr' ? 'Utilisateurs' : 'Users' }}
         </button>
       </li>
       <li class="nav-item">
         <button class="nav-link px-4 py-2" :class="{ active: activeSection === 'signatures' }" @click="activeSection = 'signatures'">
-          <i class="bi bi-journal-text me-2"></i> Registre
+          <i class="bi bi-journal-text me-2"></i> {{ locale === 'fr' ? 'Registre' : 'Registry' }}
         </button>
       </li>
     </ul>
@@ -49,9 +49,9 @@
       <!-- Chargement global -->
       <div v-if="loading" class="text-center py-5">
         <div class="spinner-border text-primary-blue" role="status">
-          <span class="visually-hidden">Chargement...</span>
+          <span class="visually-hidden">{{ locale === 'fr' ? 'Chargement...' : 'Loading...' }}</span>
         </div>
-        <p class="mt-3 text-muted">Synchronisation du système...</p>
+        <p class="mt-3 text-muted">{{ locale === 'fr' ? 'Synchronisation du système...' : 'Synchronizing system...' }}</p>
       </div>
 
       <div v-else class="fade-in-up">
@@ -66,7 +66,7 @@
                 </div>
                 <div class="stat-content">
                   <h4 class="stat-number">{{ users.length }}</h4>
-                  <p class="stat-label">Utilisateurs inscrits</p>
+                  <p class="stat-label">{{ locale === 'fr' ? 'Utilisateurs inscrits' : 'Registered users' }}</p>
                 </div>
               </div>
             </div>
@@ -77,7 +77,7 @@
                 </div>
                 <div class="stat-content">
                   <h4 class="stat-number">{{ organizations.length }}</h4>
-                  <p class="stat-label">Organisations créées</p>
+                  <p class="stat-label">{{ locale === 'fr' ? 'Organisations créées' : 'Organizations created' }}</p>
                 </div>
               </div>
             </div>
@@ -88,7 +88,7 @@
                 </div>
                 <div class="stat-content">
                   <h4 class="stat-number">{{ signatures.length }}</h4>
-                  <p class="stat-label">Signatures générées</p>
+                  <p class="stat-label">{{ locale === 'fr' ? 'Signatures générées' : 'Signatures generated' }}</p>
                 </div>
               </div>
             </div>
@@ -101,19 +101,19 @@
             <ul class="nav nav-pills custom-tabs mb-5 d-flex gap-2">
               <li class="nav-item">
                 <button class="nav-link px-4 py-2" :class="{ active: currentOrgTab === 'pending' }" @click="currentOrgTab = 'pending'">
-                  <i class="bi bi-hourglass-split me-2"></i> En attente
+                  <i class="bi bi-hourglass-split me-2"></i> {{ locale === 'fr' ? 'En attente' : 'Pending' }}
                   <span class="badge ms-2" :class="currentOrgTab === 'pending' ? 'bg-white text-primary' : 'bg-warning text-dark'">{{ pendingOrgs.length }}</span>
                 </button>
               </li>
               <li class="nav-item">
                 <button class="nav-link px-4 py-2" :class="{ active: currentOrgTab === 'approved' }" @click="currentOrgTab = 'approved'">
-                  <i class="bi bi-check-circle-fill me-2"></i> Approuvées
+                  <i class="bi bi-check-circle-fill me-2"></i> {{ locale === 'fr' ? 'Approuvées' : 'Approved' }}
                   <span class="badge ms-2" :class="currentOrgTab === 'approved' ? 'bg-white text-primary' : 'bg-success text-white'">{{ approvedOrgs.length }}</span>
                 </button>
               </li>
               <li class="nav-item">
                 <button class="nav-link px-4 py-2" :class="{ active: currentOrgTab === 'rejected' }" @click="currentOrgTab = 'rejected'">
-                  <i class="bi bi-x-circle-fill me-2"></i> Rejetées
+                  <i class="bi bi-x-circle-fill me-2"></i> {{ locale === 'fr' ? 'Rejetées' : 'Rejected' }}
                   <span class="badge ms-2" :class="currentOrgTab === 'rejected' ? 'bg-white text-primary' : 'bg-danger text-white'">{{ rejectedOrgs.length }}</span>
                 </button>
               </li>
@@ -123,8 +123,8 @@
               <div v-if="displayedOrgs.length === 0" class="col-12 text-center py-5">
                 <div class="empty-state">
                   <i class="bi bi-building-dash display-1 text-muted mb-3 d-block"></i>
-                  <h4>Aucune organisation</h4>
-                  <p class="text-muted">La liste est vide pour cette catégorie.</p>
+                  <h4>{{ locale === 'fr' ? 'Aucune organisation' : 'No organizations' }}</h4>
+                  <p class="text-muted">{{ locale === 'fr' ? 'La liste est vide pour cette catégorie.' : 'The list is empty for this category.' }}</p>
                 </div>
               </div>
 
@@ -136,7 +136,7 @@
                     </div>
                     <div class="organization-header-content">
                       <h3 class="organization-name">{{ org.name }}</h3>
-                      <p class="organization-subtitle">{{ org.organization_type || 'Organisation' }}</p>
+                      <p class="organization-subtitle">{{ org.organization_type || (locale === 'fr' ? 'Organisation' : 'Organization') }}</p>
                     </div>
                     <div class="organization-status-badges">
                       <div class="approval-status-badge" :class="org.approval_status">
@@ -149,24 +149,24 @@
                   </div>
 
                   <div class="card-content">
-                    <p class="organization-description">{{ org.description || 'Aucune description renseignée' }}</p>
+                    <p class="organization-description">{{ org.description || (locale === 'fr' ? 'Aucune description renseignée' : 'No description provided') }}</p>
                     
                     <div class="organization-meta">
                       <div class="meta-item">
                         <i class="bi bi-envelope"></i>
-                        <span>{{ org.email || 'Non renseigné' }}</span>
+                        <span>{{ org.email || (locale === 'fr' ? 'Non renseigné' : 'Not specified') }}</span>
                       </div>
                       <div class="meta-item">
                         <i class="bi bi-telephone"></i>
-                        <span>{{ org.phone || 'Non renseigné' }}</span>
+                        <span>{{ org.phone || (locale === 'fr' ? 'Non renseigné' : 'Not specified') }}</span>
                       </div>
                       <div class="meta-item">
                         <i class="bi bi-geo-alt"></i>
-                        <span>{{ org.address || 'Non renseignée' }}</span>
+                        <span>{{ org.address || (locale === 'fr' ? 'Non renseignée' : 'Not specified') }}</span>
                       </div>
                       <div class="meta-item">
                         <i class="bi bi-globe"></i>
-                        <span>{{ org.website || 'Non renseigné' }}</span>
+                        <span>{{ org.website || (locale === 'fr' ? 'Non renseigné' : 'Not specified') }}</span>
                       </div>
                     </div>
                   </div>
@@ -174,27 +174,27 @@
                   <div class="card-footer" v-if="org.approval_status === 'pending'">
                     <div class="organization-actions w-100 d-flex gap-2">
                       <button class="btn btn-outline-danger flex-grow-1" @click="handleRejectOrg(org.id)">
-                        <i class="bi bi-x-circle me-2"></i> Rejeter
+                        <i class="bi bi-x-circle me-2"></i> {{ locale === 'fr' ? 'Rejeter' : 'Reject' }}
                       </button>
                       <button class="btn btn-primary-blue flex-grow-1" style="background: linear-gradient(135deg, #0066cc 0%, #0056b3 100%); color: white; border: none;" @click="handleApproveOrg(org.id)">
-                        <i class="bi bi-check-circle me-2"></i> Valider
+                        <i class="bi bi-check-circle me-2"></i> {{ locale === 'fr' ? 'Valider' : 'Validate' }}
                       </button>
                     </div>
                   </div>
                   <div class="card-footer" v-else-if="org.approval_status === 'approved'">
                     <div class="organization-actions w-100 d-flex justify-content-end gap-2">
                       <button class="btn btn-outline-secondary btn-sm" @click="handleRevokeOrg(org.id)">
-                        <i class="bi bi-shield-lock me-2"></i> Révoquer l'accès
+                        <i class="bi bi-shield-lock me-2"></i> {{ locale === 'fr' ? 'Révoquer l\'accès' : 'Revoke access' }}
                       </button>
                     </div>
                   </div>
                   <div class="card-footer" v-else-if="org.approval_status === 'rejected'">
                     <div class="organization-actions w-100 d-flex gap-2">
                       <button class="btn btn-outline-success flex-grow-1" @click="handleRehabilitateOrg(org.id)">
-                        <i class="bi bi-arrow-counterclockwise me-2"></i> Réhabiliter
+                        <i class="bi bi-arrow-counterclockwise me-2"></i> {{ locale === 'fr' ? 'Réhabiliter' : 'Rehabilitate' }}
                       </button>
                       <button class="btn btn-outline-danger flex-grow-1" @click="handleRejectOrg(org.id, true)">
-                        <i class="bi bi-trash me-2"></i> Supprimer définitivement
+                        <i class="bi bi-trash me-2"></i> {{ locale === 'fr' ? 'Supprimer définitivement' : 'Delete permanently' }}
                       </button>
                     </div>
                   </div>
@@ -208,7 +208,7 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
               <div class="search-box position-relative" style="max-width: 400px; width: 100%;">
                 <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
-                <input type="text" class="form-control border-0 shadow-sm ps-5 py-2 rounded-pill" placeholder="Rechercher (nom, email)..." v-model="userSearchQuery">
+                <input type="text" class="form-control border-0 shadow-sm ps-5 py-2 rounded-pill" :placeholder="locale === 'fr' ? 'Rechercher (nom, email)...' : 'Search (name, email)...'" v-model="userSearchQuery">
               </div>
             </div>
             
@@ -217,16 +217,16 @@
                 <table class="table table-hover align-middle mb-0 custom-table">
                   <thead>
                     <tr>
-                      <th class="ps-4 py-3">Utilisateur</th>
-                      <th class="py-3">Email</th>
-                      <th class="py-3">Inscription</th>
-                      <th class="py-3">Rôle actuel</th>
-                      <th class="text-end pe-4 py-3">Actions</th>
+                      <th class="ps-4 py-3">{{ locale === 'fr' ? 'Utilisateur' : 'User' }}</th>
+                      <th class="py-3">{{ locale === 'fr' ? 'Email' : 'Email' }}</th>
+                      <th class="py-3">{{ locale === 'fr' ? 'Inscription' : 'Registration' }}</th>
+                      <th class="py-3">{{ locale === 'fr' ? 'Rôle actuel' : 'Current role' }}</th>
+                      <th class="text-end pe-4 py-3">{{ locale === 'fr' ? 'Actions' : 'Actions' }}</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr v-if="filteredUsers.length === 0">
-                      <td colspan="5" class="text-center py-4 text-muted">Aucun utilisateur trouvé.</td>
+                      <td colspan="5" class="text-center py-4 text-muted">{{ locale === 'fr' ? 'Aucun utilisateur trouvé.' : 'No users found.' }}</td>
                     </tr>
                     <tr v-for="user in filteredUsers" :key="user.id">
                       <td>
@@ -235,7 +235,7 @@
                           <div v-else class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
                             <i class="bi bi-person"></i>
                           </div>
-                          <span class="fw-semibold">{{ user.displayName || 'Anonyme' }}</span>
+                          <span class="fw-semibold">{{ user.displayName || (locale === 'fr' ? 'Anonyme' : 'Anonymous') }}</span>
                         </div>
                       </td>
                       <td>{{ user.email }}</td>
@@ -249,9 +249,9 @@
                         <select class="form-select form-select-sm d-inline-block w-auto" 
                                 @change="handleRoleChange(user.id, $event.target.value)" 
                                 :value="user.role || 'member'">
-                          <option value="member">Membre (Défaut)</option>
-                          <option value="chief">Chef d'Organisation</option>
-                          <option value="super-admin">Super Admin</option>
+                          <option value="member">{{ locale === 'fr' ? 'Membre (Défaut)' : 'Member (Default)' }}</option>
+                          <option value="chief">{{ locale === 'fr' ? 'Chef d\'Organisation' : 'Organization Chief' }}</option>
+                          <option value="super-admin">{{ locale === 'fr' ? 'Super Admin' : 'Super Admin' }}</option>
                         </select>
                       </td>
                     </tr>
@@ -269,23 +269,23 @@
                 <table class="table table-hover align-middle mb-0 custom-table">
                   <thead>
                     <tr>
-                      <th class="ps-4 py-3">ID Document</th>
-                      <th class="py-3">Signataire (UID)</th>
-                      <th class="py-3">Type</th>
-                      <th class="py-3">Date</th>
+                      <th class="ps-4 py-3">{{ locale === 'fr' ? 'ID Document' : 'Document ID' }}</th>
+                      <th class="py-3">{{ locale === 'fr' ? 'Signataire (UID)' : 'Signer (UID)' }}</th>
+                      <th class="py-3">{{ locale === 'fr' ? 'Type' : 'Type' }}</th>
+                      <th class="py-3">{{ locale === 'fr' ? 'Date' : 'Date' }}</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr v-if="signatures.length === 0">
-                      <td colspan="4" class="text-center py-4 text-muted">Aucune signature enregistrée.</td>
+                      <td colspan="4" class="text-center py-4 text-muted">{{ locale === 'fr' ? 'Aucune signature enregistrée.' : 'No signatures recorded.' }}</td>
                     </tr>
                     <tr v-for="sig in signatures" :key="sig.id">
                       <td><code class="text-primary-blue">{{ sig.id.substring(0,8) }}...</code></td>
                       <td>
-                        <span class="text-muted small">{{ sig.userId || 'Inconnu' }}</span>
+                        <span class="text-muted small">{{ sig.userId || (locale === 'fr' ? 'Inconnu' : 'Unknown') }}</span>
                       </td>
                       <td>
-                        <span class="badge bg-light text-dark border">Signature PDF</span>
+                        <span class="badge bg-light text-dark border">{{ locale === 'fr' ? 'Signature PDF' : 'PDF Signature' }}</span>
                       </td>
                       <td class="text-muted small">{{ formatDate(sig.createdAt?.toDate ? sig.createdAt.toDate() : sig.createdAt) }}</td>
                     </tr>
@@ -304,6 +304,9 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import OrganizationApiService from '../../services/OrganizationApiService'
 import AdminApiService from '../../services/AdminApiService'
+import { useI18n } from '../../composables/useI18n'
+
+const { t, locale } = useI18n()
 
 const loading = ref(true)
 const activeSection = ref('overview')
@@ -390,14 +393,14 @@ const handleApproveOrg = async (id) => {
   try {
     await OrganizationApiService.validateOrganization(id)
   } catch (error) {
-    alert('Erreur lors de la validation')
+    alert(locale.value === 'fr' ? 'Erreur lors de la validation' : 'Error during validation')
   }
 }
 
 const handleRejectOrg = async (id, permanent = false) => {
   const message = permanent 
-    ? 'Supprimer définitivement cette organisation ? Cette action est irréversible.' 
-    : 'Rejeter cette organisation ?'
+    ? (locale.value === 'fr' ? 'Supprimer définitivement cette organisation ? Cette action est irréversible.' : 'Permanently delete this organization? This action is irreversible.')
+    : (locale.value === 'fr' ? 'Rejeter cette organisation ?' : 'Reject this organization?')
   if (confirm(message)) {
     try {
       if (permanent) {
@@ -408,25 +411,25 @@ const handleRejectOrg = async (id, permanent = false) => {
         await OrganizationApiService.rejectOrganization(id)
       }
     } catch (error) {
-      alert('Erreur')
+      alert(locale.value === 'fr' ? 'Erreur' : 'Error')
     }
   }
 }
 
 const handleRevokeOrg = async (id) => {
-  if (confirm('Mettre cette organisation en attente de validation ?')) {
+  if (confirm(locale.value === 'fr' ? 'Mettre cette organisation en attente de validation ?' : 'Put this organization on pending validation?')) {
     try {
       const { db } = OrganizationApiService.getFirebase()
       const { doc, updateDoc } = await import('firebase/firestore')
       await updateDoc(doc(db, 'organizations', id), { approval_status: 'pending' })
     } catch (error) {
-      alert('Erreur')
+      alert(locale.value === 'fr' ? 'Erreur' : 'Error')
     }
   }
 }
 
 const handleRehabilitateOrg = async (id) => {
-  if (confirm('Réhabiliter cette organisation ? Elle sera réapprouvée et ses membres pourront de nouveau y accéder.')) {
+  if (confirm(locale.value === 'fr' ? 'Réhabiliter cette organisation ? Elle sera réapprouvée et ses membres pourront de nouveau y accéder.' : 'Rehabilitate this organization? It will be re-approved and members can access it again.')) {
     try {
       const { db } = OrganizationApiService.getFirebase()
       const { doc, updateDoc } = await import('firebase/firestore')
@@ -435,17 +438,17 @@ const handleRehabilitateOrg = async (id) => {
         rehabilitated_at: new Date().toISOString()
       })
     } catch (error) {
-      alert('Erreur lors de la réhabilitation')
+      alert(locale.value === 'fr' ? 'Erreur lors de la réhabilitation' : 'Error during rehabilitation')
     }
   }
 }
 
 const handleRoleChange = async (userId, newRole) => {
-  if (confirm(`Voulez-vous vraiment changer le rôle de cet utilisateur vers "${newRole}" ?`)) {
+  if (confirm(locale.value === 'fr' ? `Voulez-vous vraiment changer le rôle de cet utilisateur vers "${newRole}" ?` : `Are you sure you want to change this user's role to "${newRole}"?`)) {
     try {
       await AdminApiService.updateUserRole(userId, newRole)
     } catch (error) {
-      alert('Erreur lors du changement de rôle')
+      alert(locale.value === 'fr' ? 'Erreur lors du changement de rôle' : 'Error changing role')
     }
   }
 }
@@ -453,10 +456,10 @@ const handleRoleChange = async (userId, newRole) => {
 // ==================== UTILITAIRES ====================
 
 const formatDate = (dateString) => {
-  if (!dateString) return 'Inconnue'
+  if (!dateString) return locale.value === 'fr' ? 'Inconnue' : 'Unknown'
   const date = new Date(dateString)
-  if (isNaN(date.getTime())) return 'Invalide'
-  return new Intl.DateTimeFormat('fr-FR', {
+  if (isNaN(date.getTime())) return locale.value === 'fr' ? 'Invalide' : 'Invalid'
+  return new Intl.DateTimeFormat(locale.value === 'fr' ? 'fr-FR' : 'en-US', {
     day: '2-digit', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit'
   }).format(date)
@@ -469,9 +472,9 @@ const getStatusBadgeClass = (status) => {
 }
 
 const getStatusText = (status) => {
-  if (status === 'approved') return 'Approuvée'
-  if (status === 'rejected') return 'Rejetée'
-  return 'En attente'
+  if (status === 'approved') return locale.value === 'fr' ? 'Approuvée' : 'Approved'
+  if (status === 'rejected') return locale.value === 'fr' ? 'Rejetée' : 'Rejected'
+  return locale.value === 'fr' ? 'En attente' : 'Pending'
 }
 
 const getRoleBadgeClass = (role) => {
@@ -482,8 +485,8 @@ const getRoleBadgeClass = (role) => {
 
 const getRoleText = (role) => {
   if (role === 'super-admin') return 'Super Admin'
-  if (role === 'chief') return 'Chef Org'
-  return 'Membre'
+  if (role === 'chief') return locale.value === 'fr' ? 'Chef Org' : 'Org Chief'
+  return locale.value === 'fr' ? 'Membre' : 'Member'
 }
 </script>
 

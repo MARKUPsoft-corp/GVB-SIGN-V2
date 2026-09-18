@@ -12,8 +12,7 @@
               <span class="brand-text fw-bold text-light fs-4">GVB Sign</span>
             </NuxtLink>
             <p class="text-light-50 mb-4">
-              La solution de signature électronique la plus sécurisée et innovante du marché. 
-              Simplifiez vos processus de signature avec notre technologie QR Code avancée et authentification mobile.
+              {{ t('footer.description') }}
             </p>
             <!-- Réseaux sociaux -->
             <div class="social-links d-flex gap-3">
@@ -40,21 +39,20 @@
             <div class="col-6">
               <h5 class="fw-bold mb-3 text-primary footer-section-title">Menu</h5>
               <ul class="footer-links">
-                <li><NuxtLink to="/">Accueil</NuxtLink></li>
-                <li><NuxtLink to="/">Fonctionnalités</NuxtLink></li>
-                <li><NuxtLink to="/">Tarifs</NuxtLink></li>
-                <li><NuxtLink to="/">Contact</NuxtLink></li>
+                <li><NuxtLink to="/">{{ t('nav.home') }}</NuxtLink></li>
+                <li><NuxtLink to="/">{{ t('nav.features') }}</NuxtLink></li>
+                <li><NuxtLink to="/">{{ t('nav.pricing') }}</NuxtLink></li>
+                <li><NuxtLink to="/">{{ t('nav.contact') }}</NuxtLink></li>
               </ul>
             </div>
 
             <!-- Tarification -->
             <div class="col-6">
-              <h5 class="fw-bold mb-3 text-primary footer-section-title">Tarification</h5>
+              <h5 class="fw-bold mb-3 text-primary footer-section-title">{{ t('nav.pricing') }}</h5>
               <ul class="footer-links">
-                <li><NuxtLink to="/">Plan Free</NuxtLink></li>
-                <li><NuxtLink to="/">Plan Pro</NuxtLink></li>
-                <li><NuxtLink to="/">Plan Ultra</NuxtLink></li>
-                <li><NuxtLink to="/">Plan Custom</NuxtLink></li>
+                <li><NuxtLink to="/">{{ t('pricing.starterTitle') }}</NuxtLink></li>
+                <li><NuxtLink to="/">{{ t('pricing.proTitle') }}</NuxtLink></li>
+                <li><NuxtLink to="/">{{ t('pricing.enterpriseTitle') }}</NuxtLink></li>
               </ul>
             </div>
           </div>
@@ -62,7 +60,7 @@
 
         <!-- Contact (Desktop) -->
         <div class="col-lg-4 d-none d-lg-block">
-          <h5 class="fw-bold mb-3 text-primary footer-section-title">Contact</h5>
+          <h5 class="fw-bold mb-3 text-primary footer-section-title">{{ t('nav.contact') }}</h5>
           <div class="contact-info">
             <div class="contact-item d-flex align-items-center mb-2">
               <div class="contact-icon-wrapper me-3">
@@ -80,7 +78,7 @@
               <div class="contact-icon-wrapper me-3">
                 <i class="bi bi-envelope text-primary"></i>
               </div>
-              <span class="text-light-50">contact@gvbsign.cm</span>
+              <span class="text-light-50">{{ t('contact.supportEmail') }}</span>
             </div>
           </div>
         </div>
@@ -91,12 +89,11 @@
           <div class="row mb-4 justify-content-center">
             <!-- Tarification (Gauche) -->
             <div class="col-6 text-center">
-              <h5 class="fw-bold mb-3 text-primary footer-section-title">Tarification</h5>
+              <h5 class="fw-bold mb-3 text-primary footer-section-title">{{ t('nav.pricing') }}</h5>
               <ul class="footer-links">
-                <li><NuxtLink to="/">Plan Free</NuxtLink></li>
-                <li><NuxtLink to="/">Plan Pro</NuxtLink></li>
-                <li><NuxtLink to="/">Plan Ultra</NuxtLink></li>
-                <li><NuxtLink to="/">Plan Custom</NuxtLink></li>
+                <li><NuxtLink to="/">{{ t('pricing.starterTitle') }}</NuxtLink></li>
+                <li><NuxtLink to="/">{{ t('pricing.proTitle') }}</NuxtLink></li>
+                <li><NuxtLink to="/">{{ t('pricing.enterpriseTitle') }}</NuxtLink></li>
               </ul>
             </div>
 
@@ -104,10 +101,10 @@
             <div class="col-6 text-center">
               <h5 class="fw-bold mb-3 text-primary footer-section-title">Menu</h5>
               <ul class="footer-links">
-                <li><NuxtLink to="/">Accueil</NuxtLink></li>
-                <li><NuxtLink to="/">Fonctionnalités</NuxtLink></li>
-                <li><NuxtLink to="/">Tarifs</NuxtLink></li>
-                <li><NuxtLink to="/">Contact</NuxtLink></li>
+                <li><NuxtLink to="/">{{ t('nav.home') }}</NuxtLink></li>
+                <li><NuxtLink to="/">{{ t('nav.features') }}</NuxtLink></li>
+                <li><NuxtLink to="/">{{ t('nav.pricing') }}</NuxtLink></li>
+                <li><NuxtLink to="/">{{ t('nav.contact') }}</NuxtLink></li>
               </ul>
             </div>
           </div>
@@ -115,7 +112,7 @@
           <!-- Contact en bas -->
           <div class="row justify-content-center">
             <div class="col-12 text-center">
-              <h5 class="fw-bold mb-3 text-primary footer-section-title">Contact</h5>
+              <h5 class="fw-bold mb-3 text-primary footer-section-title">{{ t('nav.contact') }}</h5>
               <div class="contact-info">
                 <div class="contact-item d-flex align-items-center justify-content-center mb-2">
                   <div class="contact-icon-wrapper me-3">
@@ -133,7 +130,7 @@
                   <div class="contact-icon-wrapper me-3">
                     <i class="bi bi-envelope text-primary"></i>
                   </div>
-                  <span class="text-light-50">contact@gvbsign.cm</span>
+                  <span class="text-light-50">{{ t('contact.supportEmail') }}</span>
                 </div>
               </div>
             </div>
@@ -145,7 +142,7 @@
       <div class="row mt-4 pt-4 border-top border-secondary">
         <div class="col-12 text-center">
           <p class="text-light-50 mb-0">
-            &copy; {{ currentYear }} GVB Sign. Tous droits réservés.
+            &copy; {{ currentYear }} GVB Sign. {{ t('footer.rightsReserved') }}
           </p>
         </div>
       </div>
@@ -155,6 +152,9 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from '../../composables/useI18n'
+
+const { t } = useI18n()
 
 // Année courante
 const currentYear = computed(() => new Date().getFullYear())

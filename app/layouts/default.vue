@@ -19,9 +19,13 @@ import SharedNavbar from '../../components/shared/Navbar.vue'
 import SharedFooter from '../../components/shared/Footer.vue'
 
 // Meta tags par défaut
-useHead({
+import { useI18n } from '../../composables/useI18n'
+
+const { locale } = useI18n()
+
+useHead(() => ({
   htmlAttrs: {
-    lang: 'fr'
+    lang: locale.value
   },
   meta: [
     { name: 'format-detection', content: 'telephone=no' }
@@ -33,7 +37,7 @@ useHead({
     { rel: 'icon', type: 'image/png', href: '/gvb-favicon-1755744029.png' },
     { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
   ]
-})
+}))
 </script>
 
 <style>

@@ -6,12 +6,10 @@
         <div class="col-12">
           <div class="pricing-header text-center mb-5">
             <h2 class="display-3 fw-bold mb-4 text-dark pricing-title">
-              Des <span class="text-primary-blue">Tarifs</span> 
-              <span class="text-primary-blue"> Adaptés</span> à vos Besoins
+              <span class="text-primary-blue">{{ t('pricing.title') }}</span>
             </h2>
             <p class="lead mb-0 text-dark pricing-subtitle">
-              Choisissez le plan qui correspond parfaitement à votre activité. 
-              Tous nos plans incluent la sécurité maximale et le support technique.
+              {{ t('pricing.subtitle') }}
             </p>
           </div>
         </div>
@@ -27,14 +25,14 @@
                 :class="{ 'active': billingPeriod === 'monthly' }"
                 @click="billingPeriod = 'monthly'"
               >
-                Mensuel
+                {{ isFrench ? 'Mensuel' : 'Monthly' }}
               </button>
               <button 
                 class="toggle-btn" 
                 :class="{ 'active': billingPeriod === 'yearly' }"
                 @click="billingPeriod = 'yearly'"
               >
-                Annuel <span class="save-badge">ÉCONOMISEZ 20%</span>
+                {{ isFrench ? 'Annuel' : 'Yearly' }} <span class="save-badge">{{ isFrench ? 'ÉCONOMISEZ 20%' : 'SAVE 20%' }}</span>
               </button>
             </div>
           </div>
@@ -75,9 +73,9 @@
                     <span class="text-muted">Branding personnalisé</span>
                   </li>
                 </ul>
-                                 <button class="btn btn-free w-100 pricing-btn">
-                   Commencer gratuitement
-                 </button>
+                <button class="btn btn-free w-100 pricing-btn">
+                  {{ t('pricing.getStarted') }}
+                </button>
               </div>
             </div>
           </div>
@@ -91,35 +89,35 @@
                 <div class="pricing-badge mb-3">
                   <i class="bi bi-briefcase text-primary-blue fs-2"></i>
                 </div>
-                <h3 class="pricing-plan-name mb-2">Pro</h3>
+                <h3 class="pricing-plan-name mb-2">{{ t('pricing.proTitle') }}</h3>
                 <div class="pricing-price mb-4">
                   <span class="price-amount">{{ billingPeriod === 'monthly' ? '15,000' : '12,000' }}</span>
                   <span class="price-currency">FCFA</span>
-                  <span class="price-period">/{{ billingPeriod === 'monthly' ? 'mois' : 'mois' }}</span>
+                  <span class="price-period">{{ billingPeriod === 'monthly' ? (isFrench ? '/mois' : '/mo') : (isFrench ? '/mois' : '/mo') }}</span>
                   <div v-if="billingPeriod === 'yearly'" class="price-original">
-                    <span class="original-price">180,000 FCFA/an</span>
+                    <span class="original-price">180,000 FCFA/{{ isFrench ? 'an' : 'yr' }}</span>
                   </div>
                 </div>
                 <ul class="pricing-features list-unstyled mb-4">
                   <li class="pricing-feature mb-3">
                     <i class="bi bi-check-circle-fill text-success me-2"></i>
-                    100 signatures/mois
+                    100 signatures/{{ isFrench ? 'mois' : 'mo' }}
                   </li>
                   <li class="pricing-feature mb-3">
                     <i class="bi bi-check-circle-fill text-success me-2"></i>
-                    Stockage 10 GB
+                    {{ isFrench ? 'Stockage 10 Go' : '10 GB Storage' }}
                   </li>
                   <li class="pricing-feature mb-3">
                     <i class="bi bi-check-circle-fill text-success me-2"></i>
-                    Support prioritaire
+                    {{ isFrench ? 'Support prioritaire' : 'Priority Support' }}
                   </li>
                   <li class="pricing-feature mb-3">
                     <i class="bi bi-check-circle-fill text-success me-2"></i>
-                    API complète
+                    {{ isFrench ? 'API complète' : 'Full API Access' }}
                   </li>
                 </ul>
                 <button class="btn btn-primary-custom w-100 pricing-btn">
-                  Choisir Pro
+                  {{ t('pricing.getStarted') }}
                 </button>
               </div>
             </div>
@@ -134,35 +132,35 @@
                 <div class="pricing-badge mb-3">
                   <i class="bi bi-building text-primary-blue fs-2"></i>
                 </div>
-                <h3 class="pricing-plan-name mb-2">Ultra</h3>
+                <h3 class="pricing-plan-name mb-2">{{ t('pricing.enterpriseTitle') }}</h3>
                 <div class="pricing-price mb-4">
                   <span class="price-amount">{{ billingPeriod === 'monthly' ? '35,000' : '28,000' }}</span>
                   <span class="price-currency">FCFA</span>
-                  <span class="price-period">/{{ billingPeriod === 'monthly' ? 'mois' : 'mois' }}</span>
+                  <span class="price-period">{{ billingPeriod === 'monthly' ? (isFrench ? '/mois' : '/mo') : (isFrench ? '/mois' : '/mo') }}</span>
                   <div v-if="billingPeriod === 'yearly'" class="price-original">
-                    <span class="original-price">420,000 FCFA/an</span>
+                    <span class="original-price">420,000 FCFA/{{ isFrench ? 'an' : 'yr' }}</span>
                   </div>
                 </div>
                 <ul class="pricing-features list-unstyled mb-4">
                   <li class="pricing-feature mb-3">
                     <i class="bi bi-check-circle-fill text-success me-2"></i>
-                    Signatures illimitées
+                    {{ isFrench ? 'Signatures illimitées' : 'Unlimited Signatures' }}
                   </li>
                   <li class="pricing-feature mb-3">
                     <i class="bi bi-check-circle-fill text-success me-2"></i>
-                    Stockage 100 GB
+                    {{ isFrench ? 'Stockage 100 Go' : '100 GB Storage' }}
                   </li>
                   <li class="pricing-feature mb-3">
                     <i class="bi bi-check-circle-fill text-success me-2"></i>
-                    Gestion d'organisation
+                    {{ isFrench ? 'Gestion d\'organisation' : 'Organization Management' }}
                   </li>
                   <li class="pricing-feature mb-3">
                     <i class="bi bi-check-circle-fill text-success me-2"></i>
-                    Branding personnalisé
+                    {{ isFrench ? 'Branding personnalisé' : 'Custom Branding' }}
                   </li>
                 </ul>
                 <button class="btn btn-primary-custom w-100 pricing-btn">
-                  Choisir Ultra
+                  {{ t('pricing.getStarted') }}
                 </button>
               </div>
             </div>
@@ -177,33 +175,33 @@
                 <div class="pricing-badge mb-3">
                   <i class="bi bi-gear text-primary-blue fs-2"></i>
                 </div>
-                <h3 class="pricing-plan-name mb-2">Custom</h3>
+                <h3 class="pricing-plan-name mb-2">{{ isFrench ? 'Sur Mesure' : 'Custom' }}</h3>
                 <div class="pricing-price mb-4">
-                  <span class="price-amount">Sur</span>
-                  <span class="price-currency">devis</span>
+                  <span class="price-amount">{{ isFrench ? 'Sur' : 'Get a' }}</span>
+                  <span class="price-currency">{{ isFrench ? 'devis' : 'Quote' }}</span>
                   <span class="price-period"></span>
                 </div>
                 <ul class="pricing-features list-unstyled mb-4">
                   <li class="pricing-feature mb-3">
                     <i class="bi bi-check-circle-fill text-success me-2"></i>
-                    Solutions sur mesure
+                    {{ isFrench ? 'Solutions sur mesure' : 'Tailored Solutions' }}
                   </li>
                   <li class="pricing-feature mb-3">
                     <i class="bi bi-check-circle-fill text-success me-2"></i>
-                    Intégration dédiée
+                    {{ isFrench ? 'Intégration dédiée' : 'Dedicated Integration' }}
                   </li>
                   <li class="pricing-feature mb-3">
                     <i class="bi bi-check-circle-fill text-success me-2"></i>
-                    Support 24/7
+                    {{ isFrench ? 'Support 24/7' : '24/7 Support' }}
                   </li>
                   <li class="pricing-feature mb-3">
                     <i class="bi bi-check-circle-fill text-success me-2"></i>
-                    Formation incluse
+                    {{ isFrench ? 'Formation incluse' : 'Training Included' }}
                   </li>
                 </ul>
-                                 <button class="btn btn-custom w-100 pricing-btn">
-                   Nous contacter
-                 </button>
+                <button class="btn btn-custom w-100 pricing-btn">
+                  {{ t('pricing.contactUs') }}
+                </button>
               </div>
             </div>
           </div>
@@ -216,7 +214,7 @@
           <div class="pricing-guarantee">
             <p class="text-muted mb-0">
               <i class="bi bi-shield-check text-success me-2"></i>
-              Tous nos plans incluent une garantie satisfait ou remboursé de 30 jours
+              {{ isFrench ? 'Tous nos plans incluent une garantie satisfait ou remboursé de 30 jours' : 'All plans include a 30-day money-back guarantee' }}
             </p>
           </div>
         </div>
@@ -227,6 +225,9 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useI18n } from '../../composables/useI18n'
+
+const { t, isFrench } = useI18n()
 
 // État de la période de facturation
 const billingPeriod = ref('monthly')

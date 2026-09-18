@@ -8,15 +8,19 @@
 </template>
 
 <script setup>
+import { useI18n } from '../../composables/useI18n'
+
+const { locale } = useI18n()
+
 // Meta tags par défaut pour les pages d'auth
-useHead({
+useHead(() => ({
   htmlAttrs: {
-    lang: 'fr'
+    lang: locale.value
   },
   meta: [
     { name: 'format-detection', content: 'telephone=no' }
   ]
-})
+}))
 </script>
 
 <style>

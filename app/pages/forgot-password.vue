@@ -1,22 +1,25 @@
 <template>
   <div class="forgot-password-container">
+    <div class="lang-top-right">
+      <LanguageSelector variant="pill" size="sm" />
+    </div>
     <div class="forgot-password-card">
       <div class="forgot-password-header">
         <div class="icon">
           <i class="bi bi-key"></i>
         </div>
-        <h1>Mot de passe oublié</h1>
-        <p>Cette fonctionnalité sera bientôt disponible</p>
+        <h1>{{ t('auth.forgotPassword') }}</h1>
+        <p>{{ t('auth.forgotPasswordDesc') }}</p>
       </div>
       
       <div class="forgot-password-actions">
         <NuxtLink to="/login" class="btn btn-primary-custom">
           <i class="bi bi-arrow-left me-2"></i>
-          Retour à la connexion
+          {{ t('auth.backToLogin') }}
         </NuxtLink>
         <NuxtLink to="/" class="btn btn-outline-primary-custom">
           <i class="bi bi-house me-2"></i>
-          Accueil
+          {{ t('nav.home') }}
         </NuxtLink>
       </div>
     </div>
@@ -24,6 +27,11 @@
 </template>
 
 <script setup>
+import LanguageSelector from '../../components/shared/LanguageSelector.vue'
+import { useI18n } from '../../composables/useI18n'
+
+const { t } = useI18n()
+
 definePageMeta({
   layout: 'auth'
 })
@@ -37,6 +45,14 @@ definePageMeta({
   justify-content: center;
   background: linear-gradient(135deg, var(--secondary-blue) 0%, var(--white) 100%);
   padding: 2rem;
+  position: relative;
+}
+
+.lang-top-right {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 10;
 }
 
 .forgot-password-card {

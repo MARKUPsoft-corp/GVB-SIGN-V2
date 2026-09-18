@@ -9,21 +9,22 @@
               <!-- Formulaire à gauche -->
               <div class="col-lg-6">
                 <div class="login-form-container">
-                  <!-- Bouton retour mobile -->
-                  <div class="mobile-back-btn d-lg-none mb-4">
+                  <!-- Header avec retour et Sélecteur de langue -->
+                  <div class="d-flex justify-content-between align-items-center mb-4">
                     <NuxtLink to="/" class="back-home-link">
-                      <i class="bi bi-arrow-left"></i>
-                      <span>Retour à l'accueil</span>
+                      <i class="bi bi-arrow-left me-1"></i>
+                      <span>{{ t('auth.backToHome') }}</span>
                     </NuxtLink>
+                    <LanguageSelector variant="pill" size="sm" />
                   </div>
                   
                   <!-- Header -->
                   <div class="login-header">
                     <div class="welcome-container">
-                      <h2 class="login-title">Bienvenue sur GVB Sign</h2>
+                      <h2 class="login-title">{{ t('auth.welcomeTitle') }}</h2>
                       <div class="welcome-decoration"></div>
                     </div>
-                    <p class="login-subtitle">Connectez-vous ou créez un compte en un clic pour accéder à vos documents sécurisés.</p>
+                    <p class="login-subtitle">{{ t('auth.welcomeSubtitle') }}</p>
                   </div>
 
                   <!-- Bouton de connexion Google -->
@@ -35,11 +36,11 @@
                     >
                       <span v-if="!isLoading" class="d-flex align-items-center justify-content-center">
                         <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo" class="google-icon" />
-                        Continuer avec Google
+                        {{ t('auth.continueWithGoogle') }}
                       </span>
                       <span v-else class="d-flex align-items-center justify-content-center">
                         <i class="bi bi-arrow-clockwise me-2 spin"></i>
-                        Connexion en cours...
+                        {{ t('auth.signingIn') }}
                       </span>
                     </button>
                     <div class="validation-message mt-3 text-center" v-if="errorMessage">
@@ -59,7 +60,7 @@
                   <div class="back-home-banner">
                     <NuxtLink to="/" class="back-home-link">
                       <i class="bi bi-arrow-left"></i>
-                      <span>Accueil</span>
+                      <span>{{ t('nav.home') }}</span>
                     </NuxtLink>
                   </div>
                   
@@ -82,6 +83,10 @@
 <script setup>
 import { ref } from 'vue'
 import { useAuthStore } from '../../stores/auth'
+import { useI18n } from '../../composables/useI18n'
+import LanguageSelector from '../shared/LanguageSelector.vue'
+
+const { t } = useI18n()
 
 const authStore = process.client ? useAuthStore() : null
 const isLoading = ref(false)

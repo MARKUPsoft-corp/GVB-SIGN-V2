@@ -12,7 +12,7 @@
             <input 
               v-model="documentTitle" 
               class="document-title-input"
-              placeholder="Nom du document..."
+              :placeholder="locale === 'fr' ? 'Nom du document...' : 'Document title...'"
               :style="{ width: titleWidth + 'px' }"
               ref="titleInput"
               @input="adjustTitleWidth"
@@ -21,13 +21,13 @@
         </div>
       </div>
       <div class="editor-header-controls">
-        <button class="control-btn minimize-btn" title="Réduire">
+        <button class="control-btn minimize-btn" :title="locale === 'fr' ? 'Réduire' : 'Minimize'">
           <i class="bi bi-dash"></i>
         </button>
-        <button class="control-btn maximize-btn" title="Agrandir">
+        <button class="control-btn maximize-btn" :title="locale === 'fr' ? 'Agrandir' : 'Maximize'">
           <i class="bi bi-square"></i>
         </button>
-        <button class="control-btn close-btn" title="Fermer" @click="$emit('back')">
+        <button class="control-btn close-btn" :title="locale === 'fr' ? 'Fermer' : 'Close'" @click="$emit('back')">
           <i class="bi bi-x"></i>
         </button>
       </div>
@@ -110,7 +110,7 @@
 
         <!-- Import -->
         <div class="toolbar-group">
-          <button class="toolbar-btn" @click="importDocument" title="Importer un document Word">
+          <button class="toolbar-btn" @click="importDocument" :title="locale === 'fr' ? 'Importer un document Word' : 'Import Word document'">
             <i class="bi bi-file-earmark-arrow-up"></i>
           </button>
         </div>
@@ -127,8 +127,8 @@
     <!-- Barre de statut -->
     <div class="editor-status-bar">
       <div class="status-left">
-        <span class="word-count">{{ wordCount }} mots</span>
-        <span class="character-count">{{ characterCount }} caractères</span>
+        <span class="word-count">{{ wordCount }} {{ locale === 'fr' ? 'mots' : 'words' }}</span>
+        <span class="character-count">{{ characterCount }} {{ locale === 'fr' ? 'caractères' : 'characters' }}</span>
       </div>
       <div class="status-right">
         <span class="save-status">{{ saveStatus }}</span>
@@ -148,17 +148,21 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { useI18n } from '../../composables/useI18n'
+
+const { t, locale } = useI18n()
 
 // Props et événements
 const emit = defineEmits(['back', 'save', 'share'])
 
 // État du document
+const isSaved = ref(true)
 const documentTitle = ref('Nouveau document')
-const documentStatus = ref('Brouillon')
+const documentStatus = computed(() => locale.value === 'fr' ? 'Brouillon' : 'Draft')
 const wordCount = ref(0)
 const characterCount = ref(0)
-const saveStatus = ref('Sauvegardé')
+const saveStatus = computed(() => isSaved.value ? (locale.value === 'fr' ? 'Sauvegardé' : 'Saved') : (locale.value === 'fr' ? 'Non sauvegardé' : 'Unsaved'))
 const zoomLevel = ref(100)
 const titleWidth = ref(200)
 const titleInput = ref(null)

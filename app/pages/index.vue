@@ -22,15 +22,23 @@ import HomepagePricingSection from '../../components/homepage/PricingSection.vue
 import HomepageContactSection from '../../components/homepage/ContactSection.vue'
 
 // Meta tags pour la page d'accueil
-useHead({
-  title: 'GVB Sign - Solution de Signature Électronique Innovante',
+import { useI18n } from '../../composables/useI18n'
+
+const { locale } = useI18n()
+
+useHead(() => ({
+  title: locale.value === 'fr' 
+    ? 'GVB Sign - Solution de Signature Électronique Innovante' 
+    : 'GVB Sign - Innovative Electronic Signature Solution',
   meta: [
     {
       name: 'description',
-      content: 'Révolutionnez vos signatures avec GVB Sign. Technologie QR Code, sécurité maximale, signature instantanée.'
+      content: locale.value === 'fr'
+        ? 'Révolutionnez vos signatures avec GVB Sign. Technologie QR Code, sécurité maximale, signature instantanée.'
+        : 'Revolutionize your signatures with GVB Sign. QR Code technology, maximum security, instant signature.'
     }
   ]
-})
+}))
 </script>
 
 <style scoped>

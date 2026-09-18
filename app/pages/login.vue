@@ -8,6 +8,9 @@
 <script setup>
 // Import explicite du composant
 import AuthLoginForm from '../../components/auth/LoginForm.vue'
+import { useI18n } from '../../composables/useI18n'
+
+const { locale } = useI18n()
 
 // Définir le layout et le middleware
 definePageMeta({
@@ -16,15 +19,17 @@ definePageMeta({
 })
 
 // Meta tags pour la page de connexion
-useHead({
-  title: 'Connexion - GVB Sign',
+useHead(() => ({
+  title: locale.value === 'fr' ? 'Connexion - GVB Sign' : 'Login - GVB Sign',
   meta: [
     {
       name: 'description',
-      content: 'Connectez-vous à votre compte GVB Sign pour accéder à vos documents sécurisés.'
+      content: locale.value === 'fr' 
+        ? 'Connectez-vous à votre compte GVB Sign pour accéder à vos documents sécurisés.' 
+        : 'Sign in to your GVB Sign account to access your secured documents.'
     }
   ]
-})
+}))
 </script>
 
 <style scoped>

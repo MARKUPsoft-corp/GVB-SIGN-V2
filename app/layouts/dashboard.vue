@@ -9,15 +9,18 @@
           <span class="brand-text fw-bold text-primary-blue fs-4">GVB Sign</span>
         </div>
 
-        <!-- Bouton mobile -->
-        <button
-          class="navbar-toggler border-0 d-lg-none"
-          type="button"
-          @click="toggleSidebar"
-          aria-label="Toggle navigation"
-        >
-          <span class="navbar-toggler-icon"></span>
-        </button>
+        <!-- Language Selector + Bouton mobile -->
+        <div class="d-flex align-items-center gap-2">
+          <LanguageSelector variant="pill" size="sm" />
+          <button
+            class="navbar-toggler border-0"
+            type="button"
+            @click="toggleSidebar"
+            aria-label="Toggle navigation"
+          >
+            <span class="navbar-toggler-icon"></span>
+          </button>
+        </div>
 
         <!-- Menu de navigation desktop -->
         <div class="collapse navbar-collapse d-none d-lg-block" id="navbarNav">
@@ -25,49 +28,49 @@
             <li class="nav-item">
               <button class="nav-link fw-500 border-0 bg-transparent" :class="{ active: activePage === 'dashboard' }" @click="setActivePage('dashboard')">
                 <i class="bi bi-house-door me-2"></i>
-                Tableau de bord
+                {{ t('dashboard.nav.dashboard') }}
               </button>
             </li>
             <li class="nav-item">
               <button class="nav-link fw-500 border-0 bg-transparent" :class="{ active: activePage === 'documents' }" @click="setActivePage('documents')">
                 <i class="bi bi-file-earmark-text me-2"></i>
-                Mes Documents
+                {{ t('dashboard.nav.documents') }}
               </button>
             </li>
             <li class="nav-item">
               <button class="nav-link fw-500 border-0 bg-transparent" :class="{ active: activePage === 'signatures' }" @click="setActivePage('signatures')">
                 <i class="bi bi-pen me-2"></i>
-                Signatures
+                {{ t('dashboard.nav.signatures') }}
               </button>
             </li>
             <li class="nav-item">
               <button class="nav-link fw-500 border-0 bg-transparent" :class="{ active: activePage === 'qr-codes' }" @click="setActivePage('qr-codes')">
                 <i class="bi bi-qr-code me-2"></i>
-                QR Codes
+                {{ t('dashboard.nav.qrCodes') }}
               </button>
             </li>
             <li class="nav-item">
               <button class="nav-link fw-500 border-0 bg-transparent" :class="{ active: activePage === 'templates' }" @click="setActivePage('templates')">
                 <i class="bi bi-file-earmark-plus me-2"></i>
-                Modèles
+                {{ t('dashboard.nav.templates') }}
               </button>
             </li>
             <li class="nav-item">
               <button class="nav-link fw-500 border-0 bg-transparent" :class="{ active: activePage === 'history' }" @click="setActivePage('history')">
                 <i class="bi bi-clock-history me-2"></i>
-                Historique
+                {{ t('dashboard.nav.history') }}
               </button>
             </li>
             <li class="nav-item">
               <button class="nav-link fw-500 border-0 bg-transparent" :class="{ active: activePage === 'settings' }" @click="setActivePage('settings')">
                 <i class="bi bi-gear me-2"></i>
-                Paramètres
+                {{ t('dashboard.nav.settings') }}
               </button>
             </li>
             <li class="nav-item" v-if="userStore.role === 'super-admin'">
               <button class="nav-link fw-500 border-0 bg-transparent text-danger" :class="{ active: activePage === 'super-admin' }" @click="setActivePage('super-admin')">
                 <i class="bi bi-shield-lock-fill me-2"></i>
-                Administration
+                {{ t('dashboard.nav.admin') }}
               </button>
             </li>
           </ul>
@@ -77,15 +80,15 @@
             <div class="user-info-navbar">
               <i class="bi bi-person-circle me-2"></i>
               <ClientOnly>
-                <span class="user-name-navbar">{{ userStore.fullName || 'Utilisateur' }}</span>
+                <span class="user-name-navbar">{{ userStore.fullName || t('dashboard.nav.user') }}</span>
                 <template #fallback>
-                  <span class="user-name-navbar">Utilisateur</span>
+                  <span class="user-name-navbar">{{ t('dashboard.nav.user') }}</span>
                 </template>
               </ClientOnly>
             </div>
             <button class="btn btn-outline-danger btn-sm" @click="handleLogout">
               <i class="bi bi-box-arrow-right me-2"></i>
-              Déconnexion
+              {{ t('dashboard.nav.logout') }}
             </button>
           </div>
         </div>
@@ -113,31 +116,31 @@
           <li class="sidebar-nav-item">
             <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: activePage === 'dashboard' }" @click="setActivePage('dashboard')">
               <i class="bi bi-house-door me-3"></i>
-              Tableau de bord
+              {{ t('dashboard.nav.dashboard') }}
             </button>
           </li>
           <li class="sidebar-nav-item">
             <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: activePage === 'documents' }" @click="setActivePage('documents')">
               <i class="bi bi-file-earmark-text me-3"></i>
-              Mes Documents
+              {{ t('dashboard.nav.documents') }}
             </button>
           </li>
           <li class="sidebar-nav-item">
             <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: activePage === 'signatures' }" @click="setActivePage('signatures')">
               <i class="bi bi-pen me-3"></i>
-              Signatures
+              {{ t('dashboard.nav.signatures') }}
             </button>
           </li>
           <li class="sidebar-nav-item">
             <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: isOrganizationPage }" @click="setActivePage('organization-selection')">
               <i class="bi bi-building me-3"></i>
-              Organisation
+              {{ t('dashboard.nav.organization') }}
             </button>
           </li>
           <li class="sidebar-nav-item" v-if="userStore.role === 'super-admin'">
             <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start text-danger" :class="{ active: activePage === 'super-admin' }" @click="setActivePage('super-admin')">
               <i class="bi bi-shield-lock-fill me-3"></i>
-              Administration
+              {{ t('dashboard.nav.admin') }}
             </button>
           </li>
         </ul>
@@ -145,6 +148,9 @@
 
       <!-- Footer fixe -->
       <div class="sidebar-footer">
+        <div class="sidebar-lang-wrapper">
+          <LanguageSelector variant="pill" size="sm" />
+        </div>
         <div class="user-section">
           <div class="user-info" @click="openProfileModalFromMobile" role="button">
             <div class="user-avatar">
@@ -152,10 +158,10 @@
             </div>
             <div class="user-details">
               <ClientOnly>
-                <span class="user-name">{{ userStore.fullName || 'Utilisateur' }}</span>
+                <span class="user-name">{{ userStore.fullName || t('dashboard.nav.user') }}</span>
                 <span class="user-email">{{ userStore.email || 'email@example.com' }}</span>
                 <template #fallback>
-                  <span class="user-name">Utilisateur</span>
+                  <span class="user-name">{{ t('dashboard.nav.user') }}</span>
                   <span class="user-email">email@example.com</span>
                 </template>
               </ClientOnly>
@@ -163,7 +169,7 @@
           </div>
           <button @click="handleLogout" class="logout-btn">
             <i class="bi bi-box-arrow-right"></i>
-            <span>Déconnexion</span>
+            <span>{{ t('dashboard.nav.logout') }}</span>
           </button>
         </div>
       </div>
@@ -185,31 +191,31 @@
           <li class="nav-item">
             <button class="nav-link" :class="{ active: activePage === 'dashboard' }" @click="setActivePage('dashboard')">
               <i class="bi bi-house-door"></i>
-              <span v-show="!isSidebarCollapsed">Tableau de bord</span>
+              <span v-show="!isSidebarCollapsed">{{ t('dashboard.nav.dashboard') }}</span>
             </button>
           </li>
           <li class="nav-item">
             <button class="nav-link" :class="{ active: activePage === 'documents' }" @click="setActivePage('documents')">
               <i class="bi bi-file-earmark-text"></i>
-              <span v-show="!isSidebarCollapsed">Mes Documents</span>
+              <span v-show="!isSidebarCollapsed">{{ t('dashboard.nav.documents') }}</span>
             </button>
           </li>
           <li class="nav-item">
             <button class="nav-link" :class="{ active: activePage === 'signatures' }" @click="setActivePage('signatures')">
               <i class="bi bi-pen"></i>
-              <span v-show="!isSidebarCollapsed">Signatures</span>
+              <span v-show="!isSidebarCollapsed">{{ t('dashboard.nav.signatures') }}</span>
             </button>
           </li>
           <li class="nav-item">
             <button class="nav-link" :class="{ active: isOrganizationPage }" @click="setActivePage('organization-selection')">
               <i class="bi bi-building"></i>
-              <span v-show="!isSidebarCollapsed">Organisation</span>
+              <span v-show="!isSidebarCollapsed">{{ t('dashboard.nav.organization') }}</span>
             </button>
           </li>
           <li class="nav-item" v-if="userStore.role === 'super-admin'">
             <button class="nav-link text-danger" :class="{ active: activePage === 'super-admin' }" @click="setActivePage('super-admin')">
               <i class="bi bi-shield-lock-fill"></i>
-              <span v-show="!isSidebarCollapsed">Administration</span>
+              <span v-show="!isSidebarCollapsed">{{ t('dashboard.nav.admin') }}</span>
             </button>
           </li>
         </ul>
@@ -217,6 +223,24 @@
 
       <!-- Section utilisateur et déconnexion -->
       <div class="sidebar-footer">
+        <!-- Sélecteur de langue dans la sidebar -->
+        <div class="sidebar-lang-wrapper" v-show="!isSidebarCollapsed">
+          <LanguageSelector variant="pill" size="sm" />
+        </div>
+        
+        <!-- Sélecteur de langue compact (sidebar repliée) -->
+        <div class="sidebar-lang-collapsed" v-show="isSidebarCollapsed">
+          <button 
+            type="button" 
+            class="lang-collapsed-btn" 
+            @click="setLocale(locale === 'fr' ? 'en' : 'fr')"
+            :title="locale === 'fr' ? 'Switch to English' : 'Passer en Français'"
+            aria-label="Changer de langue"
+          >
+            <span>{{ locale === 'fr' ? '🇫🇷' : '🇬🇧' }}</span>
+          </button>
+        </div>
+
         <div class="user-section">
           <div class="user-info" @click="toggleProfileModal" role="button">
             <div class="user-avatar">
@@ -224,10 +248,10 @@
             </div>
             <div class="user-details" v-show="!isSidebarCollapsed">
               <ClientOnly>
-                <span class="user-name">{{ userStore.fullName || 'Utilisateur' }}</span>
+                <span class="user-name">{{ userStore.fullName || t('dashboard.nav.user') }}</span>
                 <span class="user-email">{{ userStore.email || 'email@example.com' }}</span>
                 <template #fallback>
-                  <span class="user-name">Utilisateur</span>
+                  <span class="user-name">{{ t('dashboard.nav.user') }}</span>
                   <span class="user-email">email@example.com</span>
                 </template>
               </ClientOnly>
@@ -235,7 +259,7 @@
           </div>
           <button @click="handleLogout" class="logout-btn">
             <i class="bi bi-box-arrow-right"></i>
-            <span v-show="!isSidebarCollapsed">Déconnexion</span>
+            <span v-show="!isSidebarCollapsed">{{ t('dashboard.nav.logout') }}</span>
           </button>
         </div>
       </div>
@@ -250,28 +274,28 @@
             <div class="profile-avatar">
               <i class="bi bi-person-circle"></i>
             </div>
-            <h6>Mon Profil</h6>
+            <h6>{{ t('dashboard.profile.myProfile') }}</h6>
           </div>
           <ul class="profile-nav">
             <li class="profile-nav-item" :class="{ active: activeProfileTab === 'profile' }" @click="setActiveProfileTab('profile')">
               <i class="bi bi-person"></i>
-              <span>Profil</span>
+              <span>{{ t('dashboard.profile.tabs.profile') }}</span>
             </li>
             <li class="profile-nav-item" :class="{ active: activeProfileTab === 'certificate' }" @click="setActiveProfileTab('certificate')">
               <i class="bi bi-shield-fill-check"></i>
-              <span>Certificat</span>
+              <span>{{ t('dashboard.profile.tabs.certificate') }}</span>
             </li>
             <li class="profile-nav-item" :class="{ active: activeProfileTab === 'security' }" @click="setActiveProfileTab('security')">
               <i class="bi bi-shield-lock"></i>
-              <span>Sécurité</span>
+              <span>{{ t('dashboard.profile.tabs.security') }}</span>
             </li>
             <li class="profile-nav-item" :class="{ active: activeProfileTab === 'preferences' }" @click="setActiveProfileTab('preferences')">
               <i class="bi bi-gear"></i>
-              <span>Préférences</span>
+              <span>{{ t('dashboard.profile.tabs.preferences') }}</span>
             </li>
             <li class="profile-nav-item" :class="{ active: activeProfileTab === 'billing' }" @click="setActiveProfileTab('billing')">
               <i class="bi bi-credit-card"></i>
-              <span>Facturation</span>
+              <span>{{ t('dashboard.profile.tabs.billing') }}</span>
             </li>
           </ul>
         </div>
@@ -292,16 +316,16 @@
             <!-- Contenu Profil -->
             <div v-if="activeProfileTab === 'profile'" class="tab-content">
               <div class="form-group">
-                <label>Nom complet</label>
+                <label>{{ t('dashboard.profile.fullName') }}</label>
                 <input type="text" class="form-control" :value="userStore.fullName" readonly>
               </div>
               <div class="form-group">
-                <label>Email</label>
+                <label>{{ t('dashboard.profile.email') }}</label>
                 <input type="email" class="form-control" :value="userStore.email" readonly>
               </div>
               <div class="form-group">
-                <label>Statut</label>
-                <span class="badge bg-success">Actif</span>
+                <label>{{ t('dashboard.profile.status') }}</label>
+                <span class="badge bg-success">{{ t('dashboard.profile.active') }}</span>
               </div>
             </div>
             
@@ -309,17 +333,17 @@
             <div v-if="activeProfileTab === 'security'" class="tab-content">
               <div class="security-item">
                 <div class="security-info">
-                  <h6>Mot de passe</h6>
-                  <p class="text-muted">Dernière modification : il y a 2 semaines</p>
+                  <h6>{{ t('dashboard.profile.password') }}</h6>
+                  <p class="text-muted">{{ t('dashboard.profile.passwordLastModified') }}</p>
                 </div>
-                <button class="btn btn-outline-primary btn-sm">Modifier</button>
+                <button class="btn btn-outline-primary btn-sm">{{ t('dashboard.profile.modify') }}</button>
               </div>
               <div class="security-item">
                 <div class="security-info">
-                  <h6>Authentification à deux facteurs</h6>
-                  <p class="text-muted">Non configurée</p>
+                  <h6>{{ t('dashboard.profile.twoFactor') }}</h6>
+                  <p class="text-muted">{{ t('dashboard.profile.twoFactorNotConfigured') }}</p>
                 </div>
-                <button class="btn btn-primary btn-sm">Activer</button>
+                <button class="btn btn-primary btn-sm">{{ t('dashboard.profile.enable') }}</button>
               </div>
             </div>
             
@@ -327,19 +351,18 @@
             <div v-if="activeProfileTab === 'preferences'" class="tab-content">
               <div class="preference-item">
                 <div class="preference-info">
-                  <h6>Langue</h6>
-                  <p class="text-muted">Français</p>
+                  <h6>{{ t('dashboard.profile.language') }}</h6>
+                  <p class="text-muted">{{ locale === 'fr' ? 'Français' : 'English' }}</p>
                 </div>
-                <select class="form-select form-select-sm">
-                  <option selected>Français</option>
-                  <option>English</option>
-                  <option>Español</option>
+                <select class="form-select form-select-sm" :value="locale" @change="setLocale($event.target.value)">
+                  <option value="fr">Français (FR)</option>
+                  <option value="en">English (EN)</option>
                 </select>
               </div>
               <div class="preference-item">
                 <div class="preference-info">
-                  <h6>Notifications email</h6>
-                  <p class="text-muted">Recevoir les notifications par email</p>
+                  <h6>{{ t('dashboard.profile.emailNotifications') }}</h6>
+                  <p class="text-muted">{{ t('dashboard.profile.emailNotificationsDesc') }}</p>
                 </div>
                 <div class="form-check form-switch">
                   <input class="form-check-input" type="checkbox" checked>
@@ -350,13 +373,13 @@
             <!-- Contenu Facturation -->
             <div v-if="activeProfileTab === 'billing'" class="tab-content">
               <div class="billing-info">
-                <h6>Plan actuel</h6>
+                <h6>{{ t('dashboard.profile.currentPlan') }}</h6>
                 <div class="plan-card">
                   <div class="plan-details">
-                    <h5>Plan Gratuit</h5>
-                    <p class="text-muted">5 signatures par mois</p>
+                    <h5>{{ t('dashboard.profile.freePlan') }}</h5>
+                    <p class="text-muted">{{ t('dashboard.profile.freePlanDesc') }}</p>
                   </div>
-                  <button class="btn btn-primary btn-sm">Mettre à niveau</button>
+                  <button class="btn btn-primary btn-sm">{{ t('dashboard.profile.upgrade') }}</button>
                 </div>
               </div>
             </div>
@@ -365,39 +388,39 @@
             <div v-if="activeProfileTab === 'certificate'" class="tab-content">
               <!-- Section d'importation - affichée seulement s'il n'y a pas de certificat -->
               <div v-if="!certificateInfo" class="certificate-upload-section">
-                <h6>Importer votre certificat</h6>
+                <h6>{{ t('dashboard.profile.importCertTitle') }}</h6>
                 <div class="certificate-action-item">
                   <div class="action-info">
-                    <h6>Certificat de signature</h6>
+                    <h6>{{ t('dashboard.profile.signatureCert') }}</h6>
                     <p class="text-muted certificate-description">
-                      Importez votre certificat PFX ou P12 pour signer vos documents.
+                      {{ t('dashboard.profile.signatureCertDesc') }}
                     </p>
                   </div>
                   <div class="action-button">
                     <button class="btn btn-outline-primary btn-sm" @click="openCertificateModal">
                       <i class="bi bi-upload me-2"></i>
-                      Importer
+                      {{ t('dashboard.profile.importBtn') }}
                     </button>
                   </div>
                 </div>
               </div>
               
               <div class="certificate-info-section" :class="{ 'certificate-info-section-top': certificateInfo }">
-                <h6>Informations du certificat</h6>
+                <h6>{{ t('dashboard.profile.certInfoTitle') }}</h6>
                 <div v-if="certificateInfo" class="certificate-status-card certificate-imported" :class="{ 'certificate-expired': !certificateInfo.validity.isValid }">
                   <div class="certificate-header">
                     <div class="certificate-status-icon">
                       <i :class="certificateInfo.validity.isValid ? 'bi bi-shield-check' : 'bi bi-shield-x'"></i>
                     </div>
                     <div class="certificate-title">
-                      <h6 class="mb-0">Certificat importé</h6>
+                      <h6 class="mb-0">{{ t('dashboard.profile.certImported') }}</h6>
                       <span class="certificate-subtitle" :class="certificateInfo.validity.isValid ? 'text-success' : 'text-danger'">
-                        {{ certificateInfo.validity.isValid ? 'Prêt pour la signature' : 'Ne peut pas être utilisé - Certificat expiré' }}
+                        {{ certificateInfo.validity.isValid ? t('dashboard.profile.readyToSign') : t('dashboard.profile.expiredCannotUse') }}
                       </span>
                     </div>
                     <div class="certificate-status-badge">
                       <span :class="certificateInfo.validity.isValid ? 'badge bg-success' : 'badge bg-danger'">
-                        {{ certificateInfo.validity.isValid ? 'Valide' : 'Expiré' }}
+                        {{ certificateInfo.validity.isValid ? t('dashboard.profile.valid') : t('dashboard.profile.expired') }}
                       </span>
                     </div>
                   </div>
@@ -406,23 +429,23 @@
                     <div class="certificate-section">
                       <h6 class="section-title">
                         <i class="bi bi-person me-2"></i>
-                        Informations du titulaire
+                        {{ t('dashboard.profile.holderInfo') }}
                       </h6>
                       <div class="info-grid">
                         <div class="info-item">
-                          <span class="info-label">Nom</span>
+                          <span class="info-label">{{ t('dashboard.profile.name') }}</span>
                           <span class="info-value">{{ certificateInfo.subject.commonName }}</span>
                         </div>
                         <div class="info-item">
-                          <span class="info-label">Organisation</span>
+                          <span class="info-label">{{ t('dashboard.profile.org') }}</span>
                           <span class="info-value">{{ certificateInfo.subject.organization }}</span>
                         </div>
                         <div class="info-item">
-                          <span class="info-label">Numéro de série</span>
+                          <span class="info-label">{{ t('dashboard.profile.serialNumber') }}</span>
                           <span class="info-value serial-number">{{ certificateInfo.serialNumber }}</span>
                         </div>
                         <div class="info-item">
-                          <span class="info-label">Pays</span>
+                          <span class="info-label">{{ t('dashboard.profile.country') }}</span>
                           <span class="info-value">{{ certificateInfo.subject.country }}</span>
                         </div>
                       </div>
@@ -431,15 +454,15 @@
                     <div class="certificate-section">
                       <h6 class="section-title">
                         <i class="bi bi-building me-2"></i>
-                        Autorité de certification
+                        {{ t('dashboard.profile.caAuthority') }}
                       </h6>
                       <div class="info-grid">
                         <div class="info-item">
-                          <span class="info-label">Émetteur</span>
+                          <span class="info-label">{{ t('dashboard.profile.issuer') }}</span>
                           <span class="info-value">{{ certificateInfo.issuer.commonName }}</span>
                         </div>
                         <div class="info-item">
-                          <span class="info-label">Organisation</span>
+                          <span class="info-label">{{ t('dashboard.profile.org') }}</span>
                           <span class="info-value">{{ certificateInfo.issuer.organization }}</span>
                         </div>
                       </div>
@@ -448,17 +471,17 @@
                     <div class="certificate-section">
                       <h6 class="section-title">
                         <i class="bi bi-calendar-check me-2"></i>
-                        Validité
+                        {{ t('dashboard.profile.validityPeriod') }}
                       </h6>
                       <div class="validity-info">
                         <div class="validity-item">
-                          <span class="validity-label">Émis le</span>
-                          <span class="validity-date">{{ new Date(certificateInfo.validity.notBefore).toLocaleDateString('fr-FR') }}</span>
+                          <span class="validity-label">{{ t('dashboard.profile.validFrom') }}</span>
+                          <span class="validity-date">{{ new Date(certificateInfo.validity.notBefore).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US') }}</span>
                         </div>
                         <div class="validity-item">
-                          <span class="validity-label">Expire le</span>
+                          <span class="validity-label">{{ t('dashboard.profile.validUntil') }}</span>
                           <span class="validity-date" :class="certificateInfo.validity.isValid ? 'text-success' : 'text-danger'">
-                            {{ new Date(certificateInfo.validity.notAfter).toLocaleDateString('fr-FR') }}
+                            {{ new Date(certificateInfo.validity.notAfter).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US') }}
                           </span>
                         </div>
                       </div>
@@ -467,16 +490,16 @@
                     <div class="certificate-section">
                       <h6 class="section-title">
                         <i class="bi bi-key me-2"></i>
-                        Clés et sécurité
+                        {{ t('dashboard.profile.keyUsage') }}
                       </h6>
                       <div class="security-info">
                         <div class="security-item">
                           <i class="bi bi-check-circle-fill text-success me-2"></i>
-                          <span>Clé privée disponible</span>
+                          <span>{{ t('dashboard.profile.digitalSignature') }}</span>
                         </div>
                         <div class="security-item">
                           <i class="bi bi-check-circle-fill text-success me-2"></i>
-                          <span>Clé publique disponible</span>
+                          <span>{{ t('dashboard.profile.nonRepudiation') }}</span>
                         </div>
                         <div class="security-item">
                           <i class="bi bi-shield-lock me-2"></i>
@@ -484,7 +507,7 @@
                         </div>
                         <div v-if="!certificateInfo.validity.isValid" class="security-item security-warning">
                           <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
-                          <span class="text-warning fw-bold">Les clés ne peuvent pas être utilisées - Certificat expiré</span>
+                          <span class="text-warning fw-bold">{{ t('dashboard.profile.expiredCannotUse') }}</span>
                         </div>
                       </div>
                     </div>
@@ -506,7 +529,7 @@
                       <div class="certificate-actions">
                         <button class="btn btn-danger btn-sm remove-certificate-btn" @click="removeCertificate">
                           <i class="bi bi-trash me-2"></i>
-                          Supprimer le certificat
+                          {{ t('dashboard.profile.deleteCert') }}
                         </button>
                       </div>
                     </div>
@@ -520,7 +543,7 @@
                     <div class="certificate-empty-text">
                       <h6 class="mb-2">Aucun certificat importé</h6>
                       <p class="text-muted mb-0">
-                        Importez un certificat PFX ou P12 pour pouvoir signer vos documents numériquement.
+                        {{ t('dashboard.profile.signatureCertDesc') }}
                       </p>
                     </div>
                   </div>
@@ -533,23 +556,23 @@
           <div class="mobile-nav-bar d-lg-none" :data-active-tab="activeProfileTab">
             <div class="mobile-nav-item" :class="{ active: activeProfileTab === 'profile' }" @click="setActiveProfileTab('profile')">
               <i class="bi bi-person"></i>
-              <span>Profil</span>
+              <span>{{ t('dashboard.profile.tabs.profile') }}</span>
             </div>
             <div class="mobile-nav-item" :class="{ active: activeProfileTab === 'certificate' }" @click="setActiveProfileTab('certificate')">
               <i class="bi bi-shield-fill-check"></i>
-              <span>Certificat</span>
+              <span>{{ t('dashboard.profile.tabs.certificate') }}</span>
             </div>
             <div class="mobile-nav-item" :class="{ active: activeProfileTab === 'security' }" @click="setActiveProfileTab('security')">
               <i class="bi bi-shield-lock"></i>
-              <span>Sécurité</span>
+              <span>{{ t('dashboard.profile.tabs.security') }}</span>
             </div>
             <div class="mobile-nav-item" :class="{ active: activeProfileTab === 'preferences' }" @click="setActiveProfileTab('preferences')">
               <i class="bi bi-gear"></i>
-              <span>Préférences</span>
+              <span>{{ t('dashboard.profile.tabs.preferences') }}</span>
             </div>
             <div class="mobile-nav-item" :class="{ active: activeProfileTab === 'billing' }" @click="setActiveProfileTab('billing')">
               <i class="bi bi-credit-card"></i>
-              <span>Facturation</span>
+              <span>{{ t('dashboard.profile.tabs.billing') }}</span>
             </div>
           </div>
         </div>
@@ -560,7 +583,7 @@
             <div class="certificate-modal-header">
               <h6>
                 <i class="bi bi-shield-fill-check"></i>
-                Importer un certificat
+                {{ t('dashboard.profile.importCertTitle') }}
               </h6>
               <button class="close-btn" @click="closeCertificateModal">
                 <i class="bi bi-x"></i>
@@ -592,7 +615,7 @@
                   >
                   <div class="drop-zone-content">
                     <i class="bi bi-cloud-upload"></i>
-                    <p>Glissez-déposez votre fichier .pfx/.p12</p>
+                    <p>{{ t('dashboard.profile.dragDropCert') }}</p>
                   </div>
                 </div>
               </div>
@@ -616,7 +639,7 @@
                   <input 
                     v-model="certificatePassword"
                     :type="showCertificatePassword ? 'text' : 'password'"
-                    placeholder="Mot de passe du certificat"
+                    :placeholder="t('dashboard.profile.certPasswordPlaceholder')"
                     class="password-input"
                   >
                   <button @click="toggleCertificatePasswordVisibility" class="password-toggle">
@@ -630,14 +653,14 @@
             
             <div class="certificate-modal-footer">
               <button @click="closeCertificateModal" class="btn btn-outline-secondary btn-sm">
-                Annuler
+                {{ t('dashboard.profile.cancelBtn') }}
               </button>
               <button 
                 @click="importCertificate" 
                 :disabled="!selectedCertificateFile || !certificatePassword"
                 class="btn btn-primary btn-sm"
               >
-                Importer
+                {{ t('dashboard.profile.importBtn') }}
               </button>
             </div>
           </div>
@@ -647,6 +670,7 @@
 
     <!-- Contenu principal -->
     <main class="dashboard-main">
+
       <!-- Bouton toggle sidebar (desktop seulement) -->
       <div class="sidebar-toggle-container d-none d-lg-block">
         <button class="sidebar-toggle" @click="toggleSidebarCollapse">
@@ -690,8 +714,8 @@
           <div class="page-placeholder">
             <div class="text-center py-5">
               <i class="bi bi-gear fs-1 text-muted mb-3"></i>
-              <h4 class="text-muted">Page en développement</h4>
-              <p class="text-muted">Cette section sera bientôt disponible.</p>
+              <h4 class="text-muted">{{ locale === 'fr' ? 'Page en développement' : 'Page under development' }}</h4>
+              <p class="text-muted">{{ locale === 'fr' ? 'Cette section sera bientôt disponible.' : 'This section will be available soon.' }}</p>
             </div>
           </div>
         </div>
@@ -704,6 +728,8 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../../stores/auth'
 import { useSessionRefresh } from '../../composables/useSessionRefresh'
+import LanguageSelector from '../../components/shared/LanguageSelector.vue'
+import { useI18n } from '../../composables/useI18n'
 import DocumentsPage from '../../components/dashboard/DocumentsPage.vue'
 import OrganizationsPage from '../../components/dashboard/OrganizationsPage.vue'
 import SignImmediatelyPage from '../../components/dashboard/SignImmediatelyPage.vue'
@@ -715,6 +741,8 @@ import DocumentPreparationPage from '../../components/dashboard/DocumentPreparat
 import SuperAdminPage from '../../components/dashboard/SuperAdminPage.vue'
 import { CertificateService } from '../../services/CertificateService'
 import OrganizationApiService from '../../services/OrganizationApiService'
+
+const { t, locale, setLocale } = useI18n()
 
 // Store d'authentification (côté client seulement)
 const authStore = process.client ? useAuthStore() : null
@@ -1105,14 +1133,7 @@ const setActiveProfileTab = (tab) => {
 }
 
 const getProfileTabTitle = () => {
-  const titles = {
-    profile: 'Informations du profil',
-    certificate: 'Certificat de signature',
-    security: 'Sécurité du compte',
-    preferences: 'Préférences utilisateur',
-    billing: 'Facturation et abonnement'
-  }
-  return titles[activeProfileTab.value] || 'Profil'
+  return t(`dashboard.profile.tabs.${activeProfileTab.value}`) || 'Profil'
 }
 
 const getProfileTabIcon = () => {
@@ -1261,8 +1282,11 @@ onMounted(async () => {
 })
 
 // Meta tags pour le dashboard
-useHead({
-  title: 'Dashboard - GVB Sign',
+useHead(() => ({
+  title: locale.value === 'fr' ? 'Tableau de bord - GVB Sign' : 'Dashboard - GVB Sign',
+  htmlAttrs: {
+    lang: locale.value
+  },
   meta: [
     { name: 'robots', content: 'noindex, nofollow' }
   ],
@@ -1271,7 +1295,7 @@ useHead({
     { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
     { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Raleway:wght@100;200;300;400;500;600;700;800;900&display=swap' }
   ]
-})
+}))
 </script>
 
 <style scoped>
@@ -1467,9 +1491,13 @@ body {
 }
 
 .mobile-sidebar .sidebar-footer {
+  position: relative;
   padding: 1rem 1.5rem;
   border-top: 1px solid rgba(0, 102, 204, 0.1);
   margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 /* SIDEBAR */
@@ -1583,7 +1611,8 @@ body {
   position: relative;
   overflow-y: auto;
   min-height: 0;
-  max-height: calc(100vh - 220px); /* Hauteur fixe pour laisser de l'espace au header et footer */
+  max-height: calc(100vh - 275px);
+  margin-bottom: 175px;
 }
 
 .sidebar-nav::before {
@@ -1693,18 +1722,19 @@ body {
 
 /* FOOTER SIDEBAR */
 .sidebar-footer {
-  padding: 0.25rem 1.5rem 0.5rem;
+  padding: 0.85rem 1.25rem;
   background: #ffffff;
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 120px; /* Hauteur fixe pour le footer */
   display: flex;
-  align-items: flex-end;
-  justify-content: flex-end;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.75rem;
   z-index: 10;
   border-top: 1px solid rgba(0, 102, 204, 0.1);
+  box-sizing: border-box;
 }
 
 .sidebar-footer::before {
@@ -1721,7 +1751,43 @@ body {
 .dashboard-sidebar.collapsed .sidebar-footer {
   padding: 0.75rem 0.5rem 1rem;
   align-items: center;
-  justify-content: flex-end;
+}
+
+.sidebar-lang-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.sidebar-lang-collapsed {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.lang-collapsed-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 102, 204, 0.2);
+  background: rgba(0, 102, 204, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  line-height: 1;
+  padding: 0;
+}
+
+.lang-collapsed-btn:hover {
+  background: rgba(0, 102, 204, 0.15);
+  border-color: rgba(0, 102, 204, 0.35);
+  transform: scale(1.05);
+  box-shadow: 0 3px 8px rgba(0, 102, 204, 0.15);
 }
 
 

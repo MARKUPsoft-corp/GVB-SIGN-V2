@@ -6,10 +6,10 @@
         <div class="col-12">
           <div class="contact-header text-center mb-5">
             <h2 class="display-3 fw-bold mb-4 text-dark contact-title">
-              Nous <span class="text-primary-blue">Contacter</span>
+              <span class="text-primary-blue">{{ t('contact.title') }}</span>
             </h2>
             <p class="lead mb-0 text-dark contact-subtitle">
-              Notre équipe est à votre disposition pour répondre à toutes vos questions.
+              {{ t('contact.subtitle') }}
             </p>
           </div>
         </div>
@@ -30,13 +30,13 @@
                     </div>
                   </div>
                   <div class="contact-info">
-                    <h4 class="mb-2">Email</h4>
+                    <h4 class="mb-2">{{ t('common.email') }}</h4>
                     <p class="mb-0">
                       <a href="mailto:contact@gvbsign.cm" class="text-decoration-none">
                         contact@gvbsign.cm
                       </a>
                     </p>
-                    <p class="text-muted mb-0">Réponse sous 24h</p>
+                    <p class="text-muted mb-0">{{ isFrench ? 'Réponse sous 24h' : 'Response within 24h' }}</p>
                   </div>
                 </div>
               </div>
@@ -50,13 +50,13 @@
                     </div>
                   </div>
                   <div class="contact-info">
-                    <h4 class="mb-2">Téléphone</h4>
+                    <h4 class="mb-2">{{ t('contact.phone') }}</h4>
                     <p class="mb-0">
                       <a href="tel:+237691234567" class="text-decoration-none">
                         +237 691 234 567
                       </a>
                     </p>
-                    <p class="text-muted mb-0">Lun - Ven : 8h - 18h</p>
+                    <p class="text-muted mb-0">{{ isFrench ? 'Lun - Ven : 8h - 18h' : 'Mon - Fri: 8am - 6pm' }}</p>
                   </div>
                 </div>
               </div>
@@ -70,7 +70,7 @@
                     </div>
                   </div>
                   <div class="contact-info">
-                    <h4 class="mb-2">Adresse</h4>
+                    <h4 class="mb-2">{{ t('contact.address') }}</h4>
                     <p class="mb-0">123 Boulevard de l'Indépendance</p>
                     <p class="mb-0">Douala, Cameroun</p>
                     <p class="text-muted mb-0">Quartier Akwa, Zone 1</p>
@@ -87,10 +87,10 @@
                     </div>
                   </div>
                   <div class="contact-info">
-                    <h4 class="mb-2">Horaires</h4>
-                    <p class="mb-0">Lundi - Vendredi : 8h00 - 18h00</p>
-                    <p class="mb-0">Samedi : 9h00 - 15h00</p>
-                    <p class="text-muted mb-0">Dimanche : Fermé</p>
+                    <h4 class="mb-2">{{ isFrench ? 'Horaires' : 'Business Hours' }}</h4>
+                    <p class="mb-0">{{ isFrench ? 'Lundi - Vendredi : 8h00 - 18h00' : 'Monday - Friday: 8:00 AM - 6:00 PM' }}</p>
+                    <p class="mb-0">{{ isFrench ? 'Samedi : 9h00 - 15h00' : 'Saturday: 9:00 AM - 3:00 PM' }}</p>
+                    <p class="text-muted mb-0">{{ isFrench ? 'Dimanche : Fermé' : 'Sunday: Closed' }}</p>
                   </div>
                 </div>
               </div>
@@ -116,6 +116,9 @@
 
 <script setup>
 import { onMounted } from 'vue'
+import { useI18n } from '../../composables/useI18n'
+
+const { t, isFrench } = useI18n()
 
 // Animation au montage du composant
 onMounted(() => {

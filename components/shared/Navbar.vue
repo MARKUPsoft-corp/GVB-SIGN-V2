@@ -20,33 +20,34 @@
       <!-- Menu de navigation desktop -->
       <div class="collapse navbar-collapse d-none d-lg-block" id="navbarNav">
         <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-5 navbar-nav-animated">
-                                <li class="nav-item">
+          <li class="nav-item">
             <button class="nav-link fw-500 border-0 bg-transparent" :class="{ 'active': $route.path === '/' && !isInFeaturesSection && !isInPricingSection && !isInContactSection }" @click="scrollToTop">
-              Accueil
+              {{ t('nav.home') }}
             </button>
           </li>
           <li class="nav-item">
             <button class="nav-link fw-500 border-0 bg-transparent" :class="{ 'active': isInFeaturesSection }" @click="scrollToFeatures">
-              Fonctionnalités
+              {{ t('nav.features') }}
             </button>
           </li>
           <li class="nav-item">
             <button class="nav-link fw-500 border-0 bg-transparent" :class="{ 'active': isInPricingSection }" @click="scrollToPricing">
-              Tarifs
+              {{ t('nav.pricing') }}
             </button>
           </li>
           <li class="nav-item">
             <button class="nav-link fw-500 border-0 bg-transparent" :class="{ 'active': isInContactSection }" @click="scrollToContact">
-              Contact
+              {{ t('nav.contact') }}
             </button>
           </li>
         </ul>
 
-        <!-- Boutons d'action -->
+        <!-- Sélecteur de langue & Boutons d'action -->
         <div class="d-flex align-items-center gap-3 navbar-buttons-animated">
+          <LanguageSelector variant="pill" size="md" />
           <NuxtLink to="/login" class="btn btn-primary-custom btn-sm px-4 rounded-pill shadow-sm">
             <i class="bi bi-google me-2"></i>
-            Connexion / Inscription
+            {{ t('nav.loginRegister') }}
           </NuxtLink>
         </div>
       </div>
@@ -68,29 +69,32 @@
     </div>
     
     <div class="sidebar-content">
+      <div class="d-flex justify-content-center mb-3">
+        <LanguageSelector variant="pill" size="md" />
+      </div>
       <ul class="sidebar-nav">
         <li class="sidebar-nav-item">
           <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ 'active': $route.path === '/' && !isInFeaturesSection && !isInPricingSection && !isInContactSection }" @click="scrollToTopAndClose">
             <i class="bi bi-house me-3"></i>
-            Accueil
+            {{ t('nav.home') }}
           </button>
         </li>
         <li class="sidebar-nav-item">
           <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ 'active': isInFeaturesSection }" @click="scrollToFeaturesAndClose">
             <i class="bi bi-gear me-3"></i>
-            Fonctionnalités
+            {{ t('nav.features') }}
           </button>
         </li>
         <li class="sidebar-nav-item">
           <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ 'active': isInPricingSection }" @click="scrollToPricingAndClose">
             <i class="bi bi-tag me-3"></i>
-            Tarifs
+            {{ t('nav.pricing') }}
           </button>
         </li>
         <li class="sidebar-nav-item">
           <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ 'active': isInContactSection }" @click="scrollToContactAndClose">
             <i class="bi bi-envelope me-3"></i>
-            Contact
+            {{ t('nav.contact') }}
           </button>
         </li>
       </ul>
@@ -98,7 +102,7 @@
       <div class="sidebar-actions">
         <NuxtLink to="/login" class="btn btn-primary-custom w-100 rounded-pill shadow-sm" @click="closeSidebar">
           <i class="bi bi-google me-2"></i>
-          Connexion / Inscription
+          {{ t('nav.loginRegister') }}
         </NuxtLink>
       </div>
     </div>
@@ -108,25 +112,29 @@
   <div v-if="$route.path !== '/'" class="mobile-bottom-nav d-lg-none" :class="{ 'bottom-nav-hidden': isSidebarOpen }">
     <div class="bottom-nav-item" :class="{ 'active': $route.path === '/' && !isInFeaturesSection && !isInPricingSection && !isInContactSection }" @click="scrollToTop">
       <i class="bi bi-house"></i>
-      <span>Accueil</span>
+      <span>{{ t('nav.home') }}</span>
     </div>
     <div class="bottom-nav-item" :class="{ 'active': isInFeaturesSection }" @click="scrollToFeatures">
       <i class="bi bi-gear"></i>
-      <span>Fonctionnalités</span>
+      <span>{{ t('nav.features') }}</span>
     </div>
     <div class="bottom-nav-item" :class="{ 'active': isInPricingSection }" @click="scrollToPricing">
       <i class="bi bi-tag"></i>
-      <span>Tarifs</span>
+      <span>{{ t('nav.pricing') }}</span>
     </div>
     <div class="bottom-nav-item" @click="goToLogin">
       <i class="bi bi-person"></i>
-      <span>Se connecter</span>
+      <span>{{ t('nav.loginRegister') }}</span>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useI18n } from '../../composables/useI18n'
+import LanguageSelector from './LanguageSelector.vue'
+
+const { t } = useI18n()
 
 const isSidebarOpen = ref(false)
 const isInFeaturesSection = ref(false)

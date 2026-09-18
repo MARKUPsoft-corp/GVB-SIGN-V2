@@ -6,21 +6,20 @@
         <div class="col-lg-6 mb-5 mb-lg-0">
           <div class="hero-content">
             <h1 class="display-1 fw-bold mb-4 text-dark hero-title">
-              Sécurisez vos 
-              <span class="text-primary-blue">Documents</span> 
-              avec la <span class="text-primary-blue">Signature Électronique</span>
+              {{ t('hero.titlePrefix') }} 
+              <span class="text-primary-blue">{{ t('hero.titleHighlight1') }}</span> 
+              {{ t('hero.titleMiddle') }} <span class="text-primary-blue">{{ t('hero.titleHighlight2') }}</span>
             </h1>
             
             <p class="lead mb-5 text-dark hero-subtitle">
-              Révolutionnez votre processus de signature avec notre technologie QR Code avancée. 
-              Sécurisé, rapide et conforme aux standards internationaux.
+              {{ t('hero.subtitle') }}
             </p>
 
             <!-- Bouton d'action rapide -->
             <div class="hero-actions">
               <NuxtLink to="/login" class="btn btn-primary-custom btn-lg hero-action-btn">
                 <i class="bi bi-play-circle me-2"></i>
-                Commencer maintenant
+                {{ t('hero.startNow') }}
               </NuxtLink>
             </div>
 
@@ -43,7 +42,7 @@
       
       <!-- Bouton de défilement vers les fonctionnalités -->
       <div class="scroll-down-container" :class="{ 'visible': isInHeroSection }">
-        <button class="scroll-down-btn" @click="scrollToFeatures" aria-label="Voir les fonctionnalités">
+        <button class="scroll-down-btn" @click="scrollToFeatures" :aria-label="t('hero.viewFeatures')">
           <i class="bi bi-chevron-down"></i>
         </button>
       </div>
@@ -53,6 +52,9 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useI18n } from '../../composables/useI18n'
+
+const { t } = useI18n()
 
 const isInHeroSection = ref(true)
 

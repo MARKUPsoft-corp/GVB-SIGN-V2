@@ -9,11 +9,10 @@
         <div class="col-12">
           <div class="features-header text-center mb-5">
             <h2 class="display-3 fw-bold mb-4 text-dark features-title">
-              Des <span class="text-primary-blue">Fonctionnalités</span> 
-              <span class="text-primary-blue"> Innovantes</span>
+              <span class="text-primary-blue">{{ t('features.title') }}</span>
             </h2>
             <p class="lead mb-0 text-dark features-subtitle">
-              Découvrez tous les avantages de notre solution de signature électronique nouvelle génération.
+              {{ t('features.subtitle') }}
             </p>
           </div>
         </div>
@@ -47,8 +46,8 @@
                         <i class="bi bi-qr-code text-primary-blue fs-1"></i>
                       </div>
                       <div class="feature-content">
-                        <h4 class="fw-bold text-dark mb-2">Technologie QR Code</h4>
-                        <p class="text-muted mb-0">Authentification instantanée via QR Code sécurisé. Plus besoin de mots de passe complexes.</p>
+                        <h4 class="fw-bold text-dark mb-2">{{ t('features.f2Title') }}</h4>
+                        <p class="text-muted mb-0">{{ t('features.f2Desc') }}</p>
                       </div>
                     </div>
                   </div>
@@ -64,42 +63,42 @@
                         <i class="bi bi-shield-check text-primary-blue fs-1"></i>
                       </div>
                       <div class="feature-content">
-                        <h4 class="fw-bold text-dark mb-2">Sécurité Maximale</h4>
-                        <p class="text-muted mb-0">Cryptage de bout en bout et conformité aux standards internationaux de sécurité.</p>
+                        <h4 class="fw-bold text-dark mb-2">{{ t('features.f6Title') }}</h4>
+                        <p class="text-muted mb-0">{{ t('features.f6Desc') }}</p>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <!-- Carte 3 - Rapidité -->
+              <!-- Carte 3 - Signature Certifiée -->
               <div class="feature-card mb-4">
                 <div class="card border-0 shadow-sm feature-card-inner">
                   <div class="card-body p-4">
                     <div class="d-flex align-items-start">
                       <div class="feature-icon me-4">
-                        <i class="bi bi-lightning text-primary-blue fs-1"></i>
+                        <i class="bi bi-patch-check text-primary-blue fs-1"></i>
                       </div>
                       <div class="feature-content">
-                        <h4 class="fw-bold text-dark mb-2">Signature Instantanée</h4>
-                        <p class="text-muted mb-0">Signez vos documents en quelques secondes depuis n'importe quel appareil mobile.</p>
+                        <h4 class="fw-bold text-dark mb-2">{{ t('features.f1Title') }}</h4>
+                        <p class="text-muted mb-0">{{ t('features.f1Desc') }}</p>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <!-- Carte 4 - Multi-plateforme -->
+              <!-- Carte 4 - Workflow Hiérarchique -->
               <div class="feature-card">
                 <div class="card border-0 shadow-sm feature-card-inner">
                   <div class="card-body p-4">
                     <div class="d-flex align-items-start">
                       <div class="feature-icon me-4">
-                        <i class="bi bi-device-hdd text-primary-blue fs-1"></i>
+                        <i class="bi bi-diagram-3 text-primary-blue fs-1"></i>
                       </div>
                       <div class="feature-content">
-                        <h4 class="fw-bold text-dark mb-2">Multi-Plateforme</h4>
-                        <p class="text-muted mb-0">Compatible avec tous vos appareils : web, mobile iOS et Android.</p>
+                        <h4 class="fw-bold text-dark mb-2">{{ t('features.f3Title') }}</h4>
+                        <p class="text-muted mb-0">{{ t('features.f3Desc') }}</p>
                       </div>
                     </div>
                   </div>
@@ -115,6 +114,9 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useI18n } from '../../composables/useI18n'
+
+const { t } = useI18n()
 
 // Animation au montage du composant
 onMounted(() => {

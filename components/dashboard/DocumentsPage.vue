@@ -21,16 +21,16 @@
       <div class="header-container">
         <div class="header-content">
           <h1 class="section-title">
-            <span class="text-dark">Espace de Gestion et Signature</span>
-            <span class="text-primary-blue"> Électronique de vos documents</span>
+            <span class="text-dark">{{ t('documents.titleMain') }}</span>
+            <span class="text-primary-blue">{{ t('documents.titleAccent') }}</span>
           </h1>
-          <p class="section-subtitle">Simplifiez vos processus de signature avec notre plateforme sécurisée et intuitive</p>
-                      <div class="header-actions">
-              <button class="btn btn-primary-custom sign-now-btn" @click="toggleSignatureModal" ref="signBtn">
-                <i class="bi bi-pen me-2"></i>
-                Signer maintenant
-              </button>
-            </div>
+          <p class="section-subtitle">{{ t('documents.subtitle') }}</p>
+          <div class="header-actions">
+            <button class="btn btn-primary-custom sign-now-btn" @click="toggleSignatureModal" ref="signBtn">
+              <i class="bi bi-pen me-2"></i>
+              {{ t('documents.signNowBtn') }}
+            </button>
+          </div>
         </div>
         <div class="header-image">
           <!-- Bulles décoratives -->
@@ -54,7 +54,7 @@
             </div>
             <div class="stat-content">
               <h4 class="stat-number">{{ realDocuments.length }}</h4>
-              <p class="stat-label">Total documents</p>
+              <p class="stat-label">{{ t('documents.statsTotal') }}</p>
             </div>
           </div>
         </div>
@@ -65,7 +65,7 @@
             </div>
             <div class="stat-content">
               <h4 class="stat-number">{{ realDocuments.length }}</h4>
-              <p class="stat-label">Signés</p>
+              <p class="stat-label">{{ t('documents.statsSigned') }}</p>
             </div>
           </div>
         </div>
@@ -76,7 +76,7 @@
             </div>
             <div class="stat-content">
               <h4 class="stat-number">0</h4>
-              <p class="stat-label">En attente</p>
+              <p class="stat-label">{{ t('documents.statsPending') }}</p>
             </div>
           </div>
         </div>
@@ -89,11 +89,11 @@
         <div class="col-12">
           <div class="sections-header text-center">
             <h2 class="display-6 fw-bold mb-3 text-dark sections-title">
-              <span class="text-dark">Vos</span> 
-              <span class="text-primary-blue"> Documents Signés</span>
+              <span class="text-dark">{{ t('documents.signedListTitle') }}</span> 
+              <span class="text-primary-blue">{{ t('documents.signedListAccent') }}</span>
             </h2>
             <p class="lead mb-0 text-muted sections-subtitle">
-              Retrouvez l'historique complet de vos signatures.
+              {{ t('documents.signedListSubtitle') }}
             </p>
           </div>
         </div>
@@ -101,16 +101,16 @@
       
       <div v-if="loading" class="text-center py-5">
         <div class="spinner-border text-primary-blue" role="status">
-          <span class="visually-hidden">Chargement...</span>
+          <span class="visually-hidden">{{ locale === 'fr' ? 'Chargement...' : 'Loading...' }}</span>
         </div>
-        <p class="mt-3 text-muted">Récupération de vos documents...</p>
+        <p class="mt-3 text-muted">{{ locale === 'fr' ? 'Récupération de vos documents...' : 'Retrieving your documents...' }}</p>
       </div>
       
       <div v-else-if="realDocuments.length === 0" class="text-center py-5">
         <div class="empty-state">
           <i class="bi bi-folder-x display-1 text-muted mb-3 d-block"></i>
-          <h4>Aucun document signé</h4>
-          <p class="text-muted">Vous n'avez pas encore signé de document sur la plateforme.</p>
+          <h4>{{ t('documents.noDocuments') }}</h4>
+          <p class="text-muted">{{ t('documents.noDocumentsDesc') }}</p>
         </div>
       </div>
       
@@ -131,7 +131,7 @@
                 <i class="bi bi-file-earmark-pdf display-1 text-muted"></i>
               </div>
               <div class="document-status signed position-absolute top-0 end-0 m-3 shadow-sm" style="backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); background: rgba(255,255,255,0.9); border: 1px solid rgba(40, 167, 69, 0.2);">
-                <i class="bi bi-check-circle-fill me-1"></i> Signé
+                <i class="bi bi-check-circle-fill me-1"></i> {{ t('documents.statsSigned') }}
               </div>
             </div>
             
@@ -141,7 +141,7 @@
                   <i class="bi bi-file-earmark-pdf text-danger"></i>
                 </div>
                 <h5 class="document-name text-truncate m-0" :title="doc.original_filename">
-                  {{ doc.original_filename || 'Document sans nom' }}
+                  {{ doc.original_filename || (locale === 'fr' ? 'Document sans nom' : 'Unnamed document') }}
                 </h5>
               </div>
               <div class="document-details mb-4">
@@ -151,10 +151,10 @@
               
               <div class="mt-auto document-actions d-flex gap-2">
                 <button class="btn btn-outline-primary flex-grow-1" style="border-radius: 8px; font-weight: 600;" @click="openPreviewModal(doc)">
-                  <i class="bi bi-eye me-1"></i> Voir
+                  <i class="bi bi-eye me-1"></i> {{ locale === 'fr' ? 'Voir' : 'View' }}
                 </button>
                 <a v-if="doc.signed_document_url" :href="getDownloadUrl(doc.signed_document_url)" target="_blank" class="btn btn-primary-blue flex-grow-1 text-decoration-none text-center">
-                  <i class="bi bi-download me-1"></i> Télécharger
+                  <i class="bi bi-download me-1"></i> {{ locale === 'fr' ? 'Télécharger' : 'Download' }}
                 </a>
               </div>
             </div>
@@ -195,7 +195,7 @@
         <div class="signature-modal-header">
           <h5 class="text-truncate flex-grow-1 mb-0 me-3" style="max-width: 80%;">
             <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
-            {{ documentToPreview?.original_filename || 'Aperçu du document' }}
+            {{ documentToPreview?.original_filename || (locale === 'fr' ? 'Aperçu du document' : 'Document preview') }}
           </h5>
           <button class="close-btn" @click="closePreviewModal">
             <i class="bi bi-x-lg"></i>
@@ -211,9 +211,9 @@
         </div>
         <div class="p-3 border-top d-flex justify-content-end bg-white" style="border-radius: 0 0 16px 16px;">
           <a :href="getDownloadUrl(documentToPreview?.signed_document_url)" target="_blank" class="btn btn-primary-blue me-3">
-            <i class="bi bi-download me-2"></i> Télécharger le document
+            <i class="bi bi-download me-2"></i> {{ locale === 'fr' ? 'Télécharger le document' : 'Download document' }}
           </a>
-          <button class="btn btn-outline-secondary" style="border-radius: 8px; font-weight: 600;" @click="closePreviewModal">Fermer</button>
+          <button class="btn btn-outline-secondary" style="border-radius: 8px; font-weight: 600;" @click="closePreviewModal">{{ locale === 'fr' ? 'Fermer' : 'Close' }}</button>
         </div>
       </div>
     </div>
@@ -224,7 +224,7 @@
         <div class="signature-modal-header">
           <h5>
             <i class="bi bi-pen"></i>
-            Options de Signature
+            {{ locale === 'fr' ? 'Options de Signature' : 'Signature Options' }}
           </h5>
           <button class="close-btn" @click="closeSignatureModal">
             <i class="bi bi-x-lg"></i>
@@ -236,8 +236,8 @@
               <i class="bi bi-lightning-fill"></i>
             </div>
             <div class="option-content">
-              <span class="option-title">Signature Immédiate</span>
-              <span class="option-desc">Signez directement votre document actuel</span>
+              <span class="option-title">{{ t('dashboard.quickActions.signImmediately') }}</span>
+              <span class="option-desc">{{ t('dashboard.quickActions.signImmediatelyDesc') }}</span>
             </div>
           </div>
           
@@ -246,8 +246,8 @@
               <i class="bi bi-file-earmark-text"></i>
             </div>
             <div class="option-content">
-              <span class="option-title">Signer à partir d'un modèle</span>
-              <span class="option-desc">Choisissez parmi nos modèles de signature</span>
+              <span class="option-title">{{ locale === 'fr' ? "Signer à partir d'un modèle" : "Sign from template" }}</span>
+              <span class="option-desc">{{ locale === 'fr' ? "Choisissez parmi nos modèles de signature" : "Choose from our signature templates" }}</span>
             </div>
           </div>
           
@@ -256,8 +256,8 @@
               <i class="bi bi-cloud-upload"></i>
             </div>
             <div class="option-content">
-              <span class="option-title">Importer un document</span>
-              <span class="option-desc">Uploadez un document à signer</span>
+              <span class="option-title">{{ locale === 'fr' ? 'Importer un document' : 'Upload document' }}</span>
+              <span class="option-desc">{{ locale === 'fr' ? 'Uploadez un document à signer' : 'Upload a document to sign' }}</span>
             </div>
           </div>
           
@@ -266,8 +266,8 @@
               <i class="bi bi-stack"></i>
             </div>
             <div class="option-content">
-              <span class="option-title">Signature en lot</span>
-              <span class="option-desc">Signez plusieurs documents à la fois</span>
+              <span class="option-title">{{ locale === 'fr' ? 'Signature en lot' : 'Batch signature' }}</span>
+              <span class="option-desc">{{ locale === 'fr' ? 'Signez plusieurs documents à la fois' : 'Sign multiple documents at once' }}</span>
             </div>
           </div>
         </div>
@@ -280,7 +280,7 @@
         <div class="signature-modal-header">
           <h5>
             <i class="bi bi-exclamation-triangle-fill text-warning"></i>
-            Certificat non valide
+            {{ locale === 'fr' ? 'Certificat non valide' : 'Invalid certificate' }}
           </h5>
           <button class="close-btn" @click="closeCertificateErrorModal">
             <i class="bi bi-x-lg"></i>
@@ -293,19 +293,19 @@
                 <i class="bi bi-shield-x text-danger"></i>
               </div>
               <div class="error-text">
-                <h6 class="error-title">Certificat invalide</h6>
+                <h6 class="error-title">{{ locale === 'fr' ? 'Certificat invalide' : 'Invalid certificate' }}</h6>
                 <p class="error-message">
-                  Votre certificat n'est pas valide ou a expiré. Importez un certificat valide pour signer.
+                  {{ locale === 'fr' ? "Votre certificat n'est pas valide ou a expiré. Importez un certificat valide pour signer." : "Your certificate is not valid or has expired. Please import a valid certificate to sign." }}
                 </p>
               </div>
             </div>
             <div class="error-actions">
               <button class="btn btn-primary btn-sm" @click="goToCertificateImport">
                 <i class="bi bi-shield-fill-check me-2"></i>
-                Importer
+                {{ locale === 'fr' ? 'Importer' : 'Import' }}
               </button>
               <button class="btn btn-outline-secondary btn-sm" @click="closeCertificateErrorModal">
-                Annuler
+                {{ locale === 'fr' ? 'Annuler' : 'Cancel' }}
               </button>
             </div>
           </div>
@@ -316,11 +316,13 @@
 
 <script setup>
 import { ref, computed, onMounted, nextTick, defineEmits } from 'vue'
+import { useI18n } from '../../composables/useI18n'
 import DocumentEditor from './DocumentEditor.vue'
 import SignImmediatelyPage from './SignImmediatelyPage.vue'
 import { CertificateService } from '../../services/CertificateService'
-
 import { SignatureApiService } from '../../services/SignatureApiService'
+
+const { t, locale } = useI18n()
 
 // Émissions
 const emit = defineEmits(['navigate-to-signature', 'open-profile-modal'])

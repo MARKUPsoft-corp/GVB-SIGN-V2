@@ -37,7 +37,7 @@
             </div>
             <div class="stat-content">
               <h4 class="stat-number">12</h4>
-              <p class="stat-label">Documents signés</p>
+              <p class="stat-label">{{ t('dashboard.stats.signedDocs') }}</p>
             </div>
           </div>
         </div>
@@ -48,7 +48,7 @@
             </div>
             <div class="stat-content">
               <h4 class="stat-number">3</h4>
-              <p class="stat-label">En attente</p>
+              <p class="stat-label">{{ t('dashboard.stats.pendingDocs') }}</p>
             </div>
           </div>
         </div>
@@ -59,31 +59,31 @@
             </div>
             <div class="stat-content">
               <h4 class="stat-number">100%</h4>
-              <p class="stat-label">Sécurisé</p>
+              <p class="stat-label">{{ t('dashboard.stats.secured') }}</p>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-              <!-- Actions rapides en deux colonnes -->
-          <div class="quick-actions">
-            <!-- En-tête de section -->
-            <div class="row mb-5">
-              <div class="col-12">
-                <div class="actions-header text-center">
-                  <h2 class="display-4 fw-bold mb-3 text-dark actions-title">
-                    <span class="text-dark">Actions</span> 
-                    <span class="text-primary-blue"> Rapides</span>
-                  </h2>
-                  <p class="lead mb-0 text-dark actions-subtitle">
-                    Accédez rapidement aux fonctionnalités essentielles de votre espace de signature électronique.
-                  </p>
-                </div>
-              </div>
-            </div>
+    <!-- Actions rapides en deux colonnes -->
+    <div class="quick-actions">
+      <!-- En-tête de section -->
+      <div class="row mb-5">
+        <div class="col-12">
+          <div class="actions-header text-center">
+            <h2 class="display-4 fw-bold mb-3 text-dark actions-title">
+              <span class="text-dark">{{ t('dashboard.quickActions.titlePrefix') }}</span> 
+              <span class="text-primary-blue">{{ t('dashboard.quickActions.titleAccent') }}</span>
+            </h2>
+            <p class="lead mb-0 text-dark actions-subtitle">
+              {{ t('dashboard.quickActions.subtitle') }}
+            </p>
+          </div>
+        </div>
+      </div>
 
-            <div class="row align-items-center">
+      <div class="row align-items-center">
         <!-- Colonne gauche - Image SVG -->
         <div class="col-lg-6 mb-5 mb-lg-0">
           <div class="actions-image text-center position-relative">
@@ -110,8 +110,8 @@
                         <i class="bi bi-file-earmark-plus text-primary-blue fs-1"></i>
                       </div>
                       <div class="action-content">
-                        <h4 class="fw-bold text-dark mb-2">Nouveau Document</h4>
-                        <p class="text-muted mb-0">Créez et signez un nouveau document en quelques clics</p>
+                        <h4 class="fw-bold text-dark mb-2">{{ t('dashboard.quickActions.createDoc') }}</h4>
+                        <p class="text-muted mb-0">{{ t('dashboard.quickActions.createDocDesc') }}</p>
                       </div>
                     </div>
                   </div>
@@ -127,8 +127,8 @@
                         <i class="bi bi-building-add text-primary-blue fs-1"></i>
                       </div>
                       <div class="action-content">
-                        <h4 class="fw-bold text-dark mb-2">Créer ou intégrer une organisation</h4>
-                        <p class="text-muted mb-0">Créez une nouvelle organisation ou rejoignez une organisation existante</p>
+                        <h4 class="fw-bold text-dark mb-2">{{ t('dashboard.quickActions.organization') }}</h4>
+                        <p class="text-muted mb-0">{{ t('dashboard.quickActions.organizationDesc') }}</p>
                       </div>
                     </div>
                   </div>
@@ -144,8 +144,8 @@
                         <i class="bi bi-pen text-primary-blue fs-1"></i>
                       </div>
                       <div class="action-content">
-                        <h4 class="fw-bold text-dark mb-2">Mes Signatures</h4>
-                        <p class="text-muted mb-0">Gérez vos signatures électroniques et modèles</p>
+                        <h4 class="fw-bold text-dark mb-2">{{ locale === 'fr' ? 'Mes Signatures' : 'My Signatures' }}</h4>
+                        <p class="text-muted mb-0">{{ locale === 'fr' ? 'Gérez vos signatures électroniques et modèles' : 'Manage your electronic signatures and templates' }}</p>
                       </div>
                     </div>
                   </div>
@@ -161,8 +161,8 @@
                         <i class="bi bi-clock-history text-primary-blue fs-1"></i>
                       </div>
                       <div class="action-content">
-                        <h4 class="fw-bold text-dark mb-2">Historique</h4>
-                        <p class="text-muted mb-0">Consultez l'historique de vos documents signés</p>
+                        <h4 class="fw-bold text-dark mb-2">{{ locale === 'fr' ? 'Historique' : 'History' }}</h4>
+                        <p class="text-muted mb-0">{{ locale === 'fr' ? 'Consultez l\'historique de vos documents signés' : 'View the history of your signed documents' }}</p>
                       </div>
                     </div>
                   </div>
@@ -180,7 +180,7 @@
         <div class="organization-modal-header">
           <h5>
             <i class="bi bi-building"></i>
-            Options d'Organisation
+            {{ locale === 'fr' ? "Options d'Organisation" : "Organization Options" }}
           </h5>
           <button class="close-btn" @click="closeOrganizationModal">
             <i class="bi bi-x-lg"></i>
@@ -192,8 +192,8 @@
               <i class="bi bi-building-add"></i>
             </div>
             <div class="option-content">
-              <span class="option-title">Créer une organisation</span>
-              <span class="option-desc">Créez une nouvelle organisation et devenez son administrateur</span>
+              <span class="option-title">{{ t('dashboard.quickActions.createOrg') }}</span>
+              <span class="option-desc">{{ t('dashboard.quickActions.createOrgDesc') }}</span>
             </div>
           </div>
           
@@ -202,8 +202,8 @@
               <i class="bi bi-person-plus"></i>
             </div>
             <div class="option-content">
-              <span class="option-title">Rejoindre une organisation</span>
-              <span class="option-desc">Rejoignez une organisation existante avec un code d'invitation</span>
+              <span class="option-title">{{ t('dashboard.quickActions.joinOrg') }}</span>
+              <span class="option-desc">{{ t('dashboard.quickActions.joinOrgDesc') }}</span>
             </div>
           </div>
         </div>
@@ -216,7 +216,7 @@
         <div class="organization-modal-header">
           <h5>
             <i class="bi bi-building-add"></i>
-            Créer une Organisation
+            {{ t('dashboard.modals.createOrgTitle') }}
           </h5>
           <button class="close-btn" @click="closeCreateOrganizationModal">
             <i class="bi bi-x-lg"></i>
@@ -227,13 +227,13 @@
             <div class="form-group">
               <label for="orgName">
                 <i class="bi bi-building"></i>
-                Nom de l'organisation
+                {{ t('dashboard.modals.orgName') }}
               </label>
               <input 
                 type="text" 
                 id="orgName" 
                 v-model="newOrganization.name" 
-                placeholder="Entrez le nom de votre organisation"
+                :placeholder="locale === 'fr' ? 'Entrez le nom de votre organisation' : 'Enter organization name'"
                 required
               >
             </div>
@@ -246,7 +246,7 @@
               <textarea 
                 id="orgDescription" 
                 v-model="newOrganization.description" 
-                placeholder="Décrivez votre organisation..."
+                :placeholder="locale === 'fr' ? 'Décrivez votre organisation...' : 'Describe your organization...'"
                 rows="3"
               ></textarea>
             </div>
@@ -254,7 +254,7 @@
             <div class="form-group">
               <label for="orgEmail">
                 <i class="bi bi-envelope"></i>
-                Email de contact
+                {{ t('dashboard.modals.orgEmail') }}
               </label>
               <input 
                 type="email" 
@@ -268,7 +268,7 @@
             <div class="form-group">
               <label for="orgPhone">
                 <i class="bi bi-telephone"></i>
-                Téléphone
+                {{ t('dashboard.modals.orgPhone') }}
               </label>
               <input 
                 type="tel" 
@@ -281,12 +281,12 @@
             <div class="form-group">
               <label for="orgAddress">
                 <i class="bi bi-geo-alt"></i>
-                Adresse
+                {{ t('dashboard.modals.orgAddress') }}
               </label>
               <textarea 
                 id="orgAddress" 
                 v-model="newOrganization.address" 
-                placeholder="Adresse complète de l'organisation..."
+                :placeholder="locale === 'fr' ? 'Adresse complète de l\'organisation...' : 'Full address of the organization...'"
                 rows="2"
               ></textarea>
             </div>
@@ -294,7 +294,7 @@
             <div class="form-group">
               <label for="orgWebsite">
                 <i class="bi bi-globe"></i>
-                Site web
+                {{ locale === 'fr' ? 'Site web' : 'Website' }}
               </label>
               <input 
                 type="url" 
@@ -307,40 +307,40 @@
             <div class="form-group">
               <label for="orgType">
                 <i class="bi bi-tags"></i>
-                Type d'organisation
+                {{ t('dashboard.modals.orgType') }}
               </label>
               <select id="orgType" v-model="newOrganization.organization_type" required>
-                <option value="">Sélectionnez un type</option>
-                <option value="entreprise">Entreprise</option>
-                <option value="association">Association</option>
-                <option value="administration">Administration</option>
-                <option value="collectivite">Collectivité</option>
-                <option value="autre">Autre</option>
+                <option value="">{{ locale === 'fr' ? 'Sélectionnez un type' : 'Select a type' }}</option>
+                <option value="entreprise">{{ locale === 'fr' ? 'Entreprise' : 'Company' }}</option>
+                <option value="association">{{ locale === 'fr' ? 'Association' : 'Non-profit' }}</option>
+                <option value="administration">{{ locale === 'fr' ? 'Administration' : 'Public Administration' }}</option>
+                <option value="collectivite">{{ locale === 'fr' ? 'Collectivité' : 'Local Authority' }}</option>
+                <option value="autre">{{ locale === 'fr' ? 'Autre' : 'Other' }}</option>
               </select>
             </div>
 
             <div class="form-group">
               <label for="orgSector">
                 <i class="bi bi-briefcase"></i>
-                Secteur d'activité
+                {{ t('dashboard.modals.orgSector') }}
               </label>
               <input 
                 type="text" 
                 id="orgSector" 
                 v-model="newOrganization.sector" 
-                placeholder="Ex: Technologies, Santé, Éducation..."
+                :placeholder="locale === 'fr' ? 'Ex: Technologies, Santé, Éducation...' : 'E.g.: Tech, Healthcare, Education...'"
               >
             </div>
 
             <div class="form-actions">
               <button type="button" class="btn-cancel" @click="closeCreateOrganizationModal">
                 <i class="bi bi-x-circle"></i>
-                Annuler
+                {{ locale === 'fr' ? 'Annuler' : 'Cancel' }}
               </button>
               <button type="submit" class="btn-create" :disabled="isCreatingOrganization">
                 <i class="bi bi-check-circle" v-if="!isCreatingOrganization"></i>
                 <i class="bi bi-hourglass-split" v-else></i>
-                {{ isCreatingOrganization ? 'Création...' : 'Créer l\'organisation' }}
+                {{ isCreatingOrganization ? (locale === 'fr' ? 'Création...' : 'Creating...') : t('dashboard.modals.createButton') }}
               </button>
             </div>
           </form>
@@ -354,7 +354,7 @@
         <div class="organization-modal-header">
           <h5>
             <i class="bi bi-person-plus"></i>
-            Rejoindre une Organisation
+            {{ t('dashboard.modals.joinOrgTitle') }}
           </h5>
           <button class="close-btn" @click="closeJoinOrganizationModal">
             <i class="bi bi-x-lg"></i>
@@ -365,31 +365,31 @@
             <div class="form-group">
               <label for="inviteCode">
                 <i class="bi bi-key"></i>
-                Code d'invitation
+                {{ t('dashboard.modals.inviteCodeLabel') }}
               </label>
               <input 
                 type="text" 
                 id="inviteCode" 
                 v-model="inviteCode" 
                 class="form-control" 
-                placeholder="Entrez le code d'invitation"
+                :placeholder="t('dashboard.modals.inviteCodePlaceholder')"
                 required
               >
               <small class="form-help">
                 <i class="bi bi-info-circle"></i>
-                Saisissez le code d'invitation fourni par l'administrateur de l'organisation
+                {{ locale === 'fr' ? 'Saisissez le code d\'invitation fourni par l\'administrateur de l\'organisation' : 'Enter the invitation code provided by the organization administrator' }}
               </small>
             </div>
 
             <div class="form-actions">
               <button type="button" class="btn-cancel" @click="closeJoinOrganizationModal">
                 <i class="bi bi-x-circle"></i>
-                Annuler
+                {{ locale === 'fr' ? 'Annuler' : 'Cancel' }}
               </button>
               <button type="submit" class="btn-create" :disabled="isJoiningOrganization">
                 <i class="bi bi-check-circle" v-if="!isJoiningOrganization"></i>
                 <i class="bi bi-hourglass-split" v-else></i>
-                {{ isJoiningOrganization ? 'Rejoindre...' : 'Rejoindre l\'organisation' }}
+                {{ isJoiningOrganization ? (locale === 'fr' ? 'Rejoindre...' : 'Joining...') : t('dashboard.modals.joinButton') }}
               </button>
             </div>
           </form>
@@ -402,6 +402,7 @@
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { useAuthStore } from '../../stores/auth'
+import { useI18n } from '../../composables/useI18n'
 import OrganizationApiService from '../../services/OrganizationApiService'
 
 // Définir le middleware et le layout
@@ -410,12 +411,14 @@ definePageMeta({
   layout: 'dashboard'
 })
 
+const { t, locale } = useI18n()
+
 // Store d'authentification (côté client seulement)
 const authStore = process.client ? useAuthStore() : null
 
 // Données utilisateur
 const route = useRoute()
-const userName = computed(() => authStore?.user?.displayName || 'Utilisateur')
+const userName = computed(() => authStore?.user?.displayName || (locale.value === 'fr' ? 'Utilisateur' : 'User'))
 const userEmail = computed(() => authStore?.user?.email || '')
 const isFromRegistration = ref(false)
 
@@ -458,14 +461,14 @@ onMounted(async () => {
 
 // Messages de bienvenue personnalisés
 const welcomePrefix = computed(() => {
-  return isFromRegistration.value ? 'Bienvenue ' : 'Bon retour '
+  return isFromRegistration.value ? t('dashboard.welcomePrefixFromReg') : t('dashboard.welcomePrefixReturn')
 })
 
 const welcomeSubtitle = computed(() => {
   if (isFromRegistration.value) {
-    return 'Votre compte a été créé avec succès. Découvrez toutes les fonctionnalités de GVB Sign.'
+    return t('dashboard.welcomeSubtitleFromReg')
   }
-  return 'Heureux de vous revoir ! Accédez rapidement à vos documents et signatures.'
+  return t('dashboard.welcomeSubtitleReturn')
 })
 
 // Meta tags
