@@ -98,13 +98,14 @@
           </button>
         </li>
       </ul>
-      
-      <div class="sidebar-actions">
-        <NuxtLink to="/login" class="btn btn-primary-custom w-100 rounded-pill shadow-sm" @click="closeSidebar">
-          <i class="bi bi-google me-2"></i>
-          {{ t('nav.loginRegister') }}
-        </NuxtLink>
-      </div>
+    </div>
+
+    <!-- Actions fixes au bas de la sidebar mobile (toujours visibles) -->
+    <div class="sidebar-footer-fixed">
+      <NuxtLink to="/login" class="btn btn-primary-custom w-100 rounded-pill shadow-sm d-flex align-items-center justify-content-center py-2" @click="closeSidebar">
+        <i class="bi bi-google me-2"></i>
+        <span>{{ t('nav.loginRegister') }}</span>
+      </NuxtLink>
     </div>
   </div>
 
@@ -537,6 +538,8 @@ onUnmounted(() => {
   right: -100%;
   width: 320px;
   height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(25px) saturate(150%);
   -webkit-backdrop-filter: blur(25px) saturate(150%);
@@ -621,24 +624,26 @@ onUnmounted(() => {
 
 .sidebar-content {
   flex: 1;
-  padding: 2rem 1.5rem;
+  padding: 1.5rem 1.5rem 1rem;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  min-height: 0;
   opacity: 0;
-  transform: translateY(30px);
-  transition: all 0.6s ease;
+  transform: translateY(20px);
+  transition: all 0.5s ease;
 }
 
 .mobile-sidebar.active .sidebar-content {
   opacity: 1;
   transform: translateY(0);
-  transition-delay: 0.4s;
+  transition-delay: 0.3s;
 }
 
 .mobile-sidebar:not(.active) .sidebar-content {
   opacity: 0;
-  transform: translateY(30px);
+  transform: translateY(20px);
   transition-delay: 0s;
 }
 
@@ -728,48 +733,50 @@ onUnmounted(() => {
   text-align: center;
 }
 
-.sidebar-actions {
-  margin-top: 2rem;
-  padding-top: 2rem;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
+.sidebar-footer-fixed {
+  flex-shrink: 0;
+  padding: 1.25rem 1.5rem calc(1.25rem + env(safe-area-inset-bottom, 0px));
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(0, 102, 204, 0.12);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
   opacity: 0;
   transform: translateY(20px);
-  transition: all 0.6s ease;
+  transition: all 0.5s ease;
+  z-index: 10;
 }
 
-.mobile-sidebar.active .sidebar-actions {
+.mobile-sidebar.active .sidebar-footer-fixed {
   opacity: 1;
   transform: translateY(0);
-  transition-delay: 0.9s;
+  transition-delay: 0.35s;
 }
 
-.mobile-sidebar:not(.active) .sidebar-actions {
+.mobile-sidebar:not(.active) .sidebar-footer-fixed {
   opacity: 0;
   transform: translateY(20px);
   transition-delay: 0s;
 }
 
-.sidebar-actions .btn {
+.sidebar-footer-fixed .btn {
   opacity: 0;
-  transform: scale(0.9);
-  transition: all 0.4s ease;
+  transform: scale(0.95);
+  transition: all 0.35s ease;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  font-size: 0.95rem;
 }
 
-.mobile-sidebar.active .sidebar-actions .btn:nth-child(1) {
+.mobile-sidebar.active .sidebar-footer-fixed .btn {
   opacity: 1;
   transform: scale(1);
-  transition-delay: 1.0s;
+  transition-delay: 0.4s;
 }
 
-.mobile-sidebar.active .sidebar-actions .btn:nth-child(2) {
-  opacity: 1;
-  transform: scale(1);
-  transition-delay: 1.1s;
-}
-
-.mobile-sidebar:not(.active) .sidebar-actions .btn {
+.mobile-sidebar:not(.active) .sidebar-footer-fixed .btn {
   opacity: 0;
-  transform: scale(0.9);
+  transform: scale(0.95);
   transition-delay: 0s;
 }
 
