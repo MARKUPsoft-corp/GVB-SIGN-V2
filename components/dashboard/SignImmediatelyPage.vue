@@ -714,6 +714,7 @@ import { SignatureApiService } from '../../services/SignatureApiService.js'
 import { useAuthStore } from '../../stores/auth.js'
 import JSZip from 'jszip'
 import forge from 'node-forge'
+import { PDFDocument } from 'pdf-lib'
 
 const { t, locale } = useI18n()
 
@@ -788,7 +789,7 @@ const strokeDashoffset = computed(() => {
 // Propriétés pour la jauge circulaire du stepper
 const stepperCircumference = computed(() => 2 * Math.PI * 52) // 2πr avec r=52
 const stepperStrokeDashoffset = computed(() => {
-  const progress = steps.length > 0 ? (currentStep.value - 1) / (steps.length - 1) : 0
+  const progress = steps.value.length > 0 ? (currentStep.value - 1) / (steps.value.length - 1) : 0
   return stepperCircumference.value * (1 - progress)
 })
 
@@ -843,7 +844,7 @@ const currentSignBaseFile = computed(() => {
 
 // Navigation du stepper
 function nextStep() {
-  if (currentStep.value < steps.length) {
+  if (currentStep.value < steps.value.length) {
     currentStep.value++
     
     // Réinitialiser l'état quand on entre dans l'étape 3
@@ -953,13 +954,29 @@ function handleFileUpload(file) {
   }
 
   // Ajouter le fichier à la liste
-  uploadedFiles.value.push({
+  const fileObj = {
     file: file,
     name: file.name,
     size: file.size,
-    pages: null, // Sera calculé plus tard
+    pages: null,
     url: URL.createObjectURL(file)
-  })
+  }
+  uploadedFiles.value.push(fileObj)
+
+  // Calculer automatiquement le nombre réel de pages du PDF
+  try {
+    file.arrayBuffer().then(async (arrayBuffer) => {
+      try {
+        const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true })
+        fileObj.pages = pdfDoc.getPageCount()
+      } catch (err) {
+        console.warn('Impossible de lire le nombre de pages du PDF:', err)
+        fileObj.pages = 1
+      }
+    })
+  } catch (_) {
+    fileObj.pages = 1
+  }
   
   // Activer le premier onglet si c'est le premier fichier
   if (uploadedFiles.value.length === 1) {
@@ -1844,7 +1861,9 @@ onMounted(() => {
     // Vérifier périodiquement les changements
     const checkCertificateInterval = setInterval(() => {
       const currentCert = certificateService.getCertificateInfo()
-      if (currentCert !== certificateInfo.value) {
+      const currentFp = currentCert?.fingerprint || currentCert?.serialNumber
+      const prevFp = certificateInfo.value?.fingerprint || certificateInfo.value?.serialNumber
+      if (currentFp !== prevFp) {
         console.log('Changement de certificat détecté, mise à jour...')
         certificateInfo.value = currentCert
       }

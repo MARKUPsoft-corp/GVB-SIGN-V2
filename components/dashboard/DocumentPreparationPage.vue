@@ -769,6 +769,7 @@ import { SignatureApiService } from '../../services/SignatureApiService'
 import OrganizationApiService from '../../services/OrganizationApiService'
 import CloudinaryService from '../../services/CloudinaryService'
 import { useI18n } from '../../composables/useI18n'
+import { PDFDocument } from 'pdf-lib'
 
 const { t, locale } = useI18n()
 
@@ -860,7 +861,7 @@ const strokeDashoffset = computed(() => {
 // Propriétés pour la jauge circulaire du stepper
 const stepperCircumference = computed(() => 2 * Math.PI * 52) // 2πr avec r=52
 const stepperStrokeDashoffset = computed(() => {
-  const progress = steps.length > 0 ? (currentStep.value - 1) / (steps.length - 1) : 0
+  const progress = steps.value.length > 0 ? (currentStep.value - 1) / (steps.value.length - 1) : 0
   return stepperCircumference.value * (1 - progress)
 })
 
@@ -900,7 +901,7 @@ const goBackToDocuments = () => {
 
 // Navigation entre étapes
 const nextStep = () => {
-  if (currentStep.value < steps.length) {
+  if (currentStep.value < steps.value.length) {
     currentStep.value++
     
     // Si on arrive à l'étape de configuration du workflow, valider la présence d'un chef
@@ -997,10 +998,25 @@ const handleFiles = async (files) => {
         name: file.name,
         size: file.size,
         url: URL.createObjectURL(file),
-        pages: null // Sera détecté automatiquement par SignBase
+        pages: null
       }
       
       uploadedFiles.value.push(fileObj)
+
+      // Calculer automatiquement le nombre réel de pages du PDF
+      try {
+        file.arrayBuffer().then(async (arrayBuffer) => {
+          try {
+            const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true })
+            fileObj.pages = pdfDoc.getPageCount()
+          } catch (err) {
+            console.warn('Impossible de lire le nombre de pages du PDF:', err)
+            fileObj.pages = 1
+          }
+        })
+      } catch (_) {
+        fileObj.pages = 1
+      }
     }
   }
   

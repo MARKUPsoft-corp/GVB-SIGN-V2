@@ -927,7 +927,7 @@ async function generateModifiedPdf() {
         
         try {
           // Générer le QR code comme une URL de données
-          const qrDataUrl = await QRCode.toDataURL('https://antic.cm/verify?id=DEMO-QR-CODE', {
+          const qrDataUrl = await QRCode.toDataURL('https://gvbsign.cm/verify?id=DEMO-QR-CODE', {
             errorCorrectionLevel: 'H',
             margin: 1,
             width: qrSize * 2, // Plus grande résolution pour meilleure qualité
