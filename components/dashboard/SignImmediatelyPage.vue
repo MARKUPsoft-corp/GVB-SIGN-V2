@@ -370,12 +370,12 @@
             <span>{{ locale === 'fr' ? 'Retour' : 'Back' }}</span>
           </button>
           <button 
-            @click="nextStep" 
-            :disabled="!allDocumentsProcessed"
+            @click="handleStep3Next" 
             class="action-btn primary"
           >
             <span v-if="allDocumentsProcessed">{{ locale === 'fr' ? 'Finaliser la signature' : 'Finalize signature' }}</span>
-            <span v-else>{{ locale === 'fr' ? 'Traitement en cours...' : 'Processing...' }} ({{ processedDocuments.size }}/{{ uploadedFiles.length }})</span>
+            <span v-else-if="activeSignBaseTabIndex < uploadedFiles.length - 1">{{ locale === 'fr' ? 'Document suivant' : 'Next document' }} ({{ processedDocuments.size }}/{{ uploadedFiles.length }})</span>
+            <span v-else>{{ locale === 'fr' ? 'Finaliser la signature' : 'Finalize signature' }}</span>
             <i class="bi bi-arrow-right"></i>
           </button>
         </div>
@@ -1070,19 +1070,32 @@ function onPdfLoadError(error) {
 
 
 // Gestion de SignBase
-function handlePositionConfirmed(data) {
-  console.log('Position confirmée:', data)
-  positionData.value = data
-  isPositionConfigured.value = true
-  
-  // Collecter toutes les informations de configuration du document actuel
+function applyDocumentConfig(data) {
+  if (!data || !uploadedFiles.value[activeSignBaseTabIndex.value]) return
   const currentFile = uploadedFiles.value[activeSignBaseTabIndex.value]
   
-  // Récupérer les positions par défaut ou spécifiques selon le mode
-  let defaultX = 85, defaultY = 10
+  let defaultX = 85, defaultY = 90
   if (data.qr?.positions?.default) {
     defaultX = data.qr.positions.default.x
     defaultY = data.qr.positions.default.y
+  } else if (data.qr?.positions && Object.values(data.qr.positions).length > 0) {
+    const firstPos = Object.values(data.qr.positions)[0]
+    if (firstPos && firstPos.x !== undefined && firstPos.y !== undefined) {
+      defaultX = firstPos.x
+      defaultY = firstPos.y
+    }
+  }
+  
+  let defaultSigX = 50, defaultSigY = 50
+  if (data.signature?.positions?.default) {
+    defaultSigX = data.signature.positions.default.x
+    defaultSigY = data.signature.positions.default.y
+  } else if (data.signature?.positions && Object.values(data.signature.positions).length > 0) {
+    const firstSigPos = Object.values(data.signature.positions)[0]
+    if (firstSigPos && firstSigPos.x !== undefined && firstSigPos.y !== undefined) {
+      defaultSigX = firstSigPos.x
+      defaultSigY = firstSigPos.y
+    }
   }
   
   const documentConfig = {
@@ -1091,56 +1104,54 @@ function handlePositionConfirmed(data) {
       size: data.qr?.size || 'medium',
       pages: data.qr?.pages || 'all',
       positions: data.qr?.positions || {},
-      mode: data.qr?.mode || 'all',
-      x: data.qr?.positions?.default?.x || defaultX,  // Utiliser la position configurée
-      y: data.qr?.positions?.default?.y || defaultY   // Utiliser la position configurée
+      mode: data.mode || 'all',
+      x: defaultX,
+      y: defaultY
     },
     signature: data.signature ? {
       imageUrl: data.signature.imageUrl,
       size: data.signature.size,
       pages: data.signature.pages,
       positions: data.signature.positions,
-      // Récupérer les positions depuis la structure correcte
-      x: data.signature.positions?.default?.x || 50,
-      y: data.signature.positions?.default?.y || 50
+      x: defaultSigX,
+      y: defaultSigY
     } : null,
     positionMode: data.mode || 'all',
     timestamp: new Date().toISOString()
   }
   
-  // Stocker la configuration du document actuel
   documentsConfiguration.value[activeSignBaseTabIndex.value] = documentConfig
   currentDocumentConfig.value = documentConfig
-  
-  // Log pour déboguer les positions
-  console.log('Configuration QR Code stockée:', {
-    size: documentConfig.qrCode.size,
-    pages: documentConfig.qrCode.pages,
-    positions: documentConfig.qrCode.positions,
-    mode: documentConfig.qrCode.mode,
-    x: documentConfig.qrCode.x,
-    y: documentConfig.qrCode.y
-  })
-  
-  // Log pour déboguer la signature
-  if (documentConfig.signature) {
-    console.log('Configuration Signature stockée:', {
-      imageUrl: documentConfig.signature.imageUrl,
-      size: documentConfig.signature.size,
-      pages: documentConfig.signature.pages,
-      positions: documentConfig.signature.positions,
-      x: documentConfig.signature.x,
-      y: documentConfig.signature.y
-    })
-  } else {
-    console.log('Aucune signature configurée')
+}
+
+function handlePositionConfirmed(data) {
+  console.log('Position confirmée:', data)
+  positionData.value = data
+  isPositionConfigured.value = true
+  applyDocumentConfig(data)
+  processedDocuments.value.add(activeSignBaseTabIndex.value)
+  moveToNextDocument()
+}
+
+function handleStep3Next() {
+  if (allDocumentsProcessed.value) {
+    nextStep()
+    return
   }
   
-  // Marquer le document actuel comme traité
-  processedDocuments.value.add(activeSignBaseTabIndex.value)
+  // Confirmer automatiquement le document actuel s'il ne l'est pas encore
+  if (!processedDocuments.value.has(activeSignBaseTabIndex.value)) {
+    const currentData = positionData.value || {
+      qr: { size: 'medium', pages: 'all', positions: { default: { x: 85, y: 90 } } },
+      signature: null,
+      mode: 'all'
+    }
+    handlePositionConfirmed(currentData)
+  }
   
-  // Passer automatiquement au document suivant
-  moveToNextDocument()
+  if (allDocumentsProcessed.value) {
+    nextStep()
+  }
 }
 
 // Fonction pour passer au document suivant
@@ -1224,8 +1235,9 @@ function handlePositionChanged(data) {
   const lastDataString = JSON.stringify(positionData.value)
   
   if (dataString !== lastDataString) {
-  console.log('Position changée:', data)
-  positionData.value = data
+    console.log('Position changée:', data)
+    positionData.value = data
+    applyDocumentConfig(data)
   }
 }
 

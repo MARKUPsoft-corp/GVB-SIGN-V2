@@ -390,12 +390,12 @@
             <span>{{ t('common.back') }}</span>
           </button>
           <button 
-            @click="nextStep" 
-            :disabled="!allDocumentsProcessed"
+            @click="handleStep3Next" 
             class="action-btn primary"
           >
             <span v-if="allDocumentsProcessed">{{ locale === 'fr' ? 'Finaliser la préparation' : 'Finalize preparation' }}</span>
-            <span v-else>{{ locale === 'fr' ? 'Traitement en cours...' : 'Processing in progress...' }} ({{ processedDocuments.size }}/{{ uploadedFiles.length }})</span>
+            <span v-else-if="activeSignBaseTabIndex < uploadedFiles.length - 1">{{ locale === 'fr' ? 'Document suivant' : 'Next document' }} ({{ processedDocuments.size }}/{{ uploadedFiles.length }})</span>
+            <span v-else>{{ locale === 'fr' ? 'Finaliser la préparation' : 'Finalize preparation' }}</span>
             <i class="bi bi-arrow-right"></i>
           </button>
         </div>
@@ -908,6 +908,24 @@ const nextStep = () => {
     if (currentStep.value === 4) {
       validateWorkflow()
     }
+  }
+}
+
+const handleStep3Next = () => {
+  if (allDocumentsProcessed.value) {
+    nextStep()
+    return
+  }
+  
+  if (!processedDocuments.value.has(activeSignBaseTabIndex.value)) {
+    processedDocuments.value.add(activeSignBaseTabIndex.value)
+    if (activeSignBaseTabIndex.value < uploadedFiles.value.length - 1) {
+      activeSignBaseTabIndex.value++
+    }
+  }
+  
+  if (allDocumentsProcessed.value) {
+    nextStep()
   }
 }
 

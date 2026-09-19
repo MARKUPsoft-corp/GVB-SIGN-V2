@@ -99,7 +99,7 @@
               @mousedown.stop="startDragQr"
               @touchstart.stop="startDragQr"
             >
-              <div class="qr-content">
+              <div class="qr-content" style="pointer-events: none; user-select: none;">
                 <div class="qr-code" :class="selectedQrSize">
                   <div class="qr-pattern"></div>
                 </div>
@@ -116,7 +116,7 @@
               @mousedown.stop="startDragSignature($event)"
               @touchstart.stop="startDragSignature($event)"
             >
-              <img :src="signatureImageUrl" alt="Signature" class="signature-img">
+              <img :src="signatureImageUrl" alt="Signature" class="signature-img" draggable="false">
             </div>
           </div>
         </div>
@@ -259,7 +259,7 @@
 
         <!-- Actions -->
         <div class="actions-panel">
-          <button @click="resetPosition" class="action-btn primary">
+          <button @click="resetPosition" class="action-btn secondary">
             <i class="bi bi-arrow-clockwise"></i>
             {{ locale === 'fr' ? 'Réinitialiser' : 'Reset' }}
           </button>
@@ -267,6 +267,11 @@
           <button @click="showFinalPreview" class="action-btn preview" :disabled="isGeneratingPdf">
             <i class="bi" :class="isGeneratingPdf ? 'bi-hourglass-split spin' : 'bi-eye-fill'"></i>
             {{ isGeneratingPdf ? (locale === 'fr' ? 'Génération en cours...' : 'Generating...') : (locale === 'fr' ? 'Aperçu final' : 'Final preview') }}
+          </button>
+
+          <button @click="confirmPosition" class="action-btn confirm" :disabled="!canConfirm || isGeneratingPdf">
+            <i class="bi bi-check-circle-fill"></i>
+            {{ locale === 'fr' ? 'Confirmer la position' : 'Confirm placement' }}
           </button>
         </div>
       </div>
@@ -441,10 +446,20 @@ const pageApplication = ref('all');
 const selectedPages = ref([]);
 
 // Tailles du QR code
+const QR_SIZE_VALUES = {
+  small: 50,
+  medium: 70,
+  large: 90
+};
+
+const getQrSizeInPx = (sizeName) => {
+  return QR_SIZE_VALUES[sizeName] || QR_SIZE_VALUES.medium;
+};
+
 const qrSizes = computed(() => [
-  { name: 'small', label: locale.value === 'fr' ? 'Petit' : 'Small', size: 50 },
-  { name: 'medium', label: locale.value === 'fr' ? 'Moyen' : 'Medium', size: 70 },
-  { name: 'large', label: locale.value === 'fr' ? 'Grand' : 'Large', size: 90 }
+  { name: 'small', label: locale.value === 'fr' ? 'Petit' : 'Small', size: QR_SIZE_VALUES.small },
+  { name: 'medium', label: locale.value === 'fr' ? 'Moyen' : 'Medium', size: QR_SIZE_VALUES.medium },
+  { name: 'large', label: locale.value === 'fr' ? 'Grand' : 'Large', size: QR_SIZE_VALUES.large }
 ]);
 const selectedQrSize = ref('medium');
 
@@ -561,13 +576,13 @@ const canConfirm = computed(() => {
 });
 
 const qrStyle = computed(() => {
-  const size = qrSizes.find(s => s.name === selectedQrSize.value);
+  const sizePx = getQrSizeInPx(selectedQrSize.value);
   const position = getCurrentPagePosition();
   return {
     left: `${position.x}%`,
     top: `${position.y}%`,
-    width: `${size.size}px`,
-    height: `${size.size}px`,
+    width: `${sizePx}px`,
+    height: `${sizePx}px`,
     transform: 'translate(-50%, -50%)',
     cursor: isDraggingQr.value ? 'grabbing' : 'grab'
   };
@@ -746,17 +761,15 @@ function handleDragMove(event) {
 }
 
 function handleDragEnd() {
-  if (isDraggingQr.value || isDraggingSignature.value) {
-    // Supprimer les écouteurs d'événements
-    document.removeEventListener('mousemove', handleDragMove);
-    document.removeEventListener('mouseup', handleDragEnd);
-    document.removeEventListener('touchmove', handleTouchMove);
-    document.removeEventListener('touchend', handleTouchEnd);
-    
-    isDraggingQr.value = false;
-    isDraggingSignature.value = false;
-    showPositionInfo.value = false;
-  }
+  // Supprimer les écouteurs d'événements
+  document.removeEventListener('mousemove', handleDragMove);
+  document.removeEventListener('mouseup', handleDragEnd);
+  document.removeEventListener('touchmove', handleTouchMove);
+  document.removeEventListener('touchend', handleTouchEnd);
+  
+  isDraggingQr.value = false;
+  isDraggingSignature.value = false;
+  showPositionInfo.value = false;
 }
 
 // Support tactile
@@ -919,7 +932,7 @@ async function generateModifiedPdf() {
         }
         
         // Générer un vrai QR code avec qrcode
-        const qrSize = qrSizes.find(s => s.name === selectedQrSize.value).size;
+        const qrSize = getQrSizeInPx(selectedQrSize.value);
         
         // Convertir la position de pourcentage à coordonnées absolues
         const qrPosX = (position.x / 100) * width;
@@ -1128,13 +1141,6 @@ async function generateModifiedPdf() {
 
 function closePreviewModal() {
   showPreviewModal.value = false;
-  
-  // Nettoyer les ressources du PDF généré pour libérer de la mémoire
-  if (generatedPdfDataUrl.value) {
-    URL.revokeObjectURL(generatedPdfDataUrl.value);
-    generatedPdfDataUrl.value = '';
-    generatedPdfBlob.value = null;
-  }
 }
 
 async function confirmAndClosePreview() {
@@ -1277,7 +1283,20 @@ async function confirmPosition() {
       // Continuer quand même avec la confirmation
     }
   } else {
-    console.log('PDF déjà généré, pas besoin de le régénérer');
+    console.log('PDF déjà généré, émission des données du PDF existant');
+    if (generatedPdfBlob.value) {
+      let fileName = 'document_modifié.pdf';
+      if (props.pdfFile && props.pdfFile.name) {
+        const originalName = props.pdfFile.name.replace(/\.pdf$/i, '');
+        fileName = `${originalName}_modifié.pdf`;
+      }
+      const pdfFile = new File([generatedPdfBlob.value], fileName, { type: 'application/pdf' });
+      emit('pdf-generated', {
+        file: pdfFile,
+        dataUrl: generatedPdfDataUrl.value,
+        blob: generatedPdfBlob.value
+      });
+    }
   }
   
   emit('position-confirmed', getPositionData());
@@ -1475,6 +1494,12 @@ watch(() => props.preloadedPositions, (newVal) => {
 
 // Exposer les méthodes pour le composant parent
 defineExpose({
+  confirmPosition: async () => {
+    await confirmPosition();
+  },
+  getPositionData: () => {
+    return getPositionData();
+  },
   generatePreviewPdf: async () => {
     console.log('🎯 generatePreviewPdf appelée depuis le parent')
     try {
@@ -1983,7 +2008,7 @@ defineExpose({
 .qr-element, .signature-element {
   position: absolute;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: box-shadow 0.2s ease;
   user-select: none;
   cursor: grab;
   z-index: 10;
@@ -2006,14 +2031,13 @@ defineExpose({
 
 .qr-element:hover, .signature-element:hover {
   box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
-  transform: translateZ(4px);
 }
 
 .qr-element.dragging, .signature-element.dragging {
-  opacity: 0.8;
+  opacity: 0.85;
   box-shadow: 0 16px 45px rgba(0, 0, 0, 0.25);
   cursor: grabbing;
-  transform: rotate(2deg) scale(1.05);
+  transition: none !important;
 }
 
 .qr-content {
@@ -2072,6 +2096,9 @@ defineExpose({
   max-height: 100%;
   display: block;
   border-radius: 2px;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
 /* Feedback de position moderne */
@@ -2758,6 +2785,29 @@ defineExpose({
 }
 
 .action-btn.primary:disabled {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  opacity: 0.6;
+  color: var(--text-muted);
+}
+
+.action-btn.confirm {
+  background: rgba(40, 167, 69, 0.15);
+  color: #28a745;
+  border: 1px solid rgba(40, 167, 69, 0.4);
+}
+
+.action-btn.confirm:hover:not(:disabled) {
+  background: rgba(40, 167, 69, 0.25);
+  border-color: rgba(40, 167, 69, 0.6);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.action-btn.confirm:disabled {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(255, 255, 255, 0.1);
   cursor: not-allowed;
