@@ -184,8 +184,13 @@ export class SignatureService {
         ...options
       }
       
-      // Générer le QR code avec seulement l'ID du document (comme dans Python)
-      const qrCodeDataURL = await QRCode.toDataURL(documentId, qrOptions)
+      // Générer le QR code avec l'URL universelle de vérification (accessible via smartphone et app mobile)
+      const qrPayload = (typeof documentId === 'string' && (documentId.startsWith('http://') || documentId.startsWith('https://')))
+        ? documentId
+        : `https://www.gvbsign.cm/verify?id=${documentId}`
+      
+      console.log(`Payload encodé dans le QR code: ${qrPayload}`)
+      const qrCodeDataURL = await QRCode.toDataURL(qrPayload, qrOptions)
       
       console.log('QR code généré avec succès')
       return qrCodeDataURL

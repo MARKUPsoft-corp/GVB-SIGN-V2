@@ -81,11 +81,8 @@ service cloud.firestore {
 
     // 3. Collection `signatures`
     match /signatures/{signatureId} {
-      allow read: if isAuthenticated() && (
-        isSuperAdmin() ||
-        (resource != null && resource.data.userId == request.auth.uid) ||
-        (resource != null && resource.data.organization_id != null && isOrganizationMember(resource.data.organization_id))
-      );
+      // Lecture publique autorisée pour permettre la vérification des signatures via QR Code / API
+      allow read: if true;
       allow create: if isAuthenticated();
       allow update, delete: if isAuthenticated() && (
         isSuperAdmin() ||
@@ -95,11 +92,12 @@ service cloud.firestore {
     
     // 4. Collection `document_preparations`
     match /document_preparations/{prepId} {
-      allow read: if isAuthenticated() && (
+      // Lecture publique si le document est terminé pour la vérification, sinon restreinte aux membres / propriétaires
+      allow read: if (resource != null && resource.data.status == 'completed') || (isAuthenticated() && (
         isSuperAdmin() ||
         (resource != null && resource.data.userId == request.auth.uid) ||
         (resource != null && resource.data.organization != null && isOrganizationMember(resource.data.organization.id))
-      );
+      ));
       allow create: if isAuthenticated();
       allow update, delete: if isAuthenticated() && (
         isSuperAdmin() ||
