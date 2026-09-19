@@ -48,20 +48,28 @@ export default defineEventHandler(async (event) => {
       } catch (_) {}
     }
 
-    // 3. Si toujours non trouvé, chercher dans "document_preparations"
+    // 3. Si toujours non trouvé, chercher dans "document_preparations" (uniquement les complétés)
     if (!signatureData) {
-      const prepQuery = query(collection(db, 'document_preparations'), where('document_id', '==', documentId))
-      const prepSnapshot = await getDocs(prepQuery)
+      try {
+        const prepQuery = query(
+          collection(db, 'document_preparations'),
+          where('status', '==', 'completed'),
+          where('document_id', '==', documentId)
+        )
+        const prepSnapshot = await getDocs(prepQuery)
 
-      if (!prepSnapshot.empty) {
-        signatureData = { id: prepSnapshot.docs[0].id, ...prepSnapshot.docs[0].data() }
-      } else {
-        try {
-          const prepDoc = await getDoc(doc(db, 'document_preparations', documentId))
-          if (prepDoc.exists()) {
-            signatureData = { id: prepDoc.id, ...prepDoc.data() }
-          }
-        } catch (_) {}
+        if (!prepSnapshot.empty) {
+          signatureData = { id: prepSnapshot.docs[0].id, ...prepSnapshot.docs[0].data() }
+        } else {
+          try {
+            const prepDoc = await getDoc(doc(db, 'document_preparations', documentId))
+            if (prepDoc.exists() && prepDoc.data()?.status === 'completed') {
+              signatureData = { id: prepDoc.id, ...prepDoc.data() }
+            }
+          } catch (_) {}
+        }
+      } catch (prepErr) {
+        console.warn('Recherche document_preparations ignorée:', prepErr?.message)
       }
     }
 
