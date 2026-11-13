@@ -1,38 +1,46 @@
 <template>
   <div class="documents-page super-admin-page fade-in-up">
-    <!-- Header de Supervision Premium -->
-    <div class="super-header mb-4">
-      <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3">
-        <div class="header-left">
+    <!-- Header Signature GVB avec titre, bulles animées et illustration SVG -->
+    <div class="documents-header super-admin-header mb-4">
+      <div class="header-container">
+        <div class="header-content">
           <div class="badge-superadmin mb-2">
             <i class="bi bi-shield-lock-fill me-1"></i>
             <span>{{ t('superAdmin.badge') }}</span>
           </div>
-          <h1 class="display-5 fw-bold text-dark mb-1">
-            {{ t('superAdmin.titleMain') }}<span class="text-primary-blue">{{ t('superAdmin.titleAccent') }}</span>
+          <h1 class="section-title">
+            <span class="text-dark">{{ activeHeaderInfo.prefix }} </span>
+            <span class="text-primary-blue">{{ activeHeaderInfo.accent }}</span>
           </h1>
-          <p class="lead text-muted mb-0">
-            {{ t('superAdmin.subtitle') }}
-          </p>
+          <p class="section-subtitle">{{ activeHeaderInfo.subtitle }}</p>
+
+          <!-- Contrôles rapides : statut en direct + rafraîchissement -->
+          <div class="header-actions d-flex align-items-center gap-3 flex-wrap mt-3">
+            <div class="pulse-indicator bg-white text-success px-3 py-2 rounded-pill shadow-sm d-flex align-items-center border">
+              <span class="spinner-grow spinner-grow-sm me-2 text-success" role="status" aria-hidden="true" style="width: 0.75rem; height: 0.75rem;"></span>
+              <span class="fw-semibold small">{{ t('superAdmin.systemOnline') }}</span>
+            </div>
+
+            <button class="btn btn-outline-primary btn-refresh rounded-pill px-3 py-2 shadow-sm d-flex align-items-center gap-2" @click="handleManualRefresh" :disabled="isRefreshing">
+              <i class="bi bi-arrow-clockwise" :class="{ 'spin-animation': isRefreshing }"></i>
+              <span class="small fw-semibold">{{ t('superAdmin.refresh') }}</span>
+            </button>
+          </div>
         </div>
 
-        <div class="header-right d-flex align-items-center gap-3">
-          <!-- Statut en ligne pulsant -->
-          <div class="pulse-indicator bg-white text-success px-3 py-2 rounded-pill shadow-sm d-flex align-items-center border">
-            <span class="spinner-grow spinner-grow-sm me-2 text-success" role="status" aria-hidden="true" style="width: 0.75rem; height: 0.75rem;"></span>
-            <span class="fw-semibold small">{{ t('superAdmin.systemOnline') }}</span>
-          </div>
-
-          <!-- Bouton rafraîchissement rapide -->
-          <button class="btn btn-outline-primary btn-refresh rounded-pill px-3 py-2 shadow-sm d-flex align-items-center gap-2" @click="handleManualRefresh" :disabled="isRefreshing">
-            <i class="bi bi-arrow-clockwise" :class="{ 'spin-animation': isRefreshing }"></i>
-            <span class="small fw-semibold">{{ t('superAdmin.refresh') }}</span>
-          </button>
+        <div class="header-image">
+          <!-- Bulles décoratives avec animation flottante GVB -->
+          <div class="bubble bubble-1"></div>
+          <div class="bubble bubble-2"></div>
+          <div class="bubble bubble-3"></div>
+          <div class="bubble bubble-4"></div>
+          
+          <img :src="activeHeaderInfo.svg" :alt="activeHeaderInfo.prefix" class="documents-illustration">
         </div>
       </div>
     </div>
 
-    <!-- Bannière d'alerte contextuelle si organisations en attente -->
+    <!-- Bannière d'alerte contextuelle si organisations en attente (cliquable pour basculer vers les demandes) -->
     <div v-if="pendingOrgs.length > 0 && currentSection !== 'organizations'" class="alert-pending-banner mb-4 p-3 rounded-4 shadow-sm d-flex align-items-center justify-content-between flex-wrap gap-3">
       <div class="d-flex align-items-center gap-3">
         <div class="alert-icon-pulse">
@@ -50,38 +58,6 @@
       </button>
     </div>
 
-    <!-- Navigation par Onglets (Standard Pilules GVB) -->
-    <div class="super-nav-tabs-wrapper mb-4">
-      <ul class="nav nav-pills custom-tabs d-flex flex-wrap gap-2">
-        <li class="nav-item">
-          <button class="nav-link px-4 py-2" :class="{ active: currentSection === 'overview' }" @click="switchSection('overview')">
-            <i class="bi bi-grid-1x2-fill me-2"></i> {{ t('superAdmin.tabOverview') }}
-          </button>
-        </li>
-        <li class="nav-item">
-          <button class="nav-link px-4 py-2 position-relative" :class="{ active: currentSection === 'organizations' }" @click="switchSection('organizations')">
-            <i class="bi bi-building-fill-gear me-2"></i> {{ t('superAdmin.tabOrgs') }}
-            <span v-if="pendingOrgs.length > 0" class="badge rounded-pill bg-warning text-dark ms-2 fw-bold">{{ pendingOrgs.length }}</span>
-          </button>
-        </li>
-        <li class="nav-item">
-          <button class="nav-link px-4 py-2" :class="{ active: currentSection === 'users' }" @click="switchSection('users')">
-            <i class="bi bi-people-fill me-2"></i> {{ t('superAdmin.tabUsers') }}
-          </button>
-        </li>
-        <li class="nav-item">
-          <button class="nav-link px-4 py-2" :class="{ active: currentSection === 'signatures' }" @click="switchSection('signatures')">
-            <i class="bi bi-journal-check me-2"></i> {{ t('superAdmin.tabRegistry') }}
-          </button>
-        </li>
-        <li class="nav-item">
-          <button class="nav-link px-4 py-2" :class="{ active: currentSection === 'system' }" @click="switchSection('system')">
-            <i class="bi bi-shield-check me-2"></i> {{ t('superAdmin.tabSystem') }}
-          </button>
-        </li>
-      </ul>
-    </div>
-
     <!-- État de chargement initial -->
     <div v-if="loading" class="text-center py-5">
       <div class="spinner-border text-primary-blue" role="status" style="width: 3rem; height: 3rem;">
@@ -90,109 +66,72 @@
       <p class="mt-3 text-muted fw-semibold">Synchronisation de la console de supervision...</p>
     </div>
 
-    <!-- Contenu des Vues -->
+    <!-- Contenu des Vues SuperAdmin -->
     <div v-else>
-      
+
       <!-- ========================================================== -->
       <!-- SECTION 1 : VUE D'ENSEMBLE (OVERVIEW & ANALYTICS)         -->
       <!-- ========================================================== -->
       <div v-if="currentSection === 'overview'" class="section-content fade-in-up">
         
-        <!-- Cartes KPIs Premium -->
-        <div class="row g-4 mb-4">
-          <!-- KPI 1 : Utilisateurs -->
-          <div class="col-xl-3 col-md-6">
-            <div class="kpi-card shadow-sm h-100">
-              <div class="d-flex justify-content-between align-items-start mb-3">
-                <div class="kpi-icon-wrap icon-blue">
-                  <i class="bi bi-people-fill"></i>
+        <!-- Cartes Statistiques Aérées (Format GVB Standard 3 Colonnes) -->
+        <div class="stats-section mb-5">
+          <div class="row g-4">
+            <div class="col-lg-4">
+              <div class="stat-card">
+                <div class="stat-icon">
+                  <i class="bi bi-people"></i>
                 </div>
-                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill small">
-                  Total Comptes
-                </span>
-              </div>
-              <h3 class="kpi-value text-dark mb-1">{{ users.length }}</h3>
-              <p class="kpi-title text-muted mb-2">{{ t('superAdmin.kpiUsers') }}</p>
-              <div class="kpi-footer pt-2 border-top d-flex justify-content-between small text-muted">
-                <span>{{ memberUsersCount }} membres</span>
-                <span>•</span>
-                <span>{{ chiefUsersCount }} chefs</span>
-                <span>•</span>
-                <span class="text-primary-blue fw-bold">{{ superAdminUsersCount }} admins</span>
+                <div class="stat-content">
+                  <h4 class="stat-number">{{ users.length }}</h4>
+                  <p class="stat-label">{{ t('superAdmin.kpiUsers') }}</p>
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- KPI 2 : Organisations -->
-          <div class="col-xl-3 col-md-6">
-            <div class="kpi-card shadow-sm h-100">
-              <div class="d-flex justify-content-between align-items-start mb-3">
-                <div class="kpi-icon-wrap icon-purple">
-                  <i class="bi bi-building-fill-gear"></i>
+            <div class="col-lg-4">
+              <div class="stat-card">
+                <div class="stat-icon">
+                  <i class="bi bi-building"></i>
                 </div>
-                <span class="badge px-2 py-1 rounded-pill small" :class="pendingOrgs.length > 0 ? 'bg-warning text-dark' : 'bg-success-subtle text-success border border-success-subtle'">
-                  {{ pendingOrgs.length > 0 ? pendingOrgs.length + ' en attente' : 'Toutes validées' }}
-                </span>
-              </div>
-              <h3 class="kpi-value text-dark mb-1">{{ organizations.length }}</h3>
-              <p class="kpi-title text-muted mb-2">{{ t('superAdmin.kpiOrgs') }}</p>
-              <div class="kpi-footer pt-2 border-top d-flex justify-content-between small text-muted">
-                <span class="text-success fw-bold">{{ approvedOrgs.length }} actives</span>
-                <span>•</span>
-                <span class="text-warning fw-bold">{{ pendingOrgs.length }} en attente</span>
-                <span>•</span>
-                <span class="text-danger">{{ rejectedOrgs.length }} rejetées</span>
+                <div class="stat-content">
+                  <h4 class="stat-number">{{ organizations.length }}</h4>
+                  <p class="stat-label">{{ t('superAdmin.kpiOrgs') }}</p>
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- KPI 3 : Signatures -->
-          <div class="col-xl-3 col-md-6">
-            <div class="kpi-card shadow-sm h-100">
-              <div class="d-flex justify-content-between align-items-start mb-3">
-                <div class="kpi-icon-wrap icon-emerald">
-                  <i class="bi bi-patch-check-fill"></i>
+            <div class="col-lg-4">
+              <div class="stat-card">
+                <div class="stat-icon">
+                  <i class="bi bi-file-earmark-check"></i>
                 </div>
-                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill small">
-                  100% Intègres
-                </span>
-              </div>
-              <h3 class="kpi-value text-dark mb-1">{{ signatures.length }}</h3>
-              <p class="kpi-title text-muted mb-2">{{ t('superAdmin.kpiSignatures') }}</p>
-              <div class="kpi-footer pt-2 border-top d-flex justify-content-between small text-muted">
-                <span>Scellées RSA-2048</span>
-                <span>SHA-256 certifié</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- KPI 4 : Santé & Services -->
-          <div class="col-xl-3 col-md-6">
-            <div class="kpi-card shadow-sm h-100">
-              <div class="d-flex justify-content-between align-items-start mb-3">
-                <div class="kpi-icon-wrap icon-cyan">
-                  <i class="bi bi-shield-check"></i>
+                <div class="stat-content">
+                  <h4 class="stat-number">{{ signatures.length }}</h4>
+                  <p class="stat-label">{{ t('superAdmin.kpiSignatures') }}</p>
                 </div>
-                <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1 rounded-pill small">
-                  5/5 Actifs
-                </span>
-              </div>
-              <h3 class="kpi-value text-dark mb-1">99.9%</h3>
-              <p class="kpi-title text-muted mb-2">{{ t('superAdmin.kpiIntegrity') }}</p>
-              <div class="kpi-footer pt-2 border-top d-flex justify-content-between small text-muted">
-                <span class="text-success">Latence ~1.2s</span>
-                <span class="text-primary-blue fw-semibold">Zero-Knowledge</span>
               </div>
             </div>
           </div>
         </div>
 
+        <!-- En-tête de section Graphiques -->
+        <div class="sections-header text-center mb-4">
+          <h2 class="display-6 fw-bold mb-3 text-dark sections-title">
+            <span class="text-dark">Activité & </span>
+            <span class="text-primary-blue">Supervision Globale</span>
+          </h2>
+          <p class="lead mb-0 text-muted sections-subtitle">
+            Évolution temporelle des signatures et distribution des structures partenaires
+          </p>
+        </div>
+
         <!-- Rangée Graphiques : 1 Courbe Temporelle + 1 Donut -->
-        <div class="row g-4 mb-4">
+        <div class="row g-4 mb-5">
           <!-- GRAPHIQUE 1 : COURBE TEMPORELLE INTERACTIVE -->
           <div class="col-lg-8">
-            <div class="chart-card shadow-sm h-100 p-4">
-              <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb-3">
+            <div class="chart-card-clean shadow-sm h-100 p-4 p-lg-5">
+              <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb-4">
                 <div>
                   <h5 class="fw-bold text-dark mb-1">
                     <i class="bi bi-graph-up text-primary-blue me-2"></i>{{ t('superAdmin.chartActivityTitle') }}
@@ -200,7 +139,6 @@
                   <small class="text-muted">{{ t('superAdmin.chartActivitySubtitle') }}</small>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                  <!-- Sélecteur de période -->
                   <div class="btn-group btn-group-sm" role="group">
                     <button type="button" class="btn btn-outline-primary" :class="{ active: chartPeriod === '7d' }" @click="chartPeriod = '7d'">7J</button>
                     <button type="button" class="btn btn-outline-primary" :class="{ active: chartPeriod === '30d' }" @click="chartPeriod = '30d'">30J</button>
@@ -223,12 +161,12 @@
                     </linearGradient>
                   </defs>
 
-                  <!-- Grille horizontale -->
-                  <line x1="40" y1="40" x2="760" y2="40" stroke="#e2e8f0" stroke-dasharray="4 4" />
-                  <line x1="40" y1="90" x2="760" y2="90" stroke="#e2e8f0" stroke-dasharray="4 4" />
-                  <line x1="40" y1="140" x2="760" y2="140" stroke="#e2e8f0" stroke-dasharray="4 4" />
-                  <line x1="40" y1="190" x2="760" y2="190" stroke="#e2e8f0" stroke-dasharray="4 4" />
-                  <line x1="40" y1="220" x2="760" y2="220" stroke="#cbd5e1" stroke-width="1.5" />
+                  <!-- Grille horizontale discrète -->
+                  <line x1="40" y1="40" x2="760" y2="40" stroke="#f1f5f9" stroke-dasharray="4 4" />
+                  <line x1="40" y1="90" x2="760" y2="90" stroke="#f1f5f9" stroke-dasharray="4 4" />
+                  <line x1="40" y1="140" x2="760" y2="140" stroke="#f1f5f9" stroke-dasharray="4 4" />
+                  <line x1="40" y1="190" x2="760" y2="190" stroke="#f1f5f9" stroke-dasharray="4 4" />
+                  <line x1="40" y1="220" x2="760" y2="220" stroke="#e2e8f0" stroke-width="1.5" />
 
                   <!-- Aire sous la courbe des signatures -->
                   <path :d="activityAreaPath" fill="url(#activityGrad)" />
@@ -276,7 +214,7 @@
               </div>
 
               <!-- Légende du graphique -->
-              <div class="d-flex align-items-center justify-content-between pt-3 border-top mt-2 flex-wrap gap-2">
+              <div class="d-flex align-items-center justify-content-between pt-3 border-top mt-3 flex-wrap gap-2">
                 <div class="d-flex align-items-center gap-3 small">
                   <span class="d-flex align-items-center gap-1 text-dark fw-semibold">
                     <span class="legend-color-dot bg-primary-blue"></span> Signatures scellées
@@ -294,7 +232,7 @@
 
           <!-- GRAPHIQUE 2 : DIAGRAMME DONUT STATUT DES ORGANISATIONS -->
           <div class="col-lg-4">
-            <div class="chart-card shadow-sm h-100 p-4 d-flex flex-column">
+            <div class="chart-card-clean shadow-sm h-100 p-4 d-flex flex-column">
               <div class="mb-3">
                 <h5 class="fw-bold text-dark mb-1">
                   <i class="bi bi-pie-chart text-primary-blue me-2"></i>{{ t('superAdmin.chartDonutTitle') }}
@@ -306,7 +244,7 @@
               <div class="donut-chart-wrapper my-auto py-3 text-center position-relative">
                 <svg viewBox="0 0 200 200" class="donut-svg">
                   <!-- Cercle de fond -->
-                  <circle cx="100" cy="100" r="70" fill="transparent" stroke="#f1f5f9" stroke-width="22" />
+                  <circle cx="100" cy="100" r="70" fill="transparent" stroke="#f1f5f9" stroke-width="20" />
                   
                   <!-- Segment Approuvées -->
                   <circle 
@@ -315,7 +253,7 @@
                     r="70" 
                     fill="transparent" 
                     stroke="#10b981" 
-                    stroke-width="22" 
+                    stroke-width="20" 
                     :stroke-dasharray="donutCircumference"
                     :stroke-dashoffset="donutApprovedOffset"
                     class="donut-segment"
@@ -329,7 +267,7 @@
                     r="70" 
                     fill="transparent" 
                     stroke="#f59e0b" 
-                    stroke-width="22" 
+                    stroke-width="20" 
                     :stroke-dasharray="donutCircumference"
                     :stroke-dashoffset="donutPendingOffset"
                     class="donut-segment"
@@ -343,7 +281,7 @@
                     r="70" 
                     fill="transparent" 
                     stroke="#ef4444" 
-                    stroke-width="22" 
+                    stroke-width="20" 
                     :stroke-dasharray="donutCircumference"
                     :stroke-dashoffset="donutRejectedOffset"
                     class="donut-segment"
@@ -360,21 +298,21 @@
 
               <!-- Légende interactive Donut -->
               <div class="donut-legend pt-3 border-top mt-auto">
-                <div class="legend-row d-flex justify-content-between align-items-center py-1 cursor-pointer" @click="switchSection('organizations', 'approved')">
+                <div class="legend-row d-flex justify-content-between align-items-center py-2 px-2 cursor-pointer rounded-2" @click="switchSection('organizations', 'approved')">
                   <div class="d-flex align-items-center gap-2 small">
                     <span class="legend-color-dot bg-success"></span>
                     <span class="text-dark fw-medium">Approuvées</span>
                   </div>
                   <span class="badge bg-success-subtle text-success fw-bold">{{ approvedOrgs.length }}</span>
                 </div>
-                <div class="legend-row d-flex justify-content-between align-items-center py-1 cursor-pointer" @click="switchSection('organizations', 'pending')">
+                <div class="legend-row d-flex justify-content-between align-items-center py-2 px-2 cursor-pointer rounded-2" @click="switchSection('organizations', 'pending')">
                   <div class="d-flex align-items-center gap-2 small">
                     <span class="legend-color-dot bg-warning"></span>
                     <span class="text-dark fw-medium">En attente</span>
                   </div>
                   <span class="badge bg-warning-subtle text-warning-emphasis fw-bold">{{ pendingOrgs.length }}</span>
                 </div>
-                <div class="legend-row d-flex justify-content-between align-items-center py-1 cursor-pointer" @click="switchSection('organizations', 'rejected')">
+                <div class="legend-row d-flex justify-content-between align-items-center py-2 px-2 cursor-pointer rounded-2" @click="switchSection('organizations', 'rejected')">
                   <div class="d-flex align-items-center gap-2 small">
                     <span class="legend-color-dot bg-danger"></span>
                     <span class="text-dark fw-medium">Rejetées</span>
@@ -386,11 +324,22 @@
           </div>
         </div>
 
+        <!-- En-tête de section Rôles & Flux d'activité -->
+        <div class="sections-header text-center mb-4">
+          <h2 class="display-6 fw-bold mb-3 text-dark sections-title">
+            <span class="text-dark">Rôles & </span>
+            <span class="text-primary-blue">Journal d'Audit</span>
+          </h2>
+          <p class="lead mb-0 text-muted sections-subtitle">
+            Distribution des permissions et dernières opérations en direct
+          </p>
+        </div>
+
         <!-- Rangée 2 : Distribution des Rôles + Flux d'Activité Récente -->
-        <div class="row g-4">
+        <div class="row g-4 mb-4">
           <!-- DISTRIBUTION DES RÔLES -->
           <div class="col-lg-6">
-            <div class="chart-card shadow-sm h-100 p-4">
+            <div class="chart-card-clean shadow-sm h-100 p-4 p-lg-5">
               <div class="mb-4">
                 <h5 class="fw-bold text-dark mb-1">
                   <i class="bi bi-person-badge text-primary-blue me-2"></i>{{ t('superAdmin.chartRolesTitle') }}
@@ -450,7 +399,7 @@
 
           <!-- FLUX D'ACTIVITÉ EN DIRECT (LIVE AUDIT) -->
           <div class="col-lg-6">
-            <div class="chart-card shadow-sm h-100 p-4">
+            <div class="chart-card-clean shadow-sm h-100 p-4 p-lg-5">
               <div class="d-flex justify-content-between align-items-center mb-3">
                 <div>
                   <h5 class="fw-bold text-dark mb-1">
@@ -468,7 +417,7 @@
                 <div 
                   v-for="(item, idx) in recentActivities" 
                   :key="'act-' + idx" 
-                  class="timeline-item d-flex align-items-start gap-3 py-2 border-bottom"
+                  class="timeline-item d-flex align-items-start gap-3 py-3 border-bottom"
                 >
                   <div class="timeline-icon-badge" :class="item.badgeClass">
                     <i :class="item.icon"></i>
@@ -493,6 +442,58 @@
       <!-- ========================================================== -->
       <div v-if="currentSection === 'organizations'" class="section-content fade-in-up">
         
+        <!-- Cartes Statistiques Dédiées Organisations -->
+        <div class="stats-section mb-5">
+          <div class="row g-4">
+            <div class="col-lg-4">
+              <div class="stat-card">
+                <div class="stat-icon">
+                  <i class="bi bi-building-check"></i>
+                </div>
+                <div class="stat-content">
+                  <h4 class="stat-number text-success">{{ approvedOrgs.length }}</h4>
+                  <p class="stat-label">Organisations Validées</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-lg-4">
+              <div class="stat-card">
+                <div class="stat-icon">
+                  <i class="bi bi-hourglass-split"></i>
+                </div>
+                <div class="stat-content">
+                  <h4 class="stat-number text-warning">{{ pendingOrgs.length }}</h4>
+                  <p class="stat-label">En Attente de Validation</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-lg-4">
+              <div class="stat-card">
+                <div class="stat-icon">
+                  <i class="bi bi-building-dash"></i>
+                </div>
+                <div class="stat-content">
+                  <h4 class="stat-number text-danger">{{ rejectedOrgs.length }}</h4>
+                  <p class="stat-label">Demandes Rejetées</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- En-tête de section -->
+        <div class="sections-header text-center mb-4">
+          <h2 class="display-6 fw-bold mb-3 text-dark sections-title">
+            <span class="text-dark">Structures & </span>
+            <span class="text-primary-blue">Demandes d'Adhésion</span>
+          </h2>
+          <p class="lead mb-0 text-muted sections-subtitle">
+            Examinez, approuvez ou révoquez les organisations partenaires
+          </p>
+        </div>
+
         <!-- Sous-onglets de statut et recherche -->
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-stretch align-items-md-center gap-3 mb-4">
           <ul class="nav nav-pills custom-tabs d-flex gap-2">
@@ -624,6 +625,58 @@
       <!-- ========================================================== -->
       <div v-if="currentSection === 'users'" class="section-content fade-in-up">
         
+        <!-- Cartes Statistiques Dédiées Utilisateurs -->
+        <div class="stats-section mb-5">
+          <div class="row g-4">
+            <div class="col-lg-4">
+              <div class="stat-card">
+                <div class="stat-icon">
+                  <i class="bi bi-person"></i>
+                </div>
+                <div class="stat-content">
+                  <h4 class="stat-number">{{ memberUsersCount }}</h4>
+                  <p class="stat-label">Membres Standards</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-lg-4">
+              <div class="stat-card">
+                <div class="stat-icon">
+                  <i class="bi bi-person-badge"></i>
+                </div>
+                <div class="stat-content">
+                  <h4 class="stat-number text-info">{{ chiefUsersCount }}</h4>
+                  <p class="stat-label">Chefs d'Organisation</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-lg-4">
+              <div class="stat-card">
+                <div class="stat-icon">
+                  <i class="bi bi-shield-lock"></i>
+                </div>
+                <div class="stat-content">
+                  <h4 class="stat-number text-primary-blue">{{ superAdminUsersCount }}</h4>
+                  <p class="stat-label">Super Administrateurs</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- En-tête de section -->
+        <div class="sections-header text-center mb-4">
+          <h2 class="display-6 fw-bold mb-3 text-dark sections-title">
+            <span class="text-dark">Annuaire & </span>
+            <span class="text-primary-blue">Contrôle des Accès</span>
+          </h2>
+          <p class="lead mb-0 text-muted sections-subtitle">
+            Supervisez les utilisateurs enregistrés et gérez les privilèges administratifs
+          </p>
+        </div>
+
         <div class="d-flex flex-column flex-sm-row justify-content-between align-items-stretch align-items-sm-center gap-3 mb-4">
           <div class="search-box position-relative" style="max-width: 400px; width: 100%;">
             <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
@@ -645,7 +698,7 @@
           </div>
         </div>
 
-        <div class="chart-card p-0 overflow-hidden border shadow-sm rounded-4">
+        <div class="chart-card-clean p-0 overflow-hidden border shadow-sm rounded-4">
           <div class="table-responsive">
             <table class="table table-hover align-middle mb-0 custom-table">
               <thead class="table-light">
@@ -711,6 +764,58 @@
       <!-- ========================================================== -->
       <div v-if="currentSection === 'signatures'" class="section-content fade-in-up">
         
+        <!-- Cartes Statistiques Dédiées Signatures -->
+        <div class="stats-section mb-5">
+          <div class="row g-4">
+            <div class="col-lg-4">
+              <div class="stat-card">
+                <div class="stat-icon">
+                  <i class="bi bi-file-earmark-pdf"></i>
+                </div>
+                <div class="stat-content">
+                  <h4 class="stat-number">{{ signatures.length }}</h4>
+                  <p class="stat-label">Documents Signés</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-lg-4">
+              <div class="stat-card">
+                <div class="stat-icon">
+                  <i class="bi bi-clock-history"></i>
+                </div>
+                <div class="stat-content">
+                  <h4 class="stat-number">{{ signatures.length }}</h4>
+                  <p class="stat-label">Horodatages Certifiés</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-lg-4">
+              <div class="stat-card">
+                <div class="stat-icon">
+                  <i class="bi bi-patch-check"></i>
+                </div>
+                <div class="stat-content">
+                  <h4 class="stat-number text-success">100%</h4>
+                  <p class="stat-label">Intégrité SHA-256</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- En-tête de section -->
+        <div class="sections-header text-center mb-4">
+          <h2 class="display-6 fw-bold mb-3 text-dark sections-title">
+            <span class="text-dark">Registre & </span>
+            <span class="text-primary-blue">Preuves Cryptographiques</span>
+          </h2>
+          <p class="lead mb-0 text-muted sections-subtitle">
+            Traçabilité infalsifiable des signatures électroniques et contrôle d'intégrité
+          </p>
+        </div>
+
         <div class="d-flex flex-column flex-sm-row justify-content-between align-items-stretch align-items-sm-center gap-3 mb-4">
           <div class="search-box position-relative" style="max-width: 450px; width: 100%;">
             <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
@@ -721,12 +826,12 @@
               v-model="sigSearchQuery"
             >
           </div>
-          <span class="badge bg-white text-muted border px-3 py-2 rounded-pill">
+          <span class="badge bg-white text-muted border px-3 py-2 rounded-pill shadow-sm">
             <i class="bi bi-database-check text-success me-1"></i> {{ filteredSignatures.length }} signature(s) enregistrée(s)
           </span>
         </div>
 
-        <div class="chart-card p-0 overflow-hidden border shadow-sm rounded-4">
+        <div class="chart-card-clean p-0 overflow-hidden border shadow-sm rounded-4">
           <div class="table-responsive">
             <table class="table table-hover align-middle mb-0 custom-table">
               <thead class="table-light">
@@ -790,11 +895,63 @@
       <!-- ========================================================== -->
       <div v-if="currentSection === 'system'" class="section-content fade-in-up">
         
+        <!-- Cartes Statistiques Dédiées Système -->
+        <div class="stats-section mb-5">
+          <div class="row g-4">
+            <div class="col-lg-4">
+              <div class="stat-card">
+                <div class="stat-icon">
+                  <i class="bi bi-hdd-network"></i>
+                </div>
+                <div class="stat-content">
+                  <h4 class="stat-number text-success">5/5</h4>
+                  <p class="stat-label">Services Opérationnels</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-lg-4">
+              <div class="stat-card">
+                <div class="stat-icon">
+                  <i class="bi bi-activity"></i>
+                </div>
+                <div class="stat-content">
+                  <h4 class="stat-number text-primary-blue">99.9%</h4>
+                  <p class="stat-label">Disponibilité Plateforme</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-lg-4">
+              <div class="stat-card">
+                <div class="stat-icon">
+                  <i class="bi bi-shield-check"></i>
+                </div>
+                <div class="stat-content">
+                  <h4 class="stat-number text-warning">RSA-2048</h4>
+                  <p class="stat-label">Zero-Knowledge Chiffré</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- En-tête de section -->
+        <div class="sections-header text-center mb-4">
+          <h2 class="display-6 fw-bold mb-3 text-dark sections-title">
+            <span class="text-dark">État des Services & </span>
+            <span class="text-primary-blue">Architecture</span>
+          </h2>
+          <p class="lead mb-0 text-muted sections-subtitle">
+            Indicateurs opérationnels des micro-services et conformité cryptographique
+          </p>
+        </div>
+
         <div class="row g-4 mb-4">
           <!-- Statut des Services Connectés -->
           <div class="col-lg-7">
-            <div class="chart-card shadow-sm p-4 h-100">
-              <h5 class="fw-bold text-dark mb-3">
+            <div class="chart-card-clean shadow-sm p-4 p-lg-5 h-100">
+              <h5 class="fw-bold text-dark mb-4">
                 <i class="bi bi-hdd-network text-primary-blue me-2"></i>{{ t('superAdmin.servicesStatus') }}
               </h5>
 
@@ -879,8 +1036,8 @@
 
           <!-- Spécifications & Architecture Système -->
           <div class="col-lg-5">
-            <div class="chart-card shadow-sm p-4 h-100">
-              <h5 class="fw-bold text-dark mb-3">
+            <div class="chart-card-clean shadow-sm p-4 p-lg-5 h-100">
+              <h5 class="fw-bold text-dark mb-4">
                 <i class="bi bi-gear-wide-connected text-primary-blue me-2"></i>{{ t('superAdmin.systemSpecs') }}
               </h5>
 
@@ -951,7 +1108,7 @@ const loading = ref(true)
 const isRefreshing = ref(false)
 const currentSection = ref(props.activeSection || 'overview')
 
-// Synchronisation de la section avec la prop
+// Synchronisation de la section avec la prop sidebar
 watch(() => props.activeSection, (newSec) => {
   if (newSec && newSec !== currentSection.value) {
     currentSection.value = newSec
@@ -1033,6 +1190,58 @@ const handleManualRefresh = () => {
     isRefreshing.value = false
   }, 700)
 }
+
+// ==================== HEADER DYNAMIQUE SELON LA SECTION ACTIVE ====================
+
+const activeHeaderInfo = computed(() => {
+  switch (currentSection.value) {
+    case 'organizations':
+      return {
+        prefix: locale.value === 'fr' ? 'Gestion des' : 'Manage',
+        accent: locale.value === 'fr' ? 'Organisations' : 'Organizations',
+        subtitle: locale.value === 'fr' 
+          ? 'Validation des nouvelles structures, contrôle des accès et annuaire d\'entreprises' 
+          : 'Validation of new structures, access control and business directory',
+        svg: '/organisation.svg'
+      }
+    case 'users':
+      return {
+        prefix: locale.value === 'fr' ? 'Utilisateurs &' : 'Users &',
+        accent: locale.value === 'fr' ? 'Rôles' : 'Roles',
+        subtitle: locale.value === 'fr' 
+          ? 'Annuaire des comptes enregistrés, attribution des privilèges et matrice RBAC' 
+          : 'Directory of registered accounts, permission management and RBAC matrix',
+        svg: '/service.svg'
+      }
+    case 'signatures':
+      return {
+        prefix: locale.value === 'fr' ? 'Registre des' : 'Registry of',
+        accent: locale.value === 'fr' ? 'Signatures' : 'Signatures',
+        subtitle: locale.value === 'fr' 
+          ? 'Journal d\'audit immuable, empreintes SHA-256 et certificats cryptographiques' 
+          : 'Immutable audit log, SHA-256 fingerprints and cryptographic certificates',
+        svg: '/My_documents.svg'
+      }
+    case 'system':
+      return {
+        prefix: locale.value === 'fr' ? 'Sécurité &' : 'Security &',
+        accent: locale.value === 'fr' ? 'Système' : 'System',
+        subtitle: locale.value === 'fr' 
+          ? 'État opérationnel des micro-services, connecteurs et conformité Zero-Knowledge' 
+          : 'Operational health of micro-services, connectors and Zero-Knowledge compliance',
+        svg: '/dashboard.svg'
+      }
+    default: // overview
+      return {
+        prefix: locale.value === 'fr' ? 'Console de' : 'Supervision',
+        accent: locale.value === 'fr' ? 'Supervision' : 'Console',
+        subtitle: locale.value === 'fr' 
+          ? 'Surveillance globale de la plateforme, flux des signatures et indicateurs de performance' 
+          : 'Global platform monitoring, signature flows and performance indicators',
+        svg: '/dashboard.svg'
+      }
+  }
+})
 
 // ==================== COMPUTED KPIS ====================
 
@@ -1399,11 +1608,116 @@ const getRoleText = (role) => {
   padding-bottom: 3rem;
 }
 
+/* ==========================================================================
+   HEADER DE LA PAGE (DESIGN SIGNATURE GVB)
+   ========================================================================== */
+.documents-header {
+  padding: 1.5rem 0 2rem 0;
+  margin-bottom: 2rem;
+}
+
+.header-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+  gap: 2rem;
+  position: relative;
+}
+
+.header-content {
+  flex: 1;
+  text-align: left;
+  opacity: 0;
+  animation: slideInLeft 1s ease-out 0.3s forwards;
+}
+
+.section-title {
+  font-size: 2.8rem;
+  font-weight: 700;
+  font-family: 'Raleway', sans-serif;
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
+}
+
+.section-subtitle {
+  font-size: 1.15rem;
+  color: #6c757d;
+  margin-bottom: 0;
+  font-weight: 400;
+  max-width: 650px;
+}
+
+.header-image {
+  flex-shrink: 0;
+  position: relative;
+  opacity: 0;
+  animation: slideInRight 1s ease-out 0.5s forwards;
+}
+
+.documents-illustration {
+  width: 380px;
+  height: auto;
+  filter: drop-shadow(0 4px 12px rgba(0, 102, 204, 0.1));
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 2;
+}
+
+.documents-illustration:hover {
+  transform: translateY(-4px);
+  filter: drop-shadow(0 8px 20px rgba(0, 102, 204, 0.15));
+}
+
+/* Bulles décoratives avec animation flottante */
+.bubble {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(0, 102, 204, 0.1);
+  z-index: 1;
+  opacity: 0;
+  animation: fadeInScale 1s ease-out forwards, float 6s ease-in-out infinite;
+}
+
+.bubble-1 {
+  width: 90px;
+  height: 90px;
+  top: -8%;
+  right: 15%;
+  animation: fadeInScale 1s ease-out 1.2s forwards, float 6s ease-in-out infinite 1.2s;
+}
+
+.bubble-2 {
+  width: 110px;
+  height: 110px;
+  top: 45%;
+  right: 2%;
+  transform: translateY(-50%);
+  animation: fadeInScale 1s ease-out 1.4s forwards, float 6s ease-in-out infinite 1.4s;
+}
+
+.bubble-3 {
+  width: 75px;
+  height: 75px;
+  bottom: 0%;
+  right: 25%;
+  animation: fadeInScale 1s ease-out 1.6s forwards, float 6s ease-in-out infinite 1.6s;
+}
+
+.bubble-4 {
+  width: 80px;
+  height: 80px;
+  top: 30%;
+  left: -5%;
+  animation: fadeInScale 1s ease-out 1.8s forwards, float 6s ease-in-out infinite 1.8s;
+}
+
 /* Badge Super Admin */
 .badge-superadmin {
   display: inline-flex;
   align-items: center;
-  background: linear-gradient(135deg, rgba(0, 102, 204, 0.1) 0%, rgba(0, 123, 255, 0.15) 100%);
+  background: linear-gradient(135deg, rgba(0, 102, 204, 0.08) 0%, rgba(0, 123, 255, 0.12) 100%);
   color: var(--primary-blue);
   font-weight: 700;
   font-size: 0.75rem;
@@ -1438,57 +1752,107 @@ const getRoleText = (role) => {
   100% { transform: rotate(360deg); }
 }
 
-/* KPI Cards Premium */
-.kpi-card {
-  background: #ffffff;
-  border-radius: 20px;
+/* ==========================================================================
+   STAT CARDS (DESIGN IDENTIQUE A DASHBOARD.VUE / DOCUMENTSPAGE.VUE)
+   ========================================================================== */
+.stats-section {
+  margin-bottom: 2.5rem;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 14px;
+  padding: 1.5rem 1.75rem;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  box-shadow: 0 2px 12px rgba(0, 102, 204, 0.05);
   border: 1px solid rgba(0, 102, 204, 0.08);
-  padding: 1.5rem;
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  opacity: 0;
+  animation: fadeInUp 0.8s ease-out forwards;
 }
 
-.kpi-card:hover {
+.stat-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 30px rgba(0, 102, 204, 0.1) !important;
-  border-color: rgba(0, 102, 204, 0.2);
+  box-shadow: 0 10px 25px rgba(0, 102, 204, 0.12);
+  border-color: rgba(0, 102, 204, 0.25);
 }
 
-.kpi-icon-wrap {
-  width: 48px;
-  height: 48px;
+.stat-icon {
+  width: 52px;
+  height: 52px;
+  background: rgba(0, 102, 204, 0.08);
   border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--primary-blue);
   font-size: 1.35rem;
+  flex-shrink: 0;
 }
 
-.icon-blue { background: rgba(0, 102, 204, 0.1); color: #0066cc; }
-.icon-purple { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
-.icon-emerald { background: rgba(16, 185, 129, 0.1); color: #10b981; }
-.icon-cyan { background: rgba(6, 182, 212, 0.1); color: #06b6d4; }
-
-.kpi-value {
-  font-size: 2.1rem;
-  font-weight: 800;
-  letter-spacing: -0.5px;
+.stat-content {
+  flex: 1;
 }
 
-.kpi-title {
-  font-size: 0.9rem;
+.stat-number {
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 0.25rem;
+  font-family: 'Raleway', sans-serif;
+  line-height: 1.1;
+}
+
+.stat-label {
+  color: #6c757d;
+  font-size: 0.875rem;
+  margin-bottom: 0;
   font-weight: 500;
 }
 
-/* Chart Cards */
-.chart-card {
+/* ==========================================================================
+   EN-TÊTE DE SECTION (SECTIONS-HEADER DANS DASHBOARD & DOCUMENTSPAGE)
+   ========================================================================== */
+.sections-header {
+  opacity: 0;
+  animation: fadeInUp 0.8s ease-out 0.3s forwards;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.sections-title {
+  font-family: 'Raleway', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.sections-subtitle {
+  font-size: 1.05rem;
+  font-weight: 400;
+  color: #6c757d;
+}
+
+/* ==========================================================================
+   CARTES DE GRAPHIQUES ET CONTENEURS BLANCS AIRÉS
+   ========================================================================== */
+.chart-card-clean {
   background: #ffffff;
-  border-radius: 20px;
+  border-radius: 18px;
   border: 1px solid rgba(0, 102, 204, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 102, 204, 0.06);
+  transition: all 0.3s ease;
+}
+
+.chart-card-clean:hover {
+  box-shadow: 0 10px 30px rgba(0, 102, 204, 0.1);
+  border-color: rgba(0, 102, 204, 0.18);
 }
 
 /* SVG Chart */
 .svg-chart-container {
-  min-height: 200px;
+  min-height: 220px;
 }
 
 .chart-point {
@@ -1524,8 +1888,8 @@ const getRoleText = (role) => {
 
 /* Donut Chart */
 .donut-svg {
-  width: 170px;
-  height: 170px;
+  width: 180px;
+  height: 180px;
   max-width: 100%;
 }
 
@@ -1550,20 +1914,17 @@ const getRoleText = (role) => {
 
 .legend-row:hover {
   background: #f8fafc;
-  border-radius: 6px;
-  padding-left: 0.25rem;
-  padding-right: 0.25rem;
 }
 
 /* Live Audit Timeline */
 .timeline-icon-badge {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   flex-shrink: 0;
 }
 
@@ -1645,5 +2006,85 @@ const getRoleText = (role) => {
 .custom-table td {
   padding-top: 1rem;
   padding-bottom: 1rem;
+}
+
+/* ==========================================================================
+   ANIMATIONS GVB SIGN
+   ========================================================================== */
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(25px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 991.98px) {
+  .header-container {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .header-content {
+    text-align: center;
+  }
+
+  .section-subtitle {
+    margin: 0 auto;
+  }
+
+  .header-actions {
+    justify-content: center;
+  }
+
+  .documents-illustration {
+    width: 280px;
+  }
 }
 </style>
