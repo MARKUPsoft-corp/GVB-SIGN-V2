@@ -1,324 +1,990 @@
 <template>
-  <div class="documents-page super-admin-page">
-    <div class="documents-header mb-4">
-      <div class="header-container d-flex justify-content-between align-items-center">
-        <div class="header-content">
-          <h1 class="display-5 fw-bold text-dark mb-2">
-            {{ locale === 'fr' ? 'Super' : 'Super' }} <span class="text-primary-blue">{{ locale === 'fr' ? 'Administration' : 'Administration' }}</span>
+  <div class="documents-page super-admin-page fade-in-up">
+    <!-- Header de Supervision Premium -->
+    <div class="super-header mb-4">
+      <div class="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center gap-3">
+        <div class="header-left">
+          <div class="badge-superadmin mb-2">
+            <i class="bi bi-shield-lock-fill me-1"></i>
+            <span>{{ t('superAdmin.badge') }}</span>
+          </div>
+          <h1 class="display-5 fw-bold text-dark mb-1">
+            {{ t('superAdmin.titleMain') }}<span class="text-primary-blue">{{ t('superAdmin.titleAccent') }}</span>
           </h1>
-          <p class="lead text-muted">
-            {{ locale === 'fr' ? 'Supervisez l\'intégralité de la plateforme.' : 'Supervise the entire platform.' }}
+          <p class="lead text-muted mb-0">
+            {{ t('superAdmin.subtitle') }}
           </p>
         </div>
-        <div class="header-actions">
-          <div class="pulse-indicator bg-light text-primary-blue px-3 py-2 rounded-pill shadow-sm d-flex align-items-center border">
-            <span class="spinner-grow spinner-grow-sm me-2 text-primary-blue" role="status" aria-hidden="true" style="width: 1rem; height: 1rem;"></span>
-            {{ locale === 'fr' ? 'Système en ligne' : 'System online' }}
+
+        <div class="header-right d-flex align-items-center gap-3">
+          <!-- Statut en ligne pulsant -->
+          <div class="pulse-indicator bg-white text-success px-3 py-2 rounded-pill shadow-sm d-flex align-items-center border">
+            <span class="spinner-grow spinner-grow-sm me-2 text-success" role="status" aria-hidden="true" style="width: 0.75rem; height: 0.75rem;"></span>
+            <span class="fw-semibold small">{{ t('superAdmin.systemOnline') }}</span>
           </div>
+
+          <!-- Bouton rafraîchissement rapide -->
+          <button class="btn btn-outline-primary btn-refresh rounded-pill px-3 py-2 shadow-sm d-flex align-items-center gap-2" @click="handleManualRefresh" :disabled="isRefreshing">
+            <i class="bi bi-arrow-clockwise" :class="{ 'spin-animation': isRefreshing }"></i>
+            <span class="small fw-semibold">{{ t('superAdmin.refresh') }}</span>
+          </button>
         </div>
       </div>
     </div>
 
-    <!-- Navigation par onglets (Standard GVB Sign) -->
-    <ul class="nav nav-pills custom-tabs mb-5 d-flex gap-2">
-      <li class="nav-item">
-        <button class="nav-link px-4 py-2" :class="{ active: activeSection === 'overview' }" @click="activeSection = 'overview'">
-          <i class="bi bi-grid-1x2 me-2"></i> {{ locale === 'fr' ? 'Vue d\'ensemble' : 'Overview' }}
-        </button>
-      </li>
-      <li class="nav-item">
-        <button class="nav-link px-4 py-2" :class="{ active: activeSection === 'organizations' }" @click="activeSection = 'organizations'">
-          <i class="bi bi-building me-2"></i> {{ locale === 'fr' ? 'Organisations' : 'Organizations' }}
-        </button>
-      </li>
-      <li class="nav-item">
-        <button class="nav-link px-4 py-2" :class="{ active: activeSection === 'users' }" @click="activeSection = 'users'">
-          <i class="bi bi-people me-2"></i> {{ locale === 'fr' ? 'Utilisateurs' : 'Users' }}
-        </button>
-      </li>
-      <li class="nav-item">
-        <button class="nav-link px-4 py-2" :class="{ active: activeSection === 'signatures' }" @click="activeSection = 'signatures'">
-          <i class="bi bi-journal-text me-2"></i> {{ locale === 'fr' ? 'Registre' : 'Registry' }}
-        </button>
-      </li>
-    </ul>
+    <!-- Bannière d'alerte contextuelle si organisations en attente -->
+    <div v-if="pendingOrgs.length > 0 && currentSection !== 'organizations'" class="alert-pending-banner mb-4 p-3 rounded-4 shadow-sm d-flex align-items-center justify-content-between flex-wrap gap-3">
+      <div class="d-flex align-items-center gap-3">
+        <div class="alert-icon-pulse">
+          <i class="bi bi-bell-fill text-warning fs-4"></i>
+        </div>
+        <div>
+          <h6 class="fw-bold mb-0 text-dark">
+            {{ pendingOrgs.length }} {{ t('superAdmin.pendingAlert') }}
+          </h6>
+          <small class="text-muted">Des structures attendent votre approbation pour activer leur compte.</small>
+        </div>
+      </div>
+      <button class="btn btn-warning btn-sm rounded-pill px-3 fw-bold shadow-sm" @click="switchSection('organizations', 'pending')">
+        <i class="bi bi-arrow-right-circle me-1"></i> Examiner les demandes
+      </button>
+    </div>
 
-    <!-- Contenu principal -->
-    <div class="admin-main-content">
+    <!-- Navigation par Onglets (Standard Pilules GVB) -->
+    <div class="super-nav-tabs-wrapper mb-4">
+      <ul class="nav nav-pills custom-tabs d-flex flex-wrap gap-2">
+        <li class="nav-item">
+          <button class="nav-link px-4 py-2" :class="{ active: currentSection === 'overview' }" @click="switchSection('overview')">
+            <i class="bi bi-grid-1x2-fill me-2"></i> {{ t('superAdmin.tabOverview') }}
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link px-4 py-2 position-relative" :class="{ active: currentSection === 'organizations' }" @click="switchSection('organizations')">
+            <i class="bi bi-building-fill-gear me-2"></i> {{ t('superAdmin.tabOrgs') }}
+            <span v-if="pendingOrgs.length > 0" class="badge rounded-pill bg-warning text-dark ms-2 fw-bold">{{ pendingOrgs.length }}</span>
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link px-4 py-2" :class="{ active: currentSection === 'users' }" @click="switchSection('users')">
+            <i class="bi bi-people-fill me-2"></i> {{ t('superAdmin.tabUsers') }}
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link px-4 py-2" :class="{ active: currentSection === 'signatures' }" @click="switchSection('signatures')">
+            <i class="bi bi-journal-check me-2"></i> {{ t('superAdmin.tabRegistry') }}
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link px-4 py-2" :class="{ active: currentSection === 'system' }" @click="switchSection('system')">
+            <i class="bi bi-shield-check me-2"></i> {{ t('superAdmin.tabSystem') }}
+          </button>
+        </li>
+      </ul>
+    </div>
+
+    <!-- État de chargement initial -->
+    <div v-if="loading" class="text-center py-5">
+      <div class="spinner-border text-primary-blue" role="status" style="width: 3rem; height: 3rem;">
+        <span class="visually-hidden">Chargement...</span>
+      </div>
+      <p class="mt-3 text-muted fw-semibold">Synchronisation de la console de supervision...</p>
+    </div>
+
+    <!-- Contenu des Vues -->
+    <div v-else>
       
-      <!-- Chargement global -->
-      <div v-if="loading" class="text-center py-5">
-        <div class="spinner-border text-primary-blue" role="status">
-          <span class="visually-hidden">{{ locale === 'fr' ? 'Chargement...' : 'Loading...' }}</span>
-        </div>
-        <p class="mt-3 text-muted">{{ locale === 'fr' ? 'Synchronisation du système...' : 'Synchronizing system...' }}</p>
-      </div>
-
-      <div v-else class="fade-in-up">
+      <!-- ========================================================== -->
+      <!-- SECTION 1 : VUE D'ENSEMBLE (OVERVIEW & ANALYTICS)         -->
+      <!-- ========================================================== -->
+      <div v-if="currentSection === 'overview'" class="section-content fade-in-up">
         
-        <!-- ==================== VUE D'ENSEMBLE ==================== -->
-        <div v-if="activeSection === 'overview'" class="section-content">
-          <div class="row g-4 mb-5">
-            <div class="col-md-4">
-              <div class="stat-card">
-                <div class="stat-icon">
-                  <i class="bi bi-people"></i>
+        <!-- Cartes KPIs Premium -->
+        <div class="row g-4 mb-4">
+          <!-- KPI 1 : Utilisateurs -->
+          <div class="col-xl-3 col-md-6">
+            <div class="kpi-card shadow-sm h-100">
+              <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="kpi-icon-wrap icon-blue">
+                  <i class="bi bi-people-fill"></i>
                 </div>
-                <div class="stat-content">
-                  <h4 class="stat-number">{{ users.length }}</h4>
-                  <p class="stat-label">{{ locale === 'fr' ? 'Utilisateurs inscrits' : 'Registered users' }}</p>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill small">
+                  Total Comptes
+                </span>
+              </div>
+              <h3 class="kpi-value text-dark mb-1">{{ users.length }}</h3>
+              <p class="kpi-title text-muted mb-2">{{ t('superAdmin.kpiUsers') }}</p>
+              <div class="kpi-footer pt-2 border-top d-flex justify-content-between small text-muted">
+                <span>{{ memberUsersCount }} membres</span>
+                <span>•</span>
+                <span>{{ chiefUsersCount }} chefs</span>
+                <span>•</span>
+                <span class="text-primary-blue fw-bold">{{ superAdminUsersCount }} admins</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- KPI 2 : Organisations -->
+          <div class="col-xl-3 col-md-6">
+            <div class="kpi-card shadow-sm h-100">
+              <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="kpi-icon-wrap icon-purple">
+                  <i class="bi bi-building-fill-gear"></i>
+                </div>
+                <span class="badge px-2 py-1 rounded-pill small" :class="pendingOrgs.length > 0 ? 'bg-warning text-dark' : 'bg-success-subtle text-success border border-success-subtle'">
+                  {{ pendingOrgs.length > 0 ? pendingOrgs.length + ' en attente' : 'Toutes validées' }}
+                </span>
+              </div>
+              <h3 class="kpi-value text-dark mb-1">{{ organizations.length }}</h3>
+              <p class="kpi-title text-muted mb-2">{{ t('superAdmin.kpiOrgs') }}</p>
+              <div class="kpi-footer pt-2 border-top d-flex justify-content-between small text-muted">
+                <span class="text-success fw-bold">{{ approvedOrgs.length }} actives</span>
+                <span>•</span>
+                <span class="text-warning fw-bold">{{ pendingOrgs.length }} en attente</span>
+                <span>•</span>
+                <span class="text-danger">{{ rejectedOrgs.length }} rejetées</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- KPI 3 : Signatures -->
+          <div class="col-xl-3 col-md-6">
+            <div class="kpi-card shadow-sm h-100">
+              <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="kpi-icon-wrap icon-emerald">
+                  <i class="bi bi-patch-check-fill"></i>
+                </div>
+                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill small">
+                  100% Intègres
+                </span>
+              </div>
+              <h3 class="kpi-value text-dark mb-1">{{ signatures.length }}</h3>
+              <p class="kpi-title text-muted mb-2">{{ t('superAdmin.kpiSignatures') }}</p>
+              <div class="kpi-footer pt-2 border-top d-flex justify-content-between small text-muted">
+                <span>Scellées RSA-2048</span>
+                <span>SHA-256 certifié</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- KPI 4 : Santé & Services -->
+          <div class="col-xl-3 col-md-6">
+            <div class="kpi-card shadow-sm h-100">
+              <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="kpi-icon-wrap icon-cyan">
+                  <i class="bi bi-shield-check"></i>
+                </div>
+                <span class="badge bg-info-subtle text-info border border-info-subtle px-2 py-1 rounded-pill small">
+                  5/5 Actifs
+                </span>
+              </div>
+              <h3 class="kpi-value text-dark mb-1">99.9%</h3>
+              <p class="kpi-title text-muted mb-2">{{ t('superAdmin.kpiIntegrity') }}</p>
+              <div class="kpi-footer pt-2 border-top d-flex justify-content-between small text-muted">
+                <span class="text-success">Latence ~1.2s</span>
+                <span class="text-primary-blue fw-semibold">Zero-Knowledge</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rangée Graphiques : 1 Courbe Temporelle + 1 Donut -->
+        <div class="row g-4 mb-4">
+          <!-- GRAPHIQUE 1 : COURBE TEMPORELLE INTERACTIVE -->
+          <div class="col-lg-8">
+            <div class="chart-card shadow-sm h-100 p-4">
+              <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 mb-3">
+                <div>
+                  <h5 class="fw-bold text-dark mb-1">
+                    <i class="bi bi-graph-up text-primary-blue me-2"></i>{{ t('superAdmin.chartActivityTitle') }}
+                  </h5>
+                  <small class="text-muted">{{ t('superAdmin.chartActivitySubtitle') }}</small>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                  <!-- Sélecteur de période -->
+                  <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-primary" :class="{ active: chartPeriod === '7d' }" @click="chartPeriod = '7d'">7J</button>
+                    <button type="button" class="btn btn-outline-primary" :class="{ active: chartPeriod === '30d' }" @click="chartPeriod = '30d'">30J</button>
+                    <button type="button" class="btn btn-outline-primary" :class="{ active: chartPeriod === 'all' }" @click="chartPeriod = 'all'">Tout</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Zone SVG Chart -->
+              <div class="svg-chart-container position-relative">
+                <svg viewBox="0 0 800 260" class="w-100 h-auto svg-chart" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="activityGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stop-color="#0066cc" stop-opacity="0.35" />
+                      <stop offset="100%" stop-color="#0066cc" stop-opacity="0.00" />
+                    </linearGradient>
+                    <linearGradient id="userGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stop-color="#10b981" stop-opacity="0.25" />
+                      <stop offset="100%" stop-color="#10b981" stop-opacity="0.00" />
+                    </linearGradient>
+                  </defs>
+
+                  <!-- Grille horizontale -->
+                  <line x1="40" y1="40" x2="760" y2="40" stroke="#e2e8f0" stroke-dasharray="4 4" />
+                  <line x1="40" y1="90" x2="760" y2="90" stroke="#e2e8f0" stroke-dasharray="4 4" />
+                  <line x1="40" y1="140" x2="760" y2="140" stroke="#e2e8f0" stroke-dasharray="4 4" />
+                  <line x1="40" y1="190" x2="760" y2="190" stroke="#e2e8f0" stroke-dasharray="4 4" />
+                  <line x1="40" y1="220" x2="760" y2="220" stroke="#cbd5e1" stroke-width="1.5" />
+
+                  <!-- Aire sous la courbe des signatures -->
+                  <path :d="activityAreaPath" fill="url(#activityGrad)" />
+                  <!-- Courbe des signatures -->
+                  <path :d="activityLinePath" fill="none" stroke="#0066cc" stroke-width="3" stroke-linecap="round" />
+
+                  <!-- Courbe secondaire utilisateurs -->
+                  <path :d="usersLinePath" fill="none" stroke="#10b981" stroke-width="2" stroke-dasharray="4 4" stroke-linecap="round" />
+
+                  <!-- Points interactifs signatures -->
+                  <g v-for="(pt, idx) in activityPoints" :key="'pt-' + idx">
+                    <circle 
+                      :cx="pt.x" 
+                      :cy="pt.y" 
+                      r="5" 
+                      fill="#ffffff" 
+                      stroke="#0066cc" 
+                      stroke-width="2.5" 
+                      class="chart-point"
+                      @mouseenter="hoveredPoint = pt"
+                      @mouseleave="hoveredPoint = null"
+                    />
+                  </g>
+
+                  <!-- Labels de date axe X -->
+                  <text 
+                    v-for="(label, lIdx) in activityLabels" 
+                    :key="'lbl-' + lIdx"
+                    :x="label.x" 
+                    y="245" 
+                    text-anchor="middle" 
+                    font-size="11" 
+                    fill="#64748b"
+                    font-weight="500"
+                  >
+                    {{ label.text }}
+                  </text>
+                </svg>
+
+                <!-- Tooltip interactif au survol -->
+                <div v-if="hoveredPoint" class="chart-tooltip shadow-sm" :style="{ left: hoveredPoint.x + 'px', top: (hoveredPoint.y - 45) + 'px' }">
+                  <div class="tooltip-date small text-muted">{{ hoveredPoint.date }}</div>
+                  <div class="tooltip-val text-primary-blue fw-bold">{{ hoveredPoint.value }} signature(s)</div>
+                </div>
+              </div>
+
+              <!-- Légende du graphique -->
+              <div class="d-flex align-items-center justify-content-between pt-3 border-top mt-2 flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-3 small">
+                  <span class="d-flex align-items-center gap-1 text-dark fw-semibold">
+                    <span class="legend-color-dot bg-primary-blue"></span> Signatures scellées
+                  </span>
+                  <span class="d-flex align-items-center gap-1 text-muted">
+                    <span class="legend-color-dot bg-success"></span> Inscriptions utilisateurs
+                  </span>
+                </div>
+                <div class="small text-muted">
+                  Pic d'activité : <strong class="text-dark">{{ peakActivityValue }} signatures/jour</strong>
                 </div>
               </div>
             </div>
-            <div class="col-md-4">
-              <div class="stat-card">
-                <div class="stat-icon">
-                  <i class="bi bi-building"></i>
-                </div>
-                <div class="stat-content">
-                  <h4 class="stat-number">{{ organizations.length }}</h4>
-                  <p class="stat-label">{{ locale === 'fr' ? 'Organisations créées' : 'Organizations created' }}</p>
+          </div>
+
+          <!-- GRAPHIQUE 2 : DIAGRAMME DONUT STATUT DES ORGANISATIONS -->
+          <div class="col-lg-4">
+            <div class="chart-card shadow-sm h-100 p-4 d-flex flex-column">
+              <div class="mb-3">
+                <h5 class="fw-bold text-dark mb-1">
+                  <i class="bi bi-pie-chart text-primary-blue me-2"></i>{{ t('superAdmin.chartDonutTitle') }}
+                </h5>
+                <small class="text-muted">{{ t('superAdmin.chartDonutSubtitle') }}</small>
+              </div>
+
+              <!-- Zone Donut SVG -->
+              <div class="donut-chart-wrapper my-auto py-3 text-center position-relative">
+                <svg viewBox="0 0 200 200" class="donut-svg">
+                  <!-- Cercle de fond -->
+                  <circle cx="100" cy="100" r="70" fill="transparent" stroke="#f1f5f9" stroke-width="22" />
+                  
+                  <!-- Segment Approuvées -->
+                  <circle 
+                    cx="100" 
+                    cy="100" 
+                    r="70" 
+                    fill="transparent" 
+                    stroke="#10b981" 
+                    stroke-width="22" 
+                    :stroke-dasharray="donutCircumference"
+                    :stroke-dashoffset="donutApprovedOffset"
+                    class="donut-segment"
+                    transform="rotate(-90 100 100)"
+                  />
+
+                  <!-- Segment En attente -->
+                  <circle 
+                    cx="100" 
+                    cy="100" 
+                    r="70" 
+                    fill="transparent" 
+                    stroke="#f59e0b" 
+                    stroke-width="22" 
+                    :stroke-dasharray="donutCircumference"
+                    :stroke-dashoffset="donutPendingOffset"
+                    class="donut-segment"
+                    transform="rotate(-90 100 100)"
+                  />
+
+                  <!-- Segment Rejetées -->
+                  <circle 
+                    cx="100" 
+                    cy="100" 
+                    r="70" 
+                    fill="transparent" 
+                    stroke="#ef4444" 
+                    stroke-width="22" 
+                    :stroke-dasharray="donutCircumference"
+                    :stroke-dashoffset="donutRejectedOffset"
+                    class="donut-segment"
+                    transform="rotate(-90 100 100)"
+                  />
+                </svg>
+
+                <!-- Centre du Donut -->
+                <div class="donut-center-info">
+                  <div class="donut-percentage display-6 fw-bold text-dark">{{ activeOrgsPercentage }}%</div>
+                  <div class="donut-label text-muted small fw-semibold">Actives</div>
                 </div>
               </div>
-            </div>
-            <div class="col-md-4">
-              <div class="stat-card">
-                <div class="stat-icon">
-                  <i class="bi bi-pen"></i>
+
+              <!-- Légende interactive Donut -->
+              <div class="donut-legend pt-3 border-top mt-auto">
+                <div class="legend-row d-flex justify-content-between align-items-center py-1 cursor-pointer" @click="switchSection('organizations', 'approved')">
+                  <div class="d-flex align-items-center gap-2 small">
+                    <span class="legend-color-dot bg-success"></span>
+                    <span class="text-dark fw-medium">Approuvées</span>
+                  </div>
+                  <span class="badge bg-success-subtle text-success fw-bold">{{ approvedOrgs.length }}</span>
                 </div>
-                <div class="stat-content">
-                  <h4 class="stat-number">{{ signatures.length }}</h4>
-                  <p class="stat-label">{{ locale === 'fr' ? 'Signatures générées' : 'Signatures generated' }}</p>
+                <div class="legend-row d-flex justify-content-between align-items-center py-1 cursor-pointer" @click="switchSection('organizations', 'pending')">
+                  <div class="d-flex align-items-center gap-2 small">
+                    <span class="legend-color-dot bg-warning"></span>
+                    <span class="text-dark fw-medium">En attente</span>
+                  </div>
+                  <span class="badge bg-warning-subtle text-warning-emphasis fw-bold">{{ pendingOrgs.length }}</span>
+                </div>
+                <div class="legend-row d-flex justify-content-between align-items-center py-1 cursor-pointer" @click="switchSection('organizations', 'rejected')">
+                  <div class="d-flex align-items-center gap-2 small">
+                    <span class="legend-color-dot bg-danger"></span>
+                    <span class="text-dark fw-medium">Rejetées</span>
+                  </div>
+                  <span class="badge bg-danger-subtle text-danger fw-bold">{{ rejectedOrgs.length }}</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-          <!-- ==================== ORGANISATIONS ==================== -->
-          <div v-if="activeSection === 'organizations'" class="section-content">
-            
-            <ul class="nav nav-pills custom-tabs mb-5 d-flex gap-2">
-              <li class="nav-item">
-                <button class="nav-link px-4 py-2" :class="{ active: currentOrgTab === 'pending' }" @click="currentOrgTab = 'pending'">
-                  <i class="bi bi-hourglass-split me-2"></i> {{ locale === 'fr' ? 'En attente' : 'Pending' }}
-                  <span class="badge ms-2" :class="currentOrgTab === 'pending' ? 'bg-white text-primary' : 'bg-warning text-dark'">{{ pendingOrgs.length }}</span>
-                </button>
-              </li>
-              <li class="nav-item">
-                <button class="nav-link px-4 py-2" :class="{ active: currentOrgTab === 'approved' }" @click="currentOrgTab = 'approved'">
-                  <i class="bi bi-check-circle-fill me-2"></i> {{ locale === 'fr' ? 'Approuvées' : 'Approved' }}
-                  <span class="badge ms-2" :class="currentOrgTab === 'approved' ? 'bg-white text-primary' : 'bg-success text-white'">{{ approvedOrgs.length }}</span>
-                </button>
-              </li>
-              <li class="nav-item">
-                <button class="nav-link px-4 py-2" :class="{ active: currentOrgTab === 'rejected' }" @click="currentOrgTab = 'rejected'">
-                  <i class="bi bi-x-circle-fill me-2"></i> {{ locale === 'fr' ? 'Rejetées' : 'Rejected' }}
-                  <span class="badge ms-2" :class="currentOrgTab === 'rejected' ? 'bg-white text-primary' : 'bg-danger text-white'">{{ rejectedOrgs.length }}</span>
-                </button>
-              </li>
-            </ul>
+        <!-- Rangée 2 : Distribution des Rôles + Flux d'Activité Récente -->
+        <div class="row g-4">
+          <!-- DISTRIBUTION DES RÔLES -->
+          <div class="col-lg-6">
+            <div class="chart-card shadow-sm h-100 p-4">
+              <div class="mb-4">
+                <h5 class="fw-bold text-dark mb-1">
+                  <i class="bi bi-person-badge text-primary-blue me-2"></i>{{ t('superAdmin.chartRolesTitle') }}
+                </h5>
+                <small class="text-muted">{{ t('superAdmin.chartRolesSubtitle') }}</small>
+              </div>
 
-            <div class="row g-4">
-              <div v-if="displayedOrgs.length === 0" class="col-12 text-center py-5">
-                <div class="empty-state">
-                  <i class="bi bi-building-dash display-1 text-muted mb-3 d-block"></i>
-                  <h4>{{ locale === 'fr' ? 'Aucune organisation' : 'No organizations' }}</h4>
-                  <p class="text-muted">{{ locale === 'fr' ? 'La liste est vide pour cette catégorie.' : 'The list is empty for this category.' }}</p>
+              <div class="roles-progress-list d-flex flex-column gap-3">
+                <!-- Membres -->
+                <div class="role-progress-item">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="fw-semibold small text-dark d-flex align-items-center gap-2">
+                      <i class="bi bi-person text-secondary"></i> Membres Standards
+                    </span>
+                    <span class="small text-muted">{{ memberUsersCount }} ({{ memberPercentage }}%)</span>
+                  </div>
+                  <div class="progress" style="height: 10px;">
+                    <div class="progress-bar bg-primary-blue" role="progressbar" :style="{ width: memberPercentage + '%' }"></div>
+                  </div>
+                </div>
+
+                <!-- Chefs d'Organisation -->
+                <div class="role-progress-item">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="fw-semibold small text-dark d-flex align-items-center gap-2">
+                      <i class="bi bi-building text-info"></i> Chefs d'Organisation
+                    </span>
+                    <span class="small text-muted">{{ chiefUsersCount }} ({{ chiefPercentage }}%)</span>
+                  </div>
+                  <div class="progress" style="height: 10px;">
+                    <div class="progress-bar bg-info" role="progressbar" :style="{ width: chiefPercentage + '%' }"></div>
+                  </div>
+                </div>
+
+                <!-- Super Admins -->
+                <div class="role-progress-item">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="fw-semibold small text-dark d-flex align-items-center gap-2">
+                      <i class="bi bi-shield-lock-fill text-warning"></i> Super Administrateurs
+                    </span>
+                    <span class="small text-muted">{{ superAdminUsersCount }} ({{ superAdminPercentage }}%)</span>
+                  </div>
+                  <div class="progress" style="height: 10px;">
+                    <div class="progress-bar bg-warning" role="progressbar" :style="{ width: superAdminPercentage + '%' }"></div>
+                  </div>
                 </div>
               </div>
 
-              <div v-for="org in displayedOrgs" :key="org.id" class="col-lg-6 mb-4">
-                <div class="organization-card">
-                  <div class="card-header">
-                    <div class="organization-icon">
-                      <i class="bi bi-building"></i>
-                    </div>
-                    <div class="organization-header-content">
-                      <h3 class="organization-name">{{ org.name }}</h3>
-                      <p class="organization-subtitle">{{ org.organization_type || (locale === 'fr' ? 'Organisation' : 'Organization') }}</p>
-                    </div>
-                    <div class="organization-status-badges">
-                      <div class="approval-status-badge" :class="org.approval_status">
-                        <span>{{ getStatusText(org.approval_status) }}</span>
-                      </div>
-                      <div class="organization-status" :class="org.approval_status === 'approved' ? 'active' : (org.approval_status === 'rejected' ? 'rejected' : 'pending')">
-                        <i class="bi bi-circle-fill"></i>
-                      </div>
-                    </div>
-                  </div>
+              <div class="mt-4 p-3 bg-light rounded-3 d-flex align-items-center justify-content-between">
+                <span class="small text-muted">Contrôle d'accès basé sur les rôles (RBAC)</span>
+                <button class="btn btn-sm btn-link text-primary-blue fw-semibold p-0 text-decoration-none" @click="switchSection('users')">
+                  Gérer les permissions →
+                </button>
+              </div>
+            </div>
+          </div>
 
-                  <div class="card-content">
-                    <p class="organization-description">{{ org.description || (locale === 'fr' ? 'Aucune description renseignée' : 'No description provided') }}</p>
-                    
-                    <div class="organization-meta">
-                      <div class="meta-item">
-                        <i class="bi bi-envelope"></i>
-                        <span>{{ org.email || (locale === 'fr' ? 'Non renseigné' : 'Not specified') }}</span>
-                      </div>
-                      <div class="meta-item">
-                        <i class="bi bi-telephone"></i>
-                        <span>{{ org.phone || (locale === 'fr' ? 'Non renseigné' : 'Not specified') }}</span>
-                      </div>
-                      <div class="meta-item">
-                        <i class="bi bi-geo-alt"></i>
-                        <span>{{ org.address || (locale === 'fr' ? 'Non renseignée' : 'Not specified') }}</span>
-                      </div>
-                      <div class="meta-item">
-                        <i class="bi bi-globe"></i>
-                        <span>{{ org.website || (locale === 'fr' ? 'Non renseigné' : 'Not specified') }}</span>
-                      </div>
-                    </div>
-                  </div>
+          <!-- FLUX D'ACTIVITÉ EN DIRECT (LIVE AUDIT) -->
+          <div class="col-lg-6">
+            <div class="chart-card shadow-sm h-100 p-4">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                  <h5 class="fw-bold text-dark mb-1">
+                    <i class="bi bi-broadcast text-danger me-2"></i>{{ t('superAdmin.liveAuditTitle') }}
+                  </h5>
+                  <small class="text-muted">{{ t('superAdmin.liveAuditSubtitle') }}</small>
+                </div>
+                <span class="badge bg-light text-dark border">En temps réel</span>
+              </div>
 
-                  <div class="card-footer" v-if="org.approval_status === 'pending'">
-                    <div class="organization-actions w-100 d-flex gap-2">
-                      <button class="btn btn-outline-danger flex-grow-1" @click="handleRejectOrg(org.id)">
-                        <i class="bi bi-x-circle me-2"></i> {{ locale === 'fr' ? 'Rejeter' : 'Reject' }}
-                      </button>
-                      <button class="btn btn-primary-blue flex-grow-1" style="background: linear-gradient(135deg, #0066cc 0%, #0056b3 100%); color: white; border: none;" @click="handleApproveOrg(org.id)">
-                        <i class="bi bi-check-circle me-2"></i> {{ locale === 'fr' ? 'Valider' : 'Validate' }}
-                      </button>
-                    </div>
+              <div class="activity-timeline-list">
+                <div v-if="recentActivities.length === 0" class="text-center py-4 text-muted small">
+                  Aucun événement récent enregistré.
+                </div>
+                <div 
+                  v-for="(item, idx) in recentActivities" 
+                  :key="'act-' + idx" 
+                  class="timeline-item d-flex align-items-start gap-3 py-2 border-bottom"
+                >
+                  <div class="timeline-icon-badge" :class="item.badgeClass">
+                    <i :class="item.icon"></i>
                   </div>
-                  <div class="card-footer" v-else-if="org.approval_status === 'approved'">
-                    <div class="organization-actions w-100 d-flex justify-content-end gap-2">
-                      <button class="btn btn-outline-secondary btn-sm" @click="handleRevokeOrg(org.id)">
-                        <i class="bi bi-shield-lock me-2"></i> {{ locale === 'fr' ? 'Révoquer l\'accès' : 'Revoke access' }}
-                      </button>
+                  <div class="timeline-content flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-center">
+                      <span class="fw-semibold text-dark small">{{ item.title }}</span>
+                      <small class="text-muted">{{ item.timeAgo }}</small>
                     </div>
-                  </div>
-                  <div class="card-footer" v-else-if="org.approval_status === 'rejected'">
-                    <div class="organization-actions w-100 d-flex gap-2">
-                      <button class="btn btn-outline-success flex-grow-1" @click="handleRehabilitateOrg(org.id)">
-                        <i class="bi bi-arrow-counterclockwise me-2"></i> {{ locale === 'fr' ? 'Réhabiliter' : 'Rehabilitate' }}
-                      </button>
-                      <button class="btn btn-outline-danger flex-grow-1" @click="handleRejectOrg(org.id, true)">
-                        <i class="bi bi-trash me-2"></i> {{ locale === 'fr' ? 'Supprimer définitivement' : 'Delete permanently' }}
-                      </button>
-                    </div>
+                    <p class="timeline-desc text-muted mb-0 small">{{ item.desc }}</p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-
-          <!-- ==================== UTILISATEURS ==================== -->
-          <div v-if="activeSection === 'users'" class="section-content">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-              <div class="search-box position-relative" style="max-width: 400px; width: 100%;">
-                <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
-                <input type="text" class="form-control border-0 shadow-sm ps-5 py-2 rounded-pill" :placeholder="locale === 'fr' ? 'Rechercher (nom, email)...' : 'Search (name, email)...'" v-model="userSearchQuery">
-              </div>
-            </div>
-            
-            <div class="documents-section-card p-0 overflow-hidden border-0 shadow-sm">
-              <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0 custom-table">
-                  <thead>
-                    <tr>
-                      <th class="ps-4 py-3">{{ locale === 'fr' ? 'Utilisateur' : 'User' }}</th>
-                      <th class="py-3">{{ locale === 'fr' ? 'Email' : 'Email' }}</th>
-                      <th class="py-3">{{ locale === 'fr' ? 'Inscription' : 'Registration' }}</th>
-                      <th class="py-3">{{ locale === 'fr' ? 'Rôle actuel' : 'Current role' }}</th>
-                      <th class="text-end pe-4 py-3">{{ locale === 'fr' ? 'Actions' : 'Actions' }}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-if="filteredUsers.length === 0">
-                      <td colspan="5" class="text-center py-4 text-muted">{{ locale === 'fr' ? 'Aucun utilisateur trouvé.' : 'No users found.' }}</td>
-                    </tr>
-                    <tr v-for="user in filteredUsers" :key="user.id">
-                      <td>
-                        <div class="d-flex align-items-center gap-2">
-                          <img v-if="user.photoURL" :src="user.photoURL" class="rounded-circle" width="32" height="32" alt="Avatar">
-                          <div v-else class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
-                            <i class="bi bi-person"></i>
-                          </div>
-                          <span class="fw-semibold">{{ user.displayName || (locale === 'fr' ? 'Anonyme' : 'Anonymous') }}</span>
-                        </div>
-                      </td>
-                      <td>{{ user.email }}</td>
-                      <td class="text-muted small">{{ formatDate(user.createdAt?.toDate ? user.createdAt.toDate() : user.createdAt) }}</td>
-                      <td>
-                        <span class="badge" :class="getRoleBadgeClass(user.role)">
-                          {{ getRoleText(user.role) }}
-                        </span>
-                      </td>
-                      <td class="text-end">
-                        <select class="form-select form-select-sm d-inline-block w-auto" 
-                                @change="handleRoleChange(user.id, $event.target.value)" 
-                                :value="user.role || 'member'">
-                          <option value="member">{{ locale === 'fr' ? 'Membre (Défaut)' : 'Member (Default)' }}</option>
-                          <option value="chief">{{ locale === 'fr' ? 'Chef d\'Organisation' : 'Organization Chief' }}</option>
-                          <option value="super-admin">{{ locale === 'fr' ? 'Super Admin' : 'Super Admin' }}</option>
-                        </select>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-
-          <!-- ==================== SIGNATURES ==================== -->
-          <div v-if="activeSection === 'signatures'" class="section-content">
-            
-            <div class="documents-section-card p-0 overflow-hidden border-0 shadow-sm">
-              <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0 custom-table">
-                  <thead>
-                    <tr>
-                      <th class="ps-4 py-3">{{ locale === 'fr' ? 'ID Document' : 'Document ID' }}</th>
-                      <th class="py-3">{{ locale === 'fr' ? 'Signataire (UID)' : 'Signer (UID)' }}</th>
-                      <th class="py-3">{{ locale === 'fr' ? 'Type' : 'Type' }}</th>
-                      <th class="py-3">{{ locale === 'fr' ? 'Date' : 'Date' }}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-if="signatures.length === 0">
-                      <td colspan="4" class="text-center py-4 text-muted">{{ locale === 'fr' ? 'Aucune signature enregistrée.' : 'No signatures recorded.' }}</td>
-                    </tr>
-                    <tr v-for="sig in signatures" :key="sig.id">
-                      <td><code class="text-primary-blue">{{ sig.id.substring(0,8) }}...</code></td>
-                      <td>
-                        <span class="text-muted small">{{ sig.userId || (locale === 'fr' ? 'Inconnu' : 'Unknown') }}</span>
-                      </td>
-                      <td>
-                        <span class="badge bg-light text-dark border">{{ locale === 'fr' ? 'Signature PDF' : 'PDF Signature' }}</span>
-                      </td>
-                      <td class="text-muted small">{{ formatDate(sig.createdAt?.toDate ? sig.createdAt.toDate() : sig.createdAt) }}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-
         </div>
+
       </div>
+
+      <!-- ========================================================== -->
+      <!-- SECTION 2 : GESTION DES ORGANISATIONS                      -->
+      <!-- ========================================================== -->
+      <div v-if="currentSection === 'organizations'" class="section-content fade-in-up">
+        
+        <!-- Sous-onglets de statut et recherche -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-stretch align-items-md-center gap-3 mb-4">
+          <ul class="nav nav-pills custom-tabs d-flex gap-2">
+            <li class="nav-item">
+              <button class="nav-link px-3 py-2" :class="{ active: currentOrgTab === 'pending' }" @click="currentOrgTab = 'pending'">
+                <i class="bi bi-hourglass-split me-1 text-warning"></i> {{ t('superAdmin.pending') }}
+                <span class="badge ms-2" :class="currentOrgTab === 'pending' ? 'bg-white text-dark' : 'bg-warning text-dark'">{{ pendingOrgs.length }}</span>
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link px-3 py-2" :class="{ active: currentOrgTab === 'approved' }" @click="currentOrgTab = 'approved'">
+                <i class="bi bi-check-circle-fill me-1 text-success"></i> {{ t('superAdmin.approved') }}
+                <span class="badge ms-2" :class="currentOrgTab === 'approved' ? 'bg-white text-dark' : 'bg-success text-white'">{{ approvedOrgs.length }}</span>
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link px-3 py-2" :class="{ active: currentOrgTab === 'rejected' }" @click="currentOrgTab = 'rejected'">
+                <i class="bi bi-x-circle-fill me-1 text-danger"></i> {{ t('superAdmin.rejected') }}
+                <span class="badge ms-2" :class="currentOrgTab === 'rejected' ? 'bg-white text-dark' : 'bg-danger text-white'">{{ rejectedOrgs.length }}</span>
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link px-3 py-2" :class="{ active: currentOrgTab === 'all' }" @click="currentOrgTab = 'all'">
+                <i class="bi bi-collection me-1"></i> Toutes ({{ organizations.length }})
+              </button>
+            </li>
+          </ul>
+
+          <div class="search-box position-relative" style="min-width: 280px;">
+            <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+            <input 
+              type="text" 
+              class="form-control border shadow-sm ps-5 py-2 rounded-pill" 
+              :placeholder="t('superAdmin.orgSearchPlaceholder')" 
+              v-model="orgSearchQuery"
+            >
+          </div>
+        </div>
+
+        <!-- Grille de cartes d'organisations -->
+        <div class="row g-4">
+          <div v-if="displayedOrgs.length === 0" class="col-12 text-center py-5">
+            <div class="empty-state p-5 bg-white rounded-4 border shadow-sm">
+              <i class="bi bi-building-dash display-3 text-muted mb-3 d-block"></i>
+              <h5 class="fw-bold text-dark">{{ t('superAdmin.noOrgsFound') }}</h5>
+              <p class="text-muted small">Aucune structure ne correspond à ces critères.</p>
+            </div>
+          </div>
+
+          <div v-for="org in displayedOrgs" :key="org.id" class="col-lg-6 mb-2">
+            <div class="organization-card shadow-sm h-100">
+              <div class="card-header border-0 pb-0 d-flex align-items-start justify-content-between">
+                <div class="d-flex align-items-center gap-3">
+                  <div class="organization-icon">
+                    <i class="bi bi-building"></i>
+                  </div>
+                  <div>
+                    <h5 class="organization-name fw-bold mb-0 text-dark">{{ org.name }}</h5>
+                    <span class="badge bg-light text-secondary border mt-1">{{ org.organization_type || 'Organisation' }}</span>
+                  </div>
+                </div>
+                <div class="approval-status-badge" :class="org.approval_status || 'pending'">
+                  <span>{{ getStatusText(org.approval_status) }}</span>
+                </div>
+              </div>
+
+              <div class="card-body py-3">
+                <p class="organization-description text-muted small mb-3">
+                  {{ org.description || 'Aucune description renseignée pour cette structure.' }}
+                </p>
+
+                <div class="row g-2 organization-meta small text-muted">
+                  <div class="col-sm-6 d-flex align-items-center gap-2">
+                    <i class="bi bi-envelope text-primary-blue"></i>
+                    <span class="text-truncate">{{ org.email || 'Non renseigné' }}</span>
+                  </div>
+                  <div class="col-sm-6 d-flex align-items-center gap-2">
+                    <i class="bi bi-telephone text-primary-blue"></i>
+                    <span>{{ org.phone || 'Non renseigné' }}</span>
+                  </div>
+                  <div class="col-sm-6 d-flex align-items-center gap-2">
+                    <i class="bi bi-geo-alt text-primary-blue"></i>
+                    <span class="text-truncate">{{ org.address || 'Non renseignée' }}</span>
+                  </div>
+                  <div class="col-sm-6 d-flex align-items-center gap-2">
+                    <i class="bi bi-globe text-primary-blue"></i>
+                    <span class="text-truncate">{{ org.website || 'Non renseigné' }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Actions Administratives -->
+              <div class="card-footer bg-light border-top pt-3 d-flex gap-2">
+                <!-- En attente -->
+                <template v-if="org.approval_status === 'pending' || !org.approval_status">
+                  <button class="btn btn-outline-danger btn-sm flex-grow-1" @click="handleRejectOrg(org.id)">
+                    <i class="bi bi-x-circle me-1"></i> {{ t('superAdmin.rejectOrg') }}
+                  </button>
+                  <button class="btn btn-success btn-sm flex-grow-1 fw-bold" @click="handleApproveOrg(org.id)">
+                    <i class="bi bi-check-circle me-1"></i> {{ t('superAdmin.validateOrg') }}
+                  </button>
+                </template>
+
+                <!-- Approuvée -->
+                <template v-else-if="org.approval_status === 'approved'">
+                  <button class="btn btn-outline-secondary btn-sm ms-auto" @click="handleRevokeOrg(org.id)">
+                    <i class="bi bi-shield-x me-1"></i> {{ t('superAdmin.revokeOrg') }}
+                  </button>
+                </template>
+
+                <!-- Rejetée -->
+                <template v-else-if="org.approval_status === 'rejected'">
+                  <button class="btn btn-outline-success btn-sm flex-grow-1" @click="handleRehabilitateOrg(org.id)">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i> {{ t('superAdmin.rehabilitateOrg') }}
+                  </button>
+                  <button class="btn btn-outline-danger btn-sm flex-grow-1" @click="handleRejectOrg(org.id, true)">
+                    <i class="bi bi-trash3 me-1"></i> {{ t('superAdmin.deletePermanent') }}
+                  </button>
+                </template>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ========================================================== -->
+      <!-- SECTION 3 : UTILISATEURS & GESTION DES RÔLES               -->
+      <!-- ========================================================== -->
+      <div v-if="currentSection === 'users'" class="section-content fade-in-up">
+        
+        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-stretch align-items-sm-center gap-3 mb-4">
+          <div class="search-box position-relative" style="max-width: 400px; width: 100%;">
+            <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+            <input 
+              type="text" 
+              class="form-control border shadow-sm ps-5 py-2 rounded-pill" 
+              :placeholder="t('superAdmin.userSearchPlaceholder')" 
+              v-model="userSearchQuery"
+            >
+          </div>
+
+          <div class="d-flex align-items-center gap-2">
+            <select class="form-select form-select-sm rounded-pill px-3 shadow-sm" v-model="userRoleFilter">
+              <option value="all">Tous les rôles ({{ users.length }})</option>
+              <option value="member">Membres ({{ memberUsersCount }})</option>
+              <option value="chief">Chefs d'organisation ({{ chiefUsersCount }})</option>
+              <option value="super-admin">Super Administrateurs ({{ superAdminUsersCount }})</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="chart-card p-0 overflow-hidden border shadow-sm rounded-4">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 custom-table">
+              <thead class="table-light">
+                <tr>
+                  <th class="ps-4 py-3">Utilisateur</th>
+                  <th class="py-3">Email</th>
+                  <th class="py-3">Date d'inscription</th>
+                  <th class="py-3">Rôle actuel</th>
+                  <th class="text-end pe-4 py-3">Modifier les privilèges</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-if="filteredUsers.length === 0">
+                  <td colspan="5" class="text-center py-5 text-muted">
+                    {{ t('superAdmin.noUsersFound') }}
+                  </td>
+                </tr>
+                <tr v-for="user in filteredUsers" :key="user.id">
+                  <td class="ps-4">
+                    <div class="d-flex align-items-center gap-3">
+                      <img v-if="user.photoURL" :src="user.photoURL" class="rounded-circle shadow-sm" width="36" height="36" alt="Avatar">
+                      <div v-else class="avatar-initials rounded-circle bg-primary-blue text-white d-flex align-items-center justify-content-center fw-bold" style="width: 36px; height: 36px;">
+                        {{ (user.displayName || user.email || 'U').charAt(0).toUpperCase() }}
+                      </div>
+                      <div>
+                        <span class="fw-bold text-dark d-block">{{ user.displayName || 'Utilisateur Anonyme' }}</span>
+                        <small class="text-muted">UID: {{ user.id.substring(0, 8) }}...</small>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="text-dark">{{ user.email }}</span>
+                  </td>
+                  <td class="text-muted small">
+                    {{ formatDate(user.createdAt?.toDate ? user.createdAt.toDate() : user.createdAt) }}
+                  </td>
+                  <td>
+                    <span class="badge rounded-pill px-3 py-1" :class="getRoleBadgeClass(user.role)">
+                      {{ getRoleText(user.role) }}
+                    </span>
+                  </td>
+                  <td class="text-end pe-4">
+                    <select 
+                      class="form-select form-select-sm d-inline-block w-auto rounded-pill shadow-sm" 
+                      @change="handleRoleChange(user.id, $event.target.value)" 
+                      :value="user.role || 'member'"
+                    >
+                      <option value="member">{{ t('superAdmin.roleMember') }}</option>
+                      <option value="chief">{{ t('superAdmin.roleChief') }}</option>
+                      <option value="super-admin">{{ t('superAdmin.roleSuperAdmin') }}</option>
+                    </select>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ========================================================== -->
+      <!-- SECTION 4 : REGISTRE D'AUDIT DES SIGNATURES                -->
+      <!-- ========================================================== -->
+      <div v-if="currentSection === 'signatures'" class="section-content fade-in-up">
+        
+        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-stretch align-items-sm-center gap-3 mb-4">
+          <div class="search-box position-relative" style="max-width: 450px; width: 100%;">
+            <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+            <input 
+              type="text" 
+              class="form-control border shadow-sm ps-5 py-2 rounded-pill" 
+              :placeholder="t('superAdmin.sigSearchPlaceholder')" 
+              v-model="sigSearchQuery"
+            >
+          </div>
+          <span class="badge bg-white text-muted border px-3 py-2 rounded-pill">
+            <i class="bi bi-database-check text-success me-1"></i> {{ filteredSignatures.length }} signature(s) enregistrée(s)
+          </span>
+        </div>
+
+        <div class="chart-card p-0 overflow-hidden border shadow-sm rounded-4">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 custom-table">
+              <thead class="table-light">
+                <tr>
+                  <th class="ps-4 py-3">{{ t('superAdmin.docId') }}</th>
+                  <th class="py-3">{{ t('superAdmin.signer') }}</th>
+                  <th class="py-3">{{ t('superAdmin.hashSha256') }}</th>
+                  <th class="py-3">{{ t('superAdmin.timestamp') }}</th>
+                  <th class="text-end pe-4 py-3">Audit</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-if="filteredSignatures.length === 0">
+                  <td colspan="5" class="text-center py-5 text-muted">
+                    {{ t('superAdmin.noSignaturesFound') }}
+                  </td>
+                </tr>
+                <tr v-for="sig in filteredSignatures" :key="sig.id">
+                  <td class="ps-4">
+                    <div class="d-flex align-items-center gap-2">
+                      <i class="bi bi-file-earmark-pdf text-danger fs-5"></i>
+                      <div>
+                        <code class="text-primary-blue fw-bold">{{ (sig.document_id || sig.id).substring(0, 12) }}...</code>
+                        <small class="d-block text-muted">{{ sig.original_filename || sig.fileName || 'document.pdf' }}</small>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="fw-semibold text-dark d-block">{{ sig.signer_full_name || sig.signer_name || 'Signataire' }}</span>
+                    <small class="text-muted">{{ sig.signer_email || sig.userId }}</small>
+                  </td>
+                  <td>
+                    <div class="d-flex align-items-center gap-2">
+                      <code class="small text-muted bg-light px-2 py-1 rounded">
+                        {{ sig.document_hash ? sig.document_hash.substring(0, 16) + '...' : 'SHA-256 Validé' }}
+                      </code>
+                    </div>
+                  </td>
+                  <td class="text-muted small">
+                    {{ formatDate(sig.createdAt?.toDate ? sig.createdAt.toDate() : (sig.signature_timestamp || sig.createdAt)) }}
+                  </td>
+                  <td class="text-end pe-4">
+                    <a 
+                      :href="'/verify?id=' + (sig.document_id || sig.id)" 
+                      target="_blank" 
+                      class="btn btn-outline-primary btn-sm rounded-pill px-3"
+                    >
+                      <i class="bi bi-shield-check me-1"></i> {{ t('superAdmin.verifyDoc') }}
+                    </a>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ========================================================== -->
+      <!-- SECTION 5 : SÉCURITÉ & SANTÉ DU SYSTÈME                   -->
+      <!-- ========================================================== -->
+      <div v-if="currentSection === 'system'" class="section-content fade-in-up">
+        
+        <div class="row g-4 mb-4">
+          <!-- Statut des Services Connectés -->
+          <div class="col-lg-7">
+            <div class="chart-card shadow-sm p-4 h-100">
+              <h5 class="fw-bold text-dark mb-3">
+                <i class="bi bi-hdd-network text-primary-blue me-2"></i>{{ t('superAdmin.servicesStatus') }}
+              </h5>
+
+              <div class="services-status-list d-flex flex-column gap-3">
+                <div class="service-status-row p-3 rounded-3 border d-flex justify-content-between align-items-center">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="service-icon bg-primary-subtle text-primary rounded-circle p-2">
+                      <i class="bi bi-shield-lock"></i>
+                    </div>
+                    <div>
+                      <h6 class="fw-bold mb-0 text-dark">{{ t('superAdmin.serviceAuth') }}</h6>
+                      <small class="text-muted">Google OAuth 2.0 & Jetons sécurisés Firebase</small>
+                    </div>
+                  </div>
+                  <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 rounded-pill">
+                    <i class="bi bi-check-circle-fill me-1"></i> {{ t('superAdmin.statusOperational') }}
+                  </span>
+                </div>
+
+                <div class="service-status-row p-3 rounded-3 border d-flex justify-content-between align-items-center">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="service-icon bg-info-subtle text-info rounded-circle p-2">
+                      <i class="bi bi-database"></i>
+                    </div>
+                    <div>
+                      <h6 class="fw-bold mb-0 text-dark">{{ t('superAdmin.serviceFirestore') }}</h6>
+                      <small class="text-muted">Listeners réactifs en direct (onSnapshot)</small>
+                    </div>
+                  </div>
+                  <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 rounded-pill">
+                    <i class="bi bi-check-circle-fill me-1"></i> {{ t('superAdmin.statusOperational') }}
+                  </span>
+                </div>
+
+                <div class="service-status-row p-3 rounded-3 border d-flex justify-content-between align-items-center">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="service-icon bg-purple-subtle text-purple rounded-circle p-2">
+                      <i class="bi bi-cloud-arrow-up"></i>
+                    </div>
+                    <div>
+                      <h6 class="fw-bold mb-0 text-dark">{{ t('superAdmin.serviceCloudinary') }}</h6>
+                      <small class="text-muted">Stockage CDN chiffré des originaux et signés</small>
+                    </div>
+                  </div>
+                  <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 rounded-pill">
+                    <i class="bi bi-check-circle-fill me-1"></i> {{ t('superAdmin.statusOperational') }}
+                  </span>
+                </div>
+
+                <div class="service-status-row p-3 rounded-3 border d-flex justify-content-between align-items-center">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="service-icon bg-success-subtle text-success rounded-circle p-2">
+                      <i class="bi bi-cpu"></i>
+                    </div>
+                    <div>
+                      <h6 class="fw-bold mb-0 text-dark">{{ t('superAdmin.serviceCrypto') }}</h6>
+                      <small class="text-muted">Zero-Knowledge (les clés privées ne quittent jamais le navigateur)</small>
+                    </div>
+                  </div>
+                  <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 rounded-pill">
+                    <i class="bi bi-check-circle-fill me-1"></i> {{ t('superAdmin.statusOperational') }}
+                  </span>
+                </div>
+
+                <div class="service-status-row p-3 rounded-3 border d-flex justify-content-between align-items-center">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="service-icon bg-warning-subtle text-warning rounded-circle p-2">
+                      <i class="bi bi-qr-code-scan"></i>
+                    </div>
+                    <div>
+                      <h6 class="fw-bold mb-0 text-dark">{{ t('superAdmin.serviceVerify') }}</h6>
+                      <small class="text-muted">Résolution QR Code et contrôle d'empreinte public</small>
+                    </div>
+                  </div>
+                  <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 rounded-pill">
+                    <i class="bi bi-check-circle-fill me-1"></i> {{ t('superAdmin.statusOperational') }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Spécifications & Architecture Système -->
+          <div class="col-lg-5">
+            <div class="chart-card shadow-sm p-4 h-100">
+              <h5 class="fw-bold text-dark mb-3">
+                <i class="bi bi-gear-wide-connected text-primary-blue me-2"></i>{{ t('superAdmin.systemSpecs') }}
+              </h5>
+
+              <ul class="list-group list-group-flush small">
+                <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                  <span class="text-muted">Architecture Framework</span>
+                  <span class="fw-bold text-dark">Nuxt.js 4 (SSR / Nitro Engine)</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                  <span class="text-muted">Moteur Frontend</span>
+                  <span class="fw-bold text-dark">Vue.js 3.5 (Composition API)</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                  <span class="text-muted">Standard Cryptographique</span>
+                  <span class="fw-bold text-dark">RSA PKCS#1 v1.5 / SHA-256</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                  <span class="text-muted">Certificats Supportés</span>
+                  <span class="fw-bold text-dark">PKCS#12 (.p12 / .pfx) & X.509</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                  <span class="text-muted">Génération PDF & Placement</span>
+                  <span class="fw-bold text-dark">pdf-lib / vue-pdf-embed</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                  <span class="text-muted">Domaine de Vérification QR</span>
+                  <span class="fw-bold text-primary-blue">gvbsign.cm</span>
+                </li>
+              </ul>
+
+              <div class="security-banner mt-4 p-3 rounded-3 bg-primary-subtle text-primary border border-primary-subtle">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                  <i class="bi bi-shield-shaded fs-5"></i>
+                  <span class="fw-bold small">Politique de Sécurité Zero-Knowledge</span>
+                </div>
+                <p class="mb-0 small" style="line-height: 1.4;">
+                  Les mots de passe de certificats et clés privées des signataires sont déchiffrés localement dans la mémoire vive de l'utilisateur et ne sont jamais journalisés ni envoyés aux serveurs distants.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
     </div>
+  </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import OrganizationApiService from '../../services/OrganizationApiService'
 import AdminApiService from '../../services/AdminApiService'
 import { useI18n } from '../../composables/useI18n'
 
+const props = defineProps({
+  activeSection: {
+    type: String,
+    default: 'overview'
+  }
+})
+
+const emit = defineEmits(['update:section', 'update:pending-count'])
+
 const { t, locale } = useI18n()
 
 const loading = ref(true)
-const activeSection = ref('overview')
+const isRefreshing = ref(false)
+const currentSection = ref(props.activeSection || 'overview')
+
+// Synchronisation de la section avec la prop
+watch(() => props.activeSection, (newSec) => {
+  if (newSec && newSec !== currentSection.value) {
+    currentSection.value = newSec
+  }
+})
+
+const switchSection = (section, orgTab = null) => {
+  currentSection.value = section
+  if (orgTab) {
+    currentOrgTab.value = orgTab
+  }
+  emit('update:section', section)
+}
 
 // Données en temps réel
 const organizations = ref([])
 const users = ref([])
 const signatures = ref([])
 
-// Onglet organisation
+// Onglet et filtres pour la gestion des organisations
 const currentOrgTab = ref('pending')
+const orgSearchQuery = ref('')
+
+// Filtres utilisateurs
 const userSearchQuery = ref('')
+const userRoleFilter = ref('all')
+
+// Filtres registre signatures
+const sigSearchQuery = ref('')
+
+// Graphique d'activité
+const chartPeriod = ref('7d')
+const hoveredPoint = ref(null)
 
 let unsubOrgs = null
 let unsubUsers = null
@@ -327,23 +993,24 @@ let unsubSigs = null
 onMounted(() => {
   loading.value = true
   
-  // 1. Écouter les organisations
+  // 1. Écouter les organisations en direct
   unsubOrgs = OrganizationApiService.listenAllOrganizations((orgs) => {
-    organizations.value = orgs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    organizations.value = orgs.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+    emit('update:pending-count', pendingOrgs.value.length)
     checkLoading()
   })
 
-  // 2. Écouter les utilisateurs
+  // 2. Écouter les utilisateurs en direct
   unsubUsers = AdminApiService.listenAllUsers((usr) => {
     users.value = usr
     checkLoading()
   })
 
-  // 3. Écouter les signatures
+  // 3. Écouter les signatures en direct
   unsubSigs = AdminApiService.listenAllSignatures((sigs) => {
     signatures.value = sigs.sort((a, b) => {
-      const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0)
-      const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0)
+      const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || a.signature_timestamp || 0)
+      const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || b.signature_timestamp || 0)
       return dateB - dateA
     })
     checkLoading()
@@ -357,33 +1024,268 @@ onUnmounted(() => {
 })
 
 const checkLoading = () => {
-  // Simple check pour enlever le loader dès qu'une des listes est chargée (ou après un court délai)
-  setTimeout(() => { loading.value = false }, 500)
+  setTimeout(() => { loading.value = false }, 300)
 }
 
-// ==================== COMPUTED PROPERTIES ====================
+const handleManualRefresh = () => {
+  isRefreshing.value = true
+  setTimeout(() => {
+    isRefreshing.value = false
+  }, 700)
+}
 
-// Organisations
+// ==================== COMPUTED KPIS ====================
+
 const pendingOrgs = computed(() => organizations.value.filter(o => o.approval_status === 'pending' || !o.approval_status))
 const approvedOrgs = computed(() => organizations.value.filter(o => o.approval_status === 'approved'))
 const rejectedOrgs = computed(() => organizations.value.filter(o => o.approval_status === 'rejected'))
 
-const displayedOrgs = computed(() => {
-  switch (currentOrgTab.value) {
-    case 'pending': return pendingOrgs.value
-    case 'approved': return approvedOrgs.value
-    case 'rejected': return rejectedOrgs.value
-    default: return []
-  }
+const activeOrgsPercentage = computed(() => {
+  if (organizations.value.length === 0) return 0
+  return Math.round((approvedOrgs.value.length / organizations.value.length) * 100)
 })
 
-// Utilisateurs
+const memberUsersCount = computed(() => users.value.filter(u => !u.role || u.role === 'member').length)
+const chiefUsersCount = computed(() => users.value.filter(u => u.role === 'chief').length)
+const superAdminUsersCount = computed(() => users.value.filter(u => u.role === 'super-admin').length)
+
+const memberPercentage = computed(() => users.value.length ? Math.round((memberUsersCount.value / users.value.length) * 100) : 0)
+const chiefPercentage = computed(() => users.value.length ? Math.round((chiefUsersCount.value / users.value.length) * 100) : 0)
+const superAdminPercentage = computed(() => users.value.length ? Math.round((superAdminUsersCount.value / users.value.length) * 100) : 0)
+
+// ==================== COMPUTED DONUT SVG ====================
+
+const donutCircumference = 2 * Math.PI * 70 // ~439.82
+
+const donutApprovedOffset = computed(() => {
+  const total = organizations.value.length || 1
+  const pct = approvedOrgs.value.length / total
+  return donutCircumference * (1 - pct)
+})
+
+const donutPendingOffset = computed(() => {
+  const total = organizations.value.length || 1
+  const pct = pendingOrgs.value.length / total
+  const approvedPct = approvedOrgs.value.length / total
+  return donutCircumference * (1 - pct) + (donutCircumference * (1 - approvedPct))
+})
+
+const donutRejectedOffset = computed(() => {
+  const total = organizations.value.length || 1
+  const pct = rejectedOrgs.value.length / total
+  const prevPct = (approvedOrgs.value.length + pendingOrgs.value.length) / total
+  return donutCircumference * (1 - pct) + (donutCircumference * (1 - prevPct))
+})
+
+// ==================== COMPUTED ACTIVITY SPLINE CHART ====================
+
+const activityChartData = computed(() => {
+  const daysCount = chartPeriod.value === '7d' ? 7 : (chartPeriod.value === '30d' ? 30 : 14)
+  const days = []
+  const today = new Date()
+
+  for (let i = daysCount - 1; i >= 0; i--) {
+    const d = new Date()
+    d.setDate(today.getDate() - i)
+    const key = d.toISOString().split('T')[0]
+    const label = new Intl.DateTimeFormat(locale.value === 'fr' ? 'fr-FR' : 'en-US', { day: 'numeric', month: 'short' }).format(d)
+    
+    // Compter les signatures du jour
+    const sigCount = signatures.value.filter(s => {
+      const sDate = s.createdAt?.toDate ? s.createdAt.toDate() : new Date(s.createdAt || s.signature_timestamp || 0)
+      return sDate.toISOString().split('T')[0] === key
+    }).length
+
+    // Compter les users du jour
+    const userCount = users.value.filter(u => {
+      const uDate = u.createdAt?.toDate ? u.createdAt.toDate() : new Date(u.createdAt || 0)
+      return uDate.toISOString().split('T')[0] === key
+    }).length
+
+    days.push({ key, label, signatures: sigCount, users: userCount })
+  }
+
+  return days
+})
+
+const peakActivityValue = computed(() => {
+  const vals = activityChartData.value.map(d => d.signatures)
+  return Math.max(...vals, 1)
+})
+
+const activityPoints = computed(() => {
+  const data = activityChartData.value
+  if (!data.length) return []
+  const maxVal = Math.max(peakActivityValue.value, 4)
+  const width = 800
+  const height = 260
+  const padX = 50
+  const padY = 50
+  const stepX = (width - 2 * padX) / (data.length - 1 || 1)
+
+  return data.map((d, idx) => {
+    const x = padX + idx * stepX
+    const y = height - padY - (d.signatures / maxVal) * (height - 2 * padY)
+    return { x, y, value: d.signatures, date: d.label }
+  })
+})
+
+const activityLinePath = computed(() => {
+  const pts = activityPoints.value
+  if (!pts.length) return ''
+  let path = `M ${pts[0].x} ${pts[0].y}`
+  for (let i = 1; i < pts.length; i++) {
+    const prev = pts[i - 1]
+    const curr = pts[i]
+    const cpX = (prev.x + curr.x) / 2
+    path += ` C ${cpX} ${prev.y}, ${cpX} ${curr.y}, ${curr.x} ${curr.y}`
+  }
+  return path
+})
+
+const activityAreaPath = computed(() => {
+  const pts = activityPoints.value
+  if (!pts.length) return ''
+  const bottomY = 220
+  let path = `M ${pts[0].x} ${bottomY} L ${pts[0].x} ${pts[0].y}`
+  for (let i = 1; i < pts.length; i++) {
+    const prev = pts[i - 1]
+    const curr = pts[i]
+    const cpX = (prev.x + curr.x) / 2
+    path += ` C ${cpX} ${prev.y}, ${cpX} ${curr.y}, ${curr.x} ${curr.y}`
+  }
+  path += ` L ${pts[pts.length - 1].x} ${bottomY} Z`
+  return path
+})
+
+const usersLinePath = computed(() => {
+  const data = activityChartData.value
+  if (!data.length) return ''
+  const maxVal = Math.max(peakActivityValue.value, 4)
+  const width = 800
+  const height = 260
+  const padX = 50
+  const padY = 50
+  const stepX = (width - 2 * padX) / (data.length - 1 || 1)
+
+  const pts = data.map((d, idx) => {
+    const x = padX + idx * stepX
+    const y = height - padY - (d.users / maxVal) * (height - 2 * padY)
+    return { x, y }
+  })
+
+  let path = `M ${pts[0].x} ${pts[0].y}`
+  for (let i = 1; i < pts.length; i++) {
+    const prev = pts[i - 1]
+    const curr = pts[i]
+    const cpX = (prev.x + curr.x) / 2
+    path += ` C ${cpX} ${prev.y}, ${cpX} ${curr.y}, ${curr.x} ${curr.y}`
+  }
+  return path
+})
+
+const activityLabels = computed(() => {
+  const pts = activityPoints.value
+  const data = activityChartData.value
+  return pts.map((p, idx) => ({ x: p.x, text: data[idx]?.label || '' }))
+})
+
+// ==================== COMPUTED LIVE ACTIVITY STREAM ====================
+
+const recentActivities = computed(() => {
+  const list = []
+
+  // Signatures récentes
+  signatures.value.slice(0, 3).forEach(sig => {
+    const date = sig.createdAt?.toDate ? sig.createdAt.toDate() : new Date(sig.createdAt || sig.signature_timestamp || Date.now())
+    list.push({
+      title: 'Signature scellée',
+      desc: (sig.signer_full_name || 'Utilisateur') + ' a signé ' + (sig.original_filename || 'document.pdf'),
+      timeAgo: getTimeAgo(date),
+      timestamp: date.getTime(),
+      icon: 'bi-pen-fill',
+      badgeClass: 'badge-emerald'
+    })
+  })
+
+  // Organisations récentes
+  organizations.value.slice(0, 2).forEach(org => {
+    const date = new Date(org.created_at || Date.now())
+    list.push({
+      title: 'Nouvelle organisation',
+      desc: org.name + ' (' + (org.approval_status || 'en attente') + ')',
+      timeAgo: getTimeAgo(date),
+      timestamp: date.getTime(),
+      icon: 'bi-building-add',
+      badgeClass: 'badge-purple'
+    })
+  })
+
+  // Utilisateurs récents
+  users.value.slice(0, 2).forEach(usr => {
+    const date = usr.createdAt?.toDate ? usr.createdAt.toDate() : new Date(usr.createdAt || Date.now())
+    list.push({
+      title: 'Inscription utilisateur',
+      desc: usr.displayName || usr.email || 'Nouveau compte',
+      timeAgo: getTimeAgo(date),
+      timestamp: date.getTime(),
+      icon: 'bi-person-plus-fill',
+      badgeClass: 'badge-blue'
+    })
+  })
+
+  return list.sort((a, b) => b.timestamp - a.timestamp).slice(0, 5)
+})
+
+// ==================== FILTER COMPUTEDS ====================
+
+const displayedOrgs = computed(() => {
+  let list = []
+  switch (currentOrgTab.value) {
+    case 'pending': list = pendingOrgs.value; break
+    case 'approved': list = approvedOrgs.value; break
+    case 'rejected': list = rejectedOrgs.value; break
+    default: list = organizations.value; break
+  }
+
+  if (!orgSearchQuery.value) return list
+  const q = orgSearchQuery.value.toLowerCase()
+  return list.filter(o => 
+    (o.name && o.name.toLowerCase().includes(q)) ||
+    (o.email && o.email.toLowerCase().includes(q)) ||
+    (o.address && o.address.toLowerCase().includes(q)) ||
+    (o.organization_type && o.organization_type.toLowerCase().includes(q))
+  )
+})
+
 const filteredUsers = computed(() => {
-  if (!userSearchQuery.value) return users.value
-  const query = userSearchQuery.value.toLowerCase()
-  return users.value.filter(u => 
-    (u.displayName && u.displayName.toLowerCase().includes(query)) || 
-    (u.email && u.email.toLowerCase().includes(query))
+  let list = users.value
+
+  if (userRoleFilter.value !== 'all') {
+    list = list.filter(u => {
+      if (userRoleFilter.value === 'member') return !u.role || u.role === 'member'
+      return u.role === userRoleFilter.value
+    })
+  }
+
+  if (!userSearchQuery.value) return list
+  const q = userSearchQuery.value.toLowerCase()
+  return list.filter(u => 
+    (u.displayName && u.displayName.toLowerCase().includes(q)) || 
+    (u.email && u.email.toLowerCase().includes(q)) ||
+    (u.id && u.id.toLowerCase().includes(q))
+  )
+})
+
+const filteredSignatures = computed(() => {
+  if (!sigSearchQuery.value) return signatures.value
+  const q = sigSearchQuery.value.toLowerCase()
+  return signatures.value.filter(s => 
+    (s.document_id && s.document_id.toLowerCase().includes(q)) ||
+    (s.id && s.id.toLowerCase().includes(q)) ||
+    (s.signer_full_name && s.signer_full_name.toLowerCase().includes(q)) ||
+    (s.signer_email && s.signer_email.toLowerCase().includes(q)) ||
+    (s.original_filename && s.original_filename.toLowerCase().includes(q))
   )
 })
 
@@ -411,7 +1313,7 @@ const handleRejectOrg = async (id, permanent = false) => {
         await OrganizationApiService.rejectOrganization(id)
       }
     } catch (error) {
-      alert(locale.value === 'fr' ? 'Erreur' : 'Error')
+      alert(locale.value === 'fr' ? 'Erreur lors du traitement' : 'Error during processing')
     }
   }
 }
@@ -429,7 +1331,7 @@ const handleRevokeOrg = async (id) => {
 }
 
 const handleRehabilitateOrg = async (id) => {
-  if (confirm(locale.value === 'fr' ? 'Réhabiliter cette organisation ? Elle sera réapprouvée et ses membres pourront de nouveau y accéder.' : 'Rehabilitate this organization? It will be re-approved and members can access it again.')) {
+  if (confirm(locale.value === 'fr' ? 'Réhabiliter cette organisation ? Elle sera de nouveau active.' : 'Rehabilitate this organization?')) {
     try {
       const { db } = OrganizationApiService.getFirebase()
       const { doc, updateDoc } = await import('firebase/firestore')
@@ -444,7 +1346,7 @@ const handleRehabilitateOrg = async (id) => {
 }
 
 const handleRoleChange = async (userId, newRole) => {
-  if (confirm(locale.value === 'fr' ? `Voulez-vous vraiment changer le rôle de cet utilisateur vers "${newRole}" ?` : `Are you sure you want to change this user's role to "${newRole}"?`)) {
+  if (confirm(locale.value === 'fr' ? `Attribuer le rôle "${newRole}" à cet utilisateur ?` : `Assign role "${newRole}" to this user?`)) {
     try {
       await AdminApiService.updateUserRole(userId, newRole)
     } catch (error) {
@@ -453,7 +1355,7 @@ const handleRoleChange = async (userId, newRole) => {
   }
 }
 
-// ==================== UTILITAIRES ====================
+// ==================== HELPERS ====================
 
 const formatDate = (dateString) => {
   if (!dateString) return locale.value === 'fr' ? 'Inconnue' : 'Unknown'
@@ -465,10 +1367,12 @@ const formatDate = (dateString) => {
   }).format(date)
 }
 
-const getStatusBadgeClass = (status) => {
-  if (status === 'approved') return 'bg-success text-white'
-  if (status === 'rejected') return 'bg-danger text-white'
-  return 'bg-warning text-dark'
+const getTimeAgo = (date) => {
+  const diffSec = Math.floor((Date.now() - date.getTime()) / 1000)
+  if (diffSec < 60) return "À l'instant"
+  if (diffSec < 3600) return `Il y a ${Math.floor(diffSec / 60)} min`
+  if (diffSec < 86400) return `Il y a ${Math.floor(diffSec / 3600)} h`
+  return `Il y a ${Math.floor(diffSec / 86400)} j`
 }
 
 const getStatusText = (status) => {
@@ -479,7 +1383,7 @@ const getStatusText = (status) => {
 
 const getRoleBadgeClass = (role) => {
   if (role === 'super-admin') return 'bg-primary-blue text-white'
-  if (role === 'chief') return 'bg-light text-primary-blue border border-primary'
+  if (role === 'chief') return 'bg-info-subtle text-info-emphasis border border-info-subtle'
   return 'bg-light text-secondary border'
 }
 
@@ -491,289 +1395,255 @@ const getRoleText = (role) => {
 </script>
 
 <style scoped>
-.documents-page {
-  padding: 0;
+.super-admin-page {
+  padding-bottom: 3rem;
 }
 
-.documents-header {
-  opacity: 0;
-  animation: slideInRight 0.8s ease-out forwards;
+/* Badge Super Admin */
+.badge-superadmin {
+  display: inline-flex;
+  align-items: center;
+  background: linear-gradient(135deg, rgba(0, 102, 204, 0.1) 0%, rgba(0, 123, 255, 0.15) 100%);
+  color: var(--primary-blue);
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  padding: 0.35rem 0.85rem;
+  border-radius: 50px;
+  border: 1px solid rgba(0, 102, 204, 0.2);
 }
 
-/* ==================== STYLES DES CARTES ORGANISATION ==================== */
-.organization-card {
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 18px;
-  border: 2px solid rgba(0, 102, 204, 0.08);
-  box-shadow: 
-    0 8px 25px rgba(0, 102, 204, 0.08),
-    0 4px 15px rgba(0, 0, 0, 0.05);
+.badge-superadmin i {
+  color: #f59e0b;
+}
+
+/* Alerte Bannière */
+.alert-pending-banner {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 1px solid #fde68a;
+  animation: pulseGlow 3s infinite alternate;
+}
+
+@keyframes pulseGlow {
+  0% { box-shadow: 0 4px 15px rgba(245, 158, 11, 0.1); }
+  100% { box-shadow: 0 8px 25px rgba(245, 158, 11, 0.25); }
+}
+
+.spin-animation {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}
+
+/* KPI Cards Premium */
+.kpi-card {
+  background: #ffffff;
+  border-radius: 20px;
+  border: 1px solid rgba(0, 102, 204, 0.08);
   padding: 1.5rem;
-  height: 100%;
-  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-  display: flex;
-  flex-direction: column;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-.organization-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 
-    0 20px 40px rgba(0, 102, 204, 0.12),
-    0 10px 25px rgba(0, 102, 204, 0.08);
+.kpi-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px rgba(0, 102, 204, 0.1) !important;
   border-color: rgba(0, 102, 204, 0.2);
 }
 
-.card-header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid rgba(0, 102, 204, 0.08);
-  background: transparent;
-}
-
-.organization-header-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.organization-icon {
-  width: 50px;
-  height: 50px;
-  background: linear-gradient(135deg, rgba(0, 102, 204, 0.1) 0%, rgba(0, 123, 255, 0.15) 100%);
-  border-radius: 12px;
+.kpi-icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
-  color: var(--primary-blue);
+  font-size: 1.35rem;
+}
+
+.icon-blue { background: rgba(0, 102, 204, 0.1); color: #0066cc; }
+.icon-purple { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
+.icon-emerald { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+.icon-cyan { background: rgba(6, 182, 212, 0.1); color: #06b6d4; }
+
+.kpi-value {
+  font-size: 2.1rem;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.kpi-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* Chart Cards */
+.chart-card {
+  background: #ffffff;
+  border-radius: 20px;
+  border: 1px solid rgba(0, 102, 204, 0.08);
+}
+
+/* SVG Chart */
+.svg-chart-container {
+  min-height: 200px;
+}
+
+.chart-point {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.chart-point:hover {
+  r: 7;
+  stroke-width: 3.5;
+  filter: drop-shadow(0 0 6px rgba(0, 102, 204, 0.6));
+}
+
+.chart-tooltip {
+  position: absolute;
+  background: rgba(15, 23, 42, 0.9);
+  color: #ffffff;
+  padding: 0.35rem 0.75rem;
+  border-radius: 8px;
+  pointer-events: none;
+  transform: translate(-50%, -100%);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  z-index: 10;
+}
+
+.legend-color-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+/* Donut Chart */
+.donut-svg {
+  width: 170px;
+  height: 170px;
+  max-width: 100%;
+}
+
+.donut-segment {
+  transition: stroke-dashoffset 1s ease-out;
+}
+
+.donut-center-info {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.donut-percentage {
+  line-height: 1;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.legend-row:hover {
+  background: #f8fafc;
+  border-radius: 6px;
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+}
+
+/* Live Audit Timeline */
+.timeline-icon-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
   flex-shrink: 0;
 }
 
-.organization-name {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #2c3e50;
-  margin: 0;
+.badge-blue { background: rgba(0, 102, 204, 0.1); color: #0066cc; }
+.badge-purple { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
+.badge-emerald { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+
+/* Cartes Organisations */
+.organization-card {
+  background: #ffffff;
+  border-radius: 18px;
+  border: 1px solid rgba(0, 102, 204, 0.08);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
 }
 
-.organization-subtitle {
-  color: #6c757d;
-  font-size: 0.9rem;
-  margin-bottom: 0;
-  font-weight: 400;
+.organization-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(0, 102, 204, 0.25);
+  box-shadow: 0 10px 25px rgba(0, 102, 204, 0.08) !important;
 }
 
-.organization-status-badges {
+.organization-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(0, 102, 204, 0.1);
+  color: var(--primary-blue);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: center;
+  font-size: 1.3rem;
+  flex-shrink: 0;
 }
 
 .approval-status-badge {
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .approval-status-badge.approved {
-  background: rgba(40, 167, 69, 0.1);
-  color: #28a745;
-  border: 1px solid rgba(40, 167, 69, 0.2);
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
 .approval-status-badge.pending {
-  background: rgba(255, 193, 7, 0.1);
-  color: #ffc107;
-  border: 1px solid rgba(255, 193, 7, 0.2);
+  background: rgba(245, 158, 11, 0.1);
+  color: #d97706;
+  border: 1px solid rgba(245, 158, 11, 0.25);
 }
 
 .approval-status-badge.rejected {
-  background: rgba(220, 53, 69, 0.1);
-  color: #dc3545;
-  border: 1px solid rgba(220, 53, 69, 0.2);
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.25);
 }
 
-.organization-status {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  font-size: 0.6rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.organization-status.active { color: #28a745; }
-.organization-status.pending { color: #ffc107; }
-.organization-status.rejected { color: #dc3545; }
-
-.card-content {
-  flex-grow: 1;
-  margin-bottom: 1.5rem;
-}
-
-.organization-description {
-  font-size: 0.9rem;
-  color: #6c757d;
-  margin: 0 0 1rem 0;
-  line-height: 1.5;
-}
-
-.organization-meta {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-
-.meta-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.85rem;
-  color: #6c757d;
-}
-
-.meta-item i {
-  color: var(--primary-blue);
+.avatar-initials {
+  flex-shrink: 0;
   font-size: 0.9rem;
 }
 
-.card-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 1rem;
-  border-top: 1px solid rgba(0, 102, 204, 0.1);
-  background: transparent;
-}
-.stat-card {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  box-shadow: 0 2px 10px rgba(0, 102, 204, 0.05);
-  border: 1px solid rgba(0, 102, 204, 0.08);
-}
-
-.stat-icon {
-  width: 50px;
-  height: 50px;
-  background: rgba(0, 102, 204, 0.1);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--primary-blue);
-  font-size: 1.25rem;
-}
-
-.stat-number {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: var(--text-dark);
-  margin-bottom: 0.25rem;
-  font-family: 'Raleway', sans-serif;
-}
-
-.stat-label {
-  color: #6c757d;
-  font-size: 0.95rem;
-  margin-bottom: 0;
-  font-weight: 500;
-}
-
-/* Style Glassmorphism */
-.documents-section-card {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-radius: 18px;
-  border: 2px solid rgba(0, 102, 204, 0.08);
-  box-shadow: 0 8px 25px rgba(0, 102, 204, 0.08);
-  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-
-.documents-section-card:hover {
-  box-shadow: 0 20px 40px rgba(0, 102, 204, 0.12);
-}
-
-/* Boutons et Onglets */
-.custom-tabs {
-  border-bottom: 2px solid rgba(0, 102, 204, 0.05);
-  padding-bottom: 0.75rem;
-}
-.custom-tabs .nav-link {
-  color: var(--text-muted);
-  font-weight: 600;
-  border: none;
-  background: transparent;
-  transition: all 0.3s ease;
-  border-radius: 50rem; /* rounded-pill */
-}
-.custom-tabs .nav-link:hover {
-  background: rgba(0, 102, 204, 0.03);
-  color: var(--primary-blue);
-}
-.custom-tabs .nav-link.active {
-  color: var(--primary-blue);
-  background: rgba(0, 102, 204, 0.08);
-  box-shadow: 0 2px 10px rgba(0, 102, 204, 0.05);
-}
-
-.btn-primary-blue {
-  background: linear-gradient(135deg, var(--primary-blue) 0%, #007bff 100%);
-  border: none;
-  color: white;
-}
-.btn-primary-blue:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(0, 102, 204, 0.3);
-}
-
-/* Search input */
-.search-box .form-control:focus {
-  box-shadow: 0 4px 15px rgba(0, 102, 204, 0.1) !important;
-  border-color: rgba(0, 102, 204, 0.2);
-}
-
-/* Tables */
-.custom-table thead {
-  background: rgba(0, 102, 204, 0.02);
-}
+/* Custom Table */
 .custom-table th {
-  font-weight: 600;
-  color: var(--text-muted);
-  border-bottom: 2px solid rgba(0, 102, 204, 0.05);
-  text-transform: uppercase;
   font-size: 0.8rem;
+  text-transform: uppercase;
   letter-spacing: 0.5px;
-}
-.custom-table td {
-  padding: 1.25rem 0.5rem;
-  border-bottom: 1px solid rgba(0, 102, 204, 0.05);
-}
-.custom-table tbody tr:hover {
-  background-color: rgba(0, 102, 204, 0.02);
+  color: #64748b;
+  font-weight: 700;
 }
 
-/* Animations */
-@keyframes slideInRight {
-  from { opacity: 0; transform: translateX(30px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-@keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.fade-in-up {
-  animation: fadeInUp 0.4s ease-out forwards;
+.custom-table td {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
 }
 </style>

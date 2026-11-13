@@ -25,6 +25,40 @@
         <!-- Menu de navigation desktop -->
         <div class="collapse navbar-collapse d-none d-lg-block" id="navbarNav">
           <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-5">
+          <template v-if="userStore.role === 'super-admin'">
+            <li class="nav-item">
+              <button class="nav-link fw-500 border-0 bg-transparent" :class="{ active: activePage === 'super-admin' && superAdminSection === 'overview' }" @click="setSuperAdminSection('overview')">
+                <i class="bi bi-grid-1x2-fill me-2 text-primary-blue"></i>
+                {{ t('superAdmin.tabOverview') }}
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link fw-500 border-0 bg-transparent" :class="{ active: activePage === 'super-admin' && superAdminSection === 'organizations' }" @click="setSuperAdminSection('organizations')">
+                <i class="bi bi-building-fill-gear me-2 text-info"></i>
+                {{ t('superAdmin.tabOrgs') }}
+                <span v-if="pendingOrgsCount > 0" class="badge bg-warning text-dark ms-1">{{ pendingOrgsCount }}</span>
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link fw-500 border-0 bg-transparent" :class="{ active: activePage === 'super-admin' && superAdminSection === 'users' }" @click="setSuperAdminSection('users')">
+                <i class="bi bi-people-fill me-2 text-success"></i>
+                {{ t('superAdmin.tabUsers') }}
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link fw-500 border-0 bg-transparent" :class="{ active: activePage === 'super-admin' && superAdminSection === 'signatures' }" @click="setSuperAdminSection('signatures')">
+                <i class="bi bi-journal-check me-2 text-primary-blue"></i>
+                {{ t('superAdmin.tabRegistry') }}
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link fw-500 border-0 bg-transparent" :class="{ active: activePage === 'super-admin' && superAdminSection === 'system' }" @click="setSuperAdminSection('system')">
+                <i class="bi bi-shield-check me-2 text-warning"></i>
+                {{ t('superAdmin.tabSystem') }}
+              </button>
+            </li>
+          </template>
+          <template v-else>
             <li class="nav-item">
               <button class="nav-link fw-500 border-0 bg-transparent" :class="{ active: activePage === 'dashboard' }" @click="setActivePage('dashboard')">
                 <i class="bi bi-house-door me-2"></i>
@@ -44,35 +78,12 @@
               </button>
             </li>
             <li class="nav-item">
-              <button class="nav-link fw-500 border-0 bg-transparent" :class="{ active: activePage === 'qr-codes' }" @click="setActivePage('qr-codes')">
-                <i class="bi bi-qr-code me-2"></i>
-                {{ t('dashboard.nav.qrCodes') }}
+              <button class="nav-link fw-500 border-0 bg-transparent" :class="{ active: isOrganizationPage }" @click="setActivePage('organization-selection')">
+                <i class="bi bi-building me-2"></i>
+                {{ t('dashboard.nav.organization') }}
               </button>
             </li>
-            <li class="nav-item">
-              <button class="nav-link fw-500 border-0 bg-transparent" :class="{ active: activePage === 'templates' }" @click="setActivePage('templates')">
-                <i class="bi bi-file-earmark-plus me-2"></i>
-                {{ t('dashboard.nav.templates') }}
-              </button>
-            </li>
-            <li class="nav-item">
-              <button class="nav-link fw-500 border-0 bg-transparent" :class="{ active: activePage === 'history' }" @click="setActivePage('history')">
-                <i class="bi bi-clock-history me-2"></i>
-                {{ t('dashboard.nav.history') }}
-              </button>
-            </li>
-            <li class="nav-item">
-              <button class="nav-link fw-500 border-0 bg-transparent" :class="{ active: activePage === 'settings' }" @click="setActivePage('settings')">
-                <i class="bi bi-gear me-2"></i>
-                {{ t('dashboard.nav.settings') }}
-              </button>
-            </li>
-            <li class="nav-item" v-if="userStore.role === 'super-admin'">
-              <button class="nav-link fw-500 border-0 bg-transparent text-danger" :class="{ active: activePage === 'super-admin' }" @click="setActivePage('super-admin')">
-                <i class="bi bi-shield-lock-fill me-2"></i>
-                {{ t('dashboard.nav.admin') }}
-              </button>
-            </li>
+          </template>
           </ul>
 
           <!-- User info et logout -->
@@ -113,36 +124,71 @@
       <!-- Navigation scrollable -->
       <nav class="sidebar-nav">
         <ul class="sidebar-nav">
-          <li class="sidebar-nav-item">
-            <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: activePage === 'dashboard' }" @click="setActivePage('dashboard')">
-              <i class="bi bi-house-door me-3"></i>
-              {{ t('dashboard.nav.dashboard') }}
-            </button>
-          </li>
-          <li class="sidebar-nav-item">
-            <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: activePage === 'documents' }" @click="setActivePage('documents')">
-              <i class="bi bi-file-earmark-text me-3"></i>
-              {{ t('dashboard.nav.documents') }}
-            </button>
-          </li>
-          <li class="sidebar-nav-item">
-            <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: activePage === 'signatures' }" @click="setActivePage('signatures')">
-              <i class="bi bi-pen me-3"></i>
-              {{ t('dashboard.nav.signatures') }}
-            </button>
-          </li>
-          <li class="sidebar-nav-item">
-            <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: isOrganizationPage }" @click="setActivePage('organization-selection')">
-              <i class="bi bi-building me-3"></i>
-              {{ t('dashboard.nav.organization') }}
-            </button>
-          </li>
-          <li class="sidebar-nav-item" v-if="userStore.role === 'super-admin'">
-            <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start text-danger" :class="{ active: activePage === 'super-admin' }" @click="setActivePage('super-admin')">
-              <i class="bi bi-shield-lock-fill me-3"></i>
-              {{ t('dashboard.nav.admin') }}
-            </button>
-          </li>
+          <!-- MENU DÉDIÉ SUPER ADMIN -->
+          <template v-if="userStore.role === 'super-admin'">
+            <li class="sidebar-section-title px-3 pt-2 pb-1 text-muted small fw-bold">
+              <span>{{ locale === 'fr' ? 'SUPERVISION & CONTRÔLE' : 'SUPERVISION & CONTROL' }}</span>
+            </li>
+            <li class="sidebar-nav-item">
+              <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: activePage === 'super-admin' && superAdminSection === 'overview' }" @click="setSuperAdminSection('overview')">
+                <i class="bi bi-grid-1x2-fill me-3 text-primary-blue"></i>
+                {{ t('superAdmin.tabOverview') }}
+              </button>
+            </li>
+            <li class="sidebar-nav-item">
+              <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start d-flex align-items-center" :class="{ active: activePage === 'super-admin' && superAdminSection === 'organizations' }" @click="setSuperAdminSection('organizations')">
+                <i class="bi bi-building-fill-gear me-3 text-info"></i>
+                <span class="flex-grow-1">{{ t('superAdmin.tabOrgs') }}</span>
+                <span v-if="pendingOrgsCount > 0" class="badge rounded-pill bg-warning text-dark fw-bold ms-2">{{ pendingOrgsCount }}</span>
+              </button>
+            </li>
+            <li class="sidebar-nav-item">
+              <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: activePage === 'super-admin' && superAdminSection === 'users' }" @click="setSuperAdminSection('users')">
+                <i class="bi bi-people-fill me-3 text-success"></i>
+                {{ t('superAdmin.tabUsers') }}
+              </button>
+            </li>
+            <li class="sidebar-nav-item">
+              <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: activePage === 'super-admin' && superAdminSection === 'signatures' }" @click="setSuperAdminSection('signatures')">
+                <i class="bi bi-journal-check me-3 text-primary-blue"></i>
+                {{ t('superAdmin.tabRegistry') }}
+              </button>
+            </li>
+            <li class="sidebar-nav-item">
+              <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: activePage === 'super-admin' && superAdminSection === 'system' }" @click="setSuperAdminSection('system')">
+                <i class="bi bi-shield-check me-3 text-warning"></i>
+                {{ t('superAdmin.tabSystem') }}
+              </button>
+            </li>
+          </template>
+
+          <!-- MENU UTILISATEURS STANDARDS -->
+          <template v-else>
+            <li class="sidebar-nav-item">
+              <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: activePage === 'dashboard' }" @click="setActivePage('dashboard')">
+                <i class="bi bi-house-door me-3"></i>
+                {{ t('dashboard.nav.dashboard') }}
+              </button>
+            </li>
+            <li class="sidebar-nav-item">
+              <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: activePage === 'documents' }" @click="setActivePage('documents')">
+                <i class="bi bi-file-earmark-text me-3"></i>
+                {{ t('dashboard.nav.documents') }}
+              </button>
+            </li>
+            <li class="sidebar-nav-item">
+              <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: activePage === 'signatures' }" @click="setActivePage('signatures')">
+                <i class="bi bi-pen me-3"></i>
+                {{ t('dashboard.nav.signatures') }}
+              </button>
+            </li>
+            <li class="sidebar-nav-item">
+              <button class="sidebar-nav-link border-0 bg-transparent w-100 text-start" :class="{ active: isOrganizationPage }" @click="setActivePage('organization-selection')">
+                <i class="bi bi-building me-3"></i>
+                {{ t('dashboard.nav.organization') }}
+              </button>
+            </li>
+          </template>
         </ul>
       </nav>
 
@@ -188,36 +234,74 @@
       <!-- Menu de navigation -->
       <nav class="sidebar-nav">
         <ul class="nav-menu">
-          <li class="nav-item">
-            <button class="nav-link" :class="{ active: activePage === 'dashboard' }" @click="setActivePage('dashboard')">
-              <i class="bi bi-house-door"></i>
-              <span v-show="!isSidebarCollapsed">{{ t('dashboard.nav.dashboard') }}</span>
-            </button>
-          </li>
-          <li class="nav-item">
-            <button class="nav-link" :class="{ active: activePage === 'documents' }" @click="setActivePage('documents')">
-              <i class="bi bi-file-earmark-text"></i>
-              <span v-show="!isSidebarCollapsed">{{ t('dashboard.nav.documents') }}</span>
-            </button>
-          </li>
-          <li class="nav-item">
-            <button class="nav-link" :class="{ active: activePage === 'signatures' }" @click="setActivePage('signatures')">
-              <i class="bi bi-pen"></i>
-              <span v-show="!isSidebarCollapsed">{{ t('dashboard.nav.signatures') }}</span>
-            </button>
-          </li>
-          <li class="nav-item">
-            <button class="nav-link" :class="{ active: isOrganizationPage }" @click="setActivePage('organization-selection')">
-              <i class="bi bi-building"></i>
-              <span v-show="!isSidebarCollapsed">{{ t('dashboard.nav.organization') }}</span>
-            </button>
-          </li>
-          <li class="nav-item" v-if="userStore.role === 'super-admin'">
-            <button class="nav-link text-danger" :class="{ active: activePage === 'super-admin' }" @click="setActivePage('super-admin')">
-              <i class="bi bi-shield-lock-fill"></i>
-              <span v-show="!isSidebarCollapsed">{{ t('dashboard.nav.admin') }}</span>
-            </button>
-          </li>
+          <!-- MENU DÉDIÉ SUPER ADMIN -->
+          <template v-if="userStore.role === 'super-admin'">
+            <li class="sidebar-section-header" v-show="!isSidebarCollapsed">
+              <div class="superadmin-badge-label">
+                <i class="bi bi-shield-lock-fill"></i>
+                <span>CONSOLE SUPER ADMIN</span>
+              </div>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link" :class="{ active: activePage === 'super-admin' && superAdminSection === 'overview' }" @click="setSuperAdminSection('overview')">
+                <i class="bi bi-grid-1x2-fill text-primary-blue"></i>
+                <span v-show="!isSidebarCollapsed">{{ t('superAdmin.tabOverview') }}</span>
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link position-relative" :class="{ active: activePage === 'super-admin' && superAdminSection === 'organizations' }" @click="setSuperAdminSection('organizations')">
+                <i class="bi bi-building-fill-gear text-info"></i>
+                <span v-show="!isSidebarCollapsed">{{ t('superAdmin.tabOrgs') }}</span>
+                <span v-if="pendingOrgsCount > 0 && !isSidebarCollapsed" class="badge rounded-pill bg-warning text-dark fw-bold ms-auto">{{ pendingOrgsCount }}</span>
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link" :class="{ active: activePage === 'super-admin' && superAdminSection === 'users' }" @click="setSuperAdminSection('users')">
+                <i class="bi bi-people-fill text-success"></i>
+                <span v-show="!isSidebarCollapsed">{{ t('superAdmin.tabUsers') }}</span>
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link" :class="{ active: activePage === 'super-admin' && superAdminSection === 'signatures' }" @click="setSuperAdminSection('signatures')">
+                <i class="bi bi-journal-check text-primary-blue"></i>
+                <span v-show="!isSidebarCollapsed">{{ t('superAdmin.tabRegistry') }}</span>
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link" :class="{ active: activePage === 'super-admin' && superAdminSection === 'system' }" @click="setSuperAdminSection('system')">
+                <i class="bi bi-shield-check text-warning"></i>
+                <span v-show="!isSidebarCollapsed">{{ t('superAdmin.tabSystem') }}</span>
+              </button>
+            </li>
+          </template>
+
+          <!-- MENU UTILISATEURS STANDARDS -->
+          <template v-else>
+            <li class="nav-item">
+              <button class="nav-link" :class="{ active: activePage === 'dashboard' }" @click="setActivePage('dashboard')">
+                <i class="bi bi-house-door"></i>
+                <span v-show="!isSidebarCollapsed">{{ t('dashboard.nav.dashboard') }}</span>
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link" :class="{ active: activePage === 'documents' }" @click="setActivePage('documents')">
+                <i class="bi bi-file-earmark-text"></i>
+                <span v-show="!isSidebarCollapsed">{{ t('dashboard.nav.documents') }}</span>
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link" :class="{ active: activePage === 'signatures' }" @click="setActivePage('signatures')">
+                <i class="bi bi-pen"></i>
+                <span v-show="!isSidebarCollapsed">{{ t('dashboard.nav.signatures') }}</span>
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link" :class="{ active: isOrganizationPage }" @click="setActivePage('organization-selection')">
+                <i class="bi bi-building"></i>
+                <span v-show="!isSidebarCollapsed">{{ t('dashboard.nav.organization') }}</span>
+              </button>
+            </li>
+          </template>
         </ul>
       </nav>
 
@@ -708,7 +792,11 @@
           <DocumentPreparationPage @go-back="setActivePage('organization-secretary')" />
         </div>
         <div v-else-if="activePage === 'super-admin'">
-          <SuperAdminPage />
+          <SuperAdminPage 
+            :active-section="superAdminSection"
+            @update:section="val => superAdminSection = val"
+            @update:pending-count="val => pendingOrgsCount = val"
+          />
         </div>
         <div v-else>
           <div class="page-placeholder">
@@ -725,7 +813,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useAuthStore } from '../../stores/auth'
 import { useSessionRefresh } from '../../composables/useSessionRefresh'
 import LanguageSelector from '../../components/shared/LanguageSelector.vue'
@@ -787,11 +875,25 @@ const certificateError = ref(null)
 // État de la navigation du dashboard
 const route = useRoute()
 const activePage = ref(route.query.page || 'dashboard')
+const superAdminSection = ref(route.query.section || 'overview')
+const pendingOrgsCount = ref(0)
+let unsubOrgsForBadge = null
 
 // Propriété calculée pour vérifier si on est sur une page d'organisation
 const isOrganizationPage = computed(() => {
   return ['organization', 'organization-selection', 'organization-member', 'organization-secretary', 'organization-manager'].includes(activePage.value)
 })
+
+// Navigation dédiée Super Admin
+const setSuperAdminSection = (section) => {
+  superAdminSection.value = section
+  activePage.value = 'super-admin'
+  localStorage.setItem('dashboardActivePage', 'super-admin')
+  localStorage.setItem('superAdminSection', section)
+  const newUrl = `${window.location.pathname}?page=super-admin&section=${section}`
+  window.history.pushState({}, '', newUrl)
+  closeSidebar()
+}
 
 // Fonctions de navigation
 const setActivePage = (page) => {
@@ -1161,9 +1263,28 @@ onMounted(() => {
   if (authStore && authStore.isAuthenticated) {
     startSessionRefresh()
   }
+
+  // Watcher pour le rôle Super Admin
+  watch(() => userStore.value.role, (newRole) => {
+    if (newRole === 'super-admin') {
+      if (activePage.value === 'dashboard') {
+        activePage.value = 'super-admin'
+        localStorage.setItem('dashboardActivePage', 'super-admin')
+      }
+      if (!unsubOrgsForBadge) {
+        unsubOrgsForBadge = OrganizationApiService.listenAllOrganizations((orgs) => {
+          pendingOrgsCount.value = orgs.filter(o => o.approval_status === 'pending' || !o.approval_status).length
+        })
+      }
+    }
+  })
 })
 
 onUnmounted(() => {
+  if (unsubOrgsForBadge) {
+    unsubOrgsForBadge()
+    unsubOrgsForBadge = null
+  }
   window.removeEventListener('scroll', handleScroll)
   window.removeEventListener('organizationSelected', handleOrganizationSelected)
   window.removeEventListener('navigateToOrganizationSelection', () => {})
@@ -1246,6 +1367,14 @@ onMounted(async () => {
   // Vérifier les paramètres URL d'abord
   const urlParams = new URLSearchParams(window.location.search)
   const pageParam = urlParams.get('page')
+  const sectionParam = urlParams.get('section')
+  
+  if (sectionParam) {
+    superAdminSection.value = sectionParam
+  } else {
+    const savedSection = localStorage.getItem('superAdminSection')
+    if (savedSection) superAdminSection.value = savedSection
+  }
   
   if (pageParam) {
     // Si un paramètre page est présent dans l'URL, l'utiliser
@@ -1257,6 +1386,19 @@ onMounted(async () => {
     const savedPage = localStorage.getItem('dashboardActivePage')
     if (savedPage && savedPage !== 'dashboard') {
       activePage.value = savedPage
+    }
+  }
+
+  // Redirection automatique pour le Super Admin
+  if (userStore.value.role === 'super-admin') {
+    if (!pageParam || pageParam === 'dashboard') {
+      activePage.value = 'super-admin'
+      localStorage.setItem('dashboardActivePage', 'super-admin')
+    }
+    if (!unsubOrgsForBadge) {
+      unsubOrgsForBadge = OrganizationApiService.listenAllOrganizations((orgs) => {
+        pendingOrgsCount.value = orgs.filter(o => o.approval_status === 'pending' || !o.approval_status).length
+      })
     }
   }
   
@@ -1631,6 +1773,26 @@ body {
   list-style: none;
   margin: 0;
   padding: 0;
+}
+
+.superadmin-badge-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  color: var(--primary-blue);
+  background: rgba(0, 102, 204, 0.08);
+  padding: 0.45rem 0.8rem;
+  border-radius: 20px;
+  margin: 0.25rem 1rem 0.8rem 1rem;
+  border: 1px solid rgba(0, 102, 204, 0.15);
+  box-shadow: 0 2px 6px rgba(0, 102, 204, 0.05);
+}
+
+.superadmin-badge-label i {
+  color: #f59e0b;
 }
 
 .nav-item {
